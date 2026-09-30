@@ -5,10 +5,17 @@ import Link from 'next/link';
 
 export default function ContactUs() {
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    setLoading(true);
+
+    // Yahan aap apna backend API ya EmailJS integrate kar sakte hain
+    setTimeout(() => {
+      setLoading(false);
+      setSubmitted(true);
+    }, 1000);
   };
 
   return (
@@ -72,15 +79,16 @@ export default function ContactUs() {
 
             <button
               type="submit"
-              className="w-full py-3 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl shadow transition text-base"
+              disabled={loading}
+              className="w-full py-3 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl shadow transition text-base disabled:opacity-50"
             >
-              संदेश भेजें (Send Message)
+              {loading ? 'भेजा जा रहा है...' : 'संदेश भेजें (Send Message)'}
             </button>
           </form>
         )}
 
         <div className="mt-8 pt-6 border-t border-emerald-100 text-center text-xs text-gray-500">
-          या सीधा ईमेल करें: <span className="font-semibold text-emerald-800">support@janpoll.in</span>
+          या सीधा ईमेल करें: <span className="font-semibold text-emerald-800">support@catchbuddy.in</span>
         </div>
       </div>
     </div>
