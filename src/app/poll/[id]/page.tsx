@@ -1,39 +1,58 @@
-import { db } from '@/lib/db';
-import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
+
+import { db } from '@/lib/db';
 import PollClientView from './PollClientView';
 
-export default async function PollPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+type PollPageProps = {
+  params: Promise<{
+    id: string;
+  }>;
+};
 
-  let poll = null;
-  try {
-    poll = await db.poll.findUnique({
-      where: { id },
-      include: {
-        options: true,
-        votes: true,
+export default async function PollPage({ params }: PollPageProps) {
+  const { id } = await params;
+
+  const poll = await db.poll.findUnique({
+    where: {
+      id,
+    },
+    select: {
+      id: true,
+      question: true,
+      deadlineDays: true,
+      options: {
+        select: {
+          id: true,
+          text: true,
+          voteCount: true,
+        },
+        orderBy: {
+          id: 'asc',
+        },
       },
-    });
-  } catch (error) {
-    console.error("Error fetching poll:", error);
-  }
+    },
+  });
 
   if (!poll) {
     notFound();
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6 text-gray-800">
-      {/* Top Back Link */}
-      <div className="mb-6">
-        <Link href="/" className="text-emerald-700 hover:text-emerald-900 font-semibold text-sm flex items-center gap-1">
-          &larr; होम पेज पर वापस जाएं
-        </Link>
-      </div>
+    <main className="min-h-screen bg-slate-50">
+      <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
+        <nav aria-label="Breadcrumb" className="mb-6">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-50 hover:text-emerald-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+          >
+            <span aria-hidden="true">←</span>
+            होम पेज पर वापस जाएं
+          </Link>
+        </nav>
 
-      {/* Render Client View */}
-      <PollClientView poll={poll} />
-    </div>
+        <PollClientView poll={poll} />
+      </div>
+    </main>
   );
 }
