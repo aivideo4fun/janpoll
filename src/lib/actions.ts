@@ -1,54 +1,109 @@
 'use server';
 
-import { db } from '@/lib/db';
-import { headers } from 'next/headers';
+import { randomUUID } from 'crypto';
 import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
+import { Prisma } from '@prisma/client';
 
-export async function castVote(pollId: string, optionId: string, anonymousUserId: string) {
+import { db } from '@/lib/db';
+import { isPollOpen } from '@/lib/poll-utils';
+import { DEVICE_COOKIE, getVoterIdentity, hasAlreadyVoted } from '@/lib/voter';
+
+export type VoteResult =
+  | { success: true }
+  | {
+      success: false;
+      code: 'INVALID' | 'CLOSED' | 'ALREADY_VOTED' | 'ERROR';
+      message: string;
+    };
+
+export async function castVote(
+  pollId: string,
+  optionId: string,
+): Promise<VoteResult> {
   try {
-    // 1. User ka real IP address nikalna (Cloudflare / Proxy safe)
-    const headersList = headers();
-    const forwardedFor = headersList.get('x-forwarded-for');
-    const realIp = forwardedFor ? forwardedFor.split(',')[0].trim() : '127.0.0.1';
-
-    // 2. Check karein ki is Poll par is IP Address ya is Browser ID se pehle vote ho chuka hai kya?
-    const existingVote = await db.vote.findFirst({
-      where: {
-        pollId,
-        OR: [
-          { anonymousUserId },
-          { ipAddress: realIp }
-        ]
+    const poll = await db.poll.findUnique({
+      where: { id: pollId },
+      select: {
+        id: true,
+        active: true,
+        createdAt: true,
+        deadlineDays: true,
+        options: { where: { id: optionId }, select: { id: true } },
       },
     });
 
-    if (existingVote) {
-      return { 
-        success: false, 
-        message: '⚠️ इस डिवाइस या नेटवर्क से इस पोल पर पहले ही वोट दिया जा चुका है! (एक डिवाइस/नेटवर्क से केवल 1 वोट मान्य है)' 
+    if (!poll || poll.options.length === 0) {
+      return { success: false, code: 'INVALID', message: 'अमान्य पोल या विकल्प।' };
+    }
+
+    if (!isPollOpen(poll)) {
+      return { success: false, code: 'CLOSED', message: 'यह पोल बंद हो चुका है।' };
+    }
+
+    if (await hasAlreadyVoted(pollId)) {
+      return {
+        success: false,
+        code: 'ALREADY_VOTED',
+        message: 'आप इस पोल में पहले ही वोट दे चुके हैं।',
       };
     }
 
-    // 3. Database mein vote save karein (IP aur Browser ID dono ke sath)
-    await db.vote.create({
-      data: {
-        pollId,
-        optionId,
-        anonymousUserId,
-        ipAddress: realIp,
-      },
-    });
+    // Device cookie server बनाएगा, client नहीं (client का ID नकली हो सकता है)
+    const cookieStore = await cookies();
+    let deviceId = cookieStore.get(DEVICE_COOKIE)?.value;
 
-    // 4. Option vote count badhayein
-    await db.pollOption.update({
-      where: { id: optionId },
-      data: { voteCount: { increment: 1 } },
-    });
+    if (!deviceId) {
+      deviceId = randomUUID();
+      cookieStore.set(DEVICE_COOKIE, deviceId, {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 60 * 60 * 24 * 365,
+        path: '/',
+      });
+    }
 
+    const { ipHash } = await getVoterIdentity();
+
+    // Vote और count एक साथ सेव होंगे, या दोनों नहीं
+    await db.$transaction([
+            db.vote.create({
+        data: {
+          pollId,
+          optionId,
+          anonymousUserId: deviceId,
+          ipAddress: ipHash,
+        },
+      }),
+      db.pollOption.update({
+        where: { id: optionId },
+        data: { voteCount: { increment: 1 } },
+      }),
+    ]);
+
+    revalidatePath('/');
     revalidatePath(`/poll/${pollId}`);
-    return { success: true, message: 'आपका वोट सफलतापूर्व दर्ज हो गया!' };
+
+    return { success: true };
   } catch (error) {
-    console.error('Voting error:', error);
-    return { success: false, message: 'वोट दर्ज करने में त्रुटि हुई। कृपया पुनः प्रयास करें।' };
+    // Unique constraint: दो request एक साथ आईं तो भी दूसरा वोट रुकेगा
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    ) {
+      return {
+        success: false,
+        code: 'ALREADY_VOTED',
+        message: 'आप इस पोल में पहले ही वोट दे चुके हैं।',
+      };
+    }
+
+    console.error('castVote error:', error);
+    return {
+      success: false,
+      code: 'ERROR',
+      message: 'वोट दर्ज करते समय समस्या आई। कृपया दोबारा प्रयास करें।',
+    };
   }
 }

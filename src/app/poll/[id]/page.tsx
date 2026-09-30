@@ -2,34 +2,30 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { db } from '@/lib/db';
+import { isPollOpen } from '@/lib/poll-utils';
+import { hasAlreadyVoted } from '@/lib/voter';
 import PollClientView from './PollClientView';
 
+export const dynamic = 'force-dynamic';
+
 type PollPageProps = {
-  params: Promise<{
-    id: string;
-  }>;
+  params: Promise<{ id: string }>;
 };
 
 export default async function PollPage({ params }: PollPageProps) {
   const { id } = await params;
 
   const poll = await db.poll.findUnique({
-    where: {
-      id,
-    },
+    where: { id },
     select: {
       id: true,
       question: true,
       deadlineDays: true,
+      active: true,
+      createdAt: true,
       options: {
-        select: {
-          id: true,
-          text: true,
-          voteCount: true,
-        },
-        orderBy: {
-          id: 'asc',
-        },
+        select: { id: true, text: true, voteCount: true },
+        orderBy: { id: 'asc' },
       },
     },
   });
@@ -37,6 +33,10 @@ export default async function PollPage({ params }: PollPageProps) {
   if (!poll) {
     notFound();
   }
+
+  // Server पर चेक: IP या device cookie से पहले वोट दिया है या नहीं
+  const alreadyVoted = await hasAlreadyVoted(poll.id);
+  const isOpen = isPollOpen(poll);
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -51,7 +51,16 @@ export default async function PollPage({ params }: PollPageProps) {
           </Link>
         </nav>
 
-        <PollClientView poll={poll} />
+        <PollClientView
+          poll={{
+            id: poll.id,
+            question: poll.question,
+            deadlineDays: poll.deadlineDays,
+            options: poll.options,
+          }}
+          alreadyVoted={alreadyVoted}
+          isOpen={isOpen}
+        />
       </div>
     </main>
   );

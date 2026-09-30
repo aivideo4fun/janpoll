@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Cell,
   Legend,
@@ -11,7 +12,6 @@ import {
 } from 'recharts';
 
 import { castVote } from '@/lib/actions';
-import { getOrCreateAnonymousUserId } from '@/lib/anonymous-user';
 
 const COLORS = [
   '#047857',
@@ -39,6 +39,8 @@ type Poll = {
 
 type PollClientViewProps = {
   poll: Poll;
+  alreadyVoted: boolean;
+  isOpen: boolean;
 };
 
 type ChartDataItem = {
@@ -47,59 +49,24 @@ type ChartDataItem = {
   percentage: number;
 };
 
-const VOTED_POLLS_KEY = 'voted_polls';
-
-function getVotedPolls(): Record<string, boolean> {
-  if (typeof window === 'undefined') {
-    return {};
-  }
-
-  try {
-    const storedValue = localStorage.getItem(VOTED_POLLS_KEY);
-
-    if (!storedValue) {
-      return {};
-    }
-
-    const parsedValue = JSON.parse(storedValue);
-
-    return parsedValue &&
-      typeof parsedValue === 'object' &&
-      !Array.isArray(parsedValue)
-      ? parsedValue
-      : {};
-  } catch {
-    return {};
-  }
-}
-
 export default function PollClientView({
   poll,
+  alreadyVoted,
+  isOpen,
 }: PollClientViewProps) {
+  const router = useRouter();
+
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const [hasVoted, setHasVoted] = useState(false);
+  const [hasVoted, setHasVoted] = useState(alreadyVoted);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-  const [userId, setUserId] = useState('');
+  const [message, setMessage] = useState(
+    alreadyVoted ? 'आप इस पोल में पहले ही वोट दे चुके हैं।' : '',
+  );
 
-  useEffect(() => {
-    const anonymousUserId = getOrCreateAnonymousUserId();
-
-    setUserId(anonymousUserId);
-
-    const votedPolls = getVotedPolls();
-
-    if (votedPolls[poll.id]) {
-      setHasVoted(true);
-    }
-  }, [poll.id]);
+  const showResults = hasVoted || !isOpen;
 
   const totalVotes = useMemo(
-    () =>
-      poll.options.reduce(
-        (total, option) => total + option.voteCount,
-        0,
-      ),
+    () => poll.options.reduce((total, option) => total + option.voteCount, 0),
     [poll.options],
   );
 
@@ -116,21 +83,7 @@ export default function PollClientView({
     [poll.options, totalVotes],
   );
 
-  const saveVotedPoll = useCallback(() => {
-    const votedPolls = getVotedPolls();
-
-    localStorage.setItem(
-      VOTED_POLLS_KEY,
-      JSON.stringify({
-        ...votedPolls,
-        [poll.id]: true,
-      }),
-    );
-  }, [poll.id]);
-
-  const handleVoteSubmit = async (
-    event: React.FormEvent<HTMLFormElement>,
-  ) => {
+  const handleVoteSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!selectedOption) {
@@ -138,57 +91,38 @@ export default function PollClientView({
       return;
     }
 
-    if (!userId) {
-      setMessage('यूज़र पहचान तैयार नहीं हुई। कृपया दोबारा प्रयास करें।');
-      return;
-    }
-
     setLoading(true);
     setMessage('');
 
     try {
-      const response = await castVote(
-        poll.id,
-        selectedOption,
-        userId,
-      );
+      const response = await castVote(poll.id, selectedOption);
 
       if (response.success) {
-        saveVotedPoll();
         setHasVoted(true);
         setMessage('आपका वोट सफलतापूर्वक दर्ज हो गया।');
+        router.refresh(); // सर्वर से नई गिनती लाओ
         return;
       }
 
-      setMessage(
-        response.message || 'वोट दर्ज नहीं हो सका। कृपया दोबारा प्रयास करें।',
-      );
+      setMessage(response.message);
 
-      // Server ने बताया कि इस user ने पहले vote किया है।
-      if (
-        response.message?.toLowerCase().includes('already') ||
-        response.message?.includes('पहले') ||
-        response.message?.includes('vote')
-      ) {
+      if (response.code === 'ALREADY_VOTED') {
         setHasVoted(true);
+        router.refresh();
       }
     } catch (error) {
       console.error('Vote submission error:', error);
-      setMessage(
-        'वोट दर्ज करते समय समस्या आई। कृपया थोड़ी देर बाद दोबारा प्रयास करें।',
-      );
+      setMessage('वोट दर्ज करते समय समस्या आई। कृपया थोड़ी देर बाद दोबारा प्रयास करें।');
     } finally {
       setLoading(false);
     }
   };
 
   const handleShare = async () => {
-    const shareUrl = window.location.href;
-
     const shareData = {
       title: poll.question,
       text: `🗳️ इस JanPoll पर अपनी राय दें:\n\n${poll.question}`,
-      url: shareUrl,
+      url: window.location.href,
     };
 
     try {
@@ -197,10 +131,9 @@ export default function PollClientView({
         return;
       }
 
-      await navigator.clipboard.writeText(shareUrl);
+      await navigator.clipboard.writeText(shareData.url);
       setMessage('पोल लिंक क्लिपबोर्ड पर कॉपी हो गया है।');
     } catch (error) {
-      // User ने share dialog cancel किया हो तो error दिखाने की जरूरत नहीं।
       if ((error as DOMException)?.name !== 'AbortError') {
         setMessage('पोल शेयर नहीं हो सका। कृपया दोबारा प्रयास करें।');
       }
@@ -221,7 +154,7 @@ export default function PollClientView({
 
             <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm">
               <span aria-hidden="true">⏳</span>
-              समय सीमा: {deadline} दिन
+              {isOpen ? `समय सीमा: ${deadline} दिन` : 'पोल बंद हो चुका है'}
             </span>
           </div>
 
@@ -245,7 +178,7 @@ export default function PollClientView({
             </div>
           )}
 
-          {!hasVoted ? (
+          {!showResults ? (
             <form onSubmit={handleVoteSubmit} className="space-y-5">
               <fieldset disabled={loading}>
                 <legend className="mb-3 text-sm font-bold text-slate-700">
@@ -316,9 +249,7 @@ export default function PollClientView({
           ) : (
             <div className="space-y-7">
               <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-center">
-                <p className="font-bold text-emerald-900">
-                  ✅ परिणाम और आंकड़े
-                </p>
+                <p className="font-bold text-emerald-900">✅ परिणाम और आंकड़े</p>
                 <p className="mt-1 text-sm text-emerald-700">
                   अब तक कुल {totalVotes.toLocaleString('en-IN')} वोट
                 </p>
@@ -326,10 +257,7 @@ export default function PollClientView({
 
               {totalVotes > 0 ? (
                 <>
-                  <div
-                    className="h-72 w-full"
-                    aria-label="पोल परिणामों का pie chart"
-                  >
+                  <div className="h-72 w-full" aria-label="पोल परिणामों का pie chart">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
@@ -352,19 +280,12 @@ export default function PollClientView({
                           ))}
                         </Pie>
 
-                        <Tooltip
-                          formatter={(value, name) => [
-                            `${value} वोट`,
-                            name,
-                          ]}
-                        />
+                        <Tooltip formatter={(value, name) => [`${value} वोट`, name]} />
 
                         <Legend
                           verticalAlign="bottom"
                           height={36}
-                          wrapperStyle={{
-                            fontSize: '12px',
-                          }}
+                          wrapperStyle={{ fontSize: '12px' }}
                         />
                       </PieChart>
                     </ResponsiveContainer>
@@ -377,10 +298,7 @@ export default function PollClientView({
                         className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
                       >
                         <div className="mb-2 flex items-start justify-between gap-4 text-sm">
-                          <span className="font-semibold text-slate-700">
-                            {item.name}
-                          </span>
-
+                          <span className="font-semibold text-slate-700">{item.name}</span>
                           <span className="shrink-0 font-bold text-emerald-800">
                             {item.votes} ({item.percentage}%)
                           </span>
@@ -398,8 +316,7 @@ export default function PollClientView({
                             className="h-full rounded-full transition-all duration-700"
                             style={{
                               width: `${item.percentage}%`,
-                              backgroundColor:
-                                COLORS[index % COLORS.length],
+                              backgroundColor: COLORS[index % COLORS.length],
                             }}
                           />
                         </div>
@@ -429,8 +346,7 @@ export default function PollClientView({
       </div>
 
       <aside className="mt-6 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-center text-xs leading-relaxed text-slate-500 shadow-sm">
-        JanPoll के सभी पोल्स केवल जनता की राय जानने के लिए हैं। यह किसी
-        सरकारी संस्था या आधिकारिक चुनावी मतदान प्रणाली का हिस्सा नहीं है।
+        JanPoll के सभी पोल्स केवल जनता की राय जानने के लिए हैं। यह किसी सरकारी संस्था या आधिकारिक चुनावी मतदान प्रणाली का हिस्सा नहीं है।
       </aside>
     </section>
   );

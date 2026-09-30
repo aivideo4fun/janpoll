@@ -1,38 +1,50 @@
 import Link from 'next/link';
+
 import { db } from '@/lib/db';
+import { isPollOpen } from '@/lib/poll-utils';
+
+export const dynamic = 'force-dynamic';
 
 export default async function Home() {
-  let polls: any[] = [];
-  let totalPollsCount = 0;
+  let polls: Array<{
+    id: string;
+    question: string;
+    createdAt: Date;
+    options: { id: string; text: string; voteCount: number }[];
+  }> = [];
   let totalVotesCount = 0;
-  let dbError = false;
 
   try {
-    // 1. Database se actual polls fetch karna (Recent 10)
-    polls = await db.poll.findMany({
-      orderBy: { createdAt: 'desc' },
-      include: { 
-        options: true,
-        votes: true 
-      },
-      take: 10,
-    });
+    const [allPolls, voteSum] = await Promise.all([
+      db.poll.findMany({
+        where: { active: true },
+        select: {
+          id: true,
+          question: true,
+          active: true,
+          createdAt: true,
+          deadlineDays: true,
+          options: {
+            select: { id: true, text: true, voteCount: true },
+            orderBy: { id: 'asc' },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      db.pollOption.aggregate({ _sum: { voteCount: true } }),
+    ]);
 
-    // 2. Total Polls count
-    totalPollsCount = await db.poll.count();
-
-    // 3. Total Votes count (Sabhi votes ka real-time total)
-    const votesData = await db.vote.count();
-    totalVotesCount = votesData;
-
+    // सिर्फ़ वही पोल जो अभी चल रहे हैं (समय सीमा खत्म नहीं हुई)
+    polls = allPolls.filter(isPollOpen);
+    totalVotesCount = voteSum._sum.voteCount ?? 0;
   } catch (error) {
-    console.error("Database fetch error:", error);
-    dbError = true;
+    console.error('Error fetching home polls:', error);
   }
+
+  const runningPollsCount = polls.length;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 text-gray-800">
-      
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-emerald-800 to-green-700 text-white rounded-2xl p-6 md:p-10 mb-8 text-center shadow-md">
         <span className="bg-white/20 text-emerald-100 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider backdrop-blur-sm">
@@ -60,37 +72,44 @@ export default async function Home() {
         </div>
       </div>
 
-      {/* Real-time Dynamic Stats Cards */}
+      {/* Live Stats */}
       <div className="grid grid-cols-3 gap-3 mb-10">
         <div className="bg-white p-4 rounded-xl border border-emerald-100 text-center shadow-sm">
-          <div className="text-2xl md:text-3xl font-black text-emerald-800">{totalPollsCount}</div>
-          <div className="text-xs text-gray-500 font-medium mt-1">🗳️ कुल पोल (Polls)</div>
+          <div className="text-2xl md:text-3xl font-black text-emerald-800">
+            {runningPollsCount.toLocaleString('en-IN')}
+          </div>
+          <div className="text-xs text-gray-500 font-medium mt-1">🗳️ चल रहे पोल</div>
         </div>
         <div className="bg-white p-4 rounded-xl border border-emerald-100 text-center shadow-sm">
-          <div className="text-2xl md:text-3xl font-black text-emerald-800">{totalVotesCount}</div>
-          <div className="text-xs text-gray-500 font-medium mt-1">👥 कुल वोट (Votes)</div>
+          <div className="text-2xl md:text-3xl font-black text-emerald-800">
+            {totalVotesCount.toLocaleString('en-IN')}
+          </div>
+          <div className="text-xs text-gray-500 font-medium mt-1">👥 कुल वोट</div>
         </div>
         <div className="bg-white p-4 rounded-xl border border-emerald-100 text-center shadow-sm">
           <div className="text-2xl md:text-3xl font-black text-emerald-800">राजस्थान</div>
-          <div className="text-xs text-gray-500 font-medium mt-1">📍 कवरेज (Coverage)</div>
+          <div className="text-xs text-gray-500 font-medium mt-1">📍 कवरेज</div>
         </div>
       </div>
 
-      {/* Categories Section */}
+      {/* Categories */}
       <div className="mb-10">
         <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">
-          📂 पोल की श्रेणियाँ (Categories)
+          📂 पोल की श्रेणियाँ
         </h3>
         <div className="flex flex-wrap gap-2">
-          {['स्थानीय मुद्दे', 'ग्राम पंचायत', 'शहर', 'राजस्थान', 'शिक्षा', 'युवा', 'अन्य'].map((cat, idx) => (
-            <span key={idx} className="bg-white hover:bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold px-3 py-1.5 rounded-lg cursor-pointer transition shadow-xs">
+          {['स्थानीय मुद्दे', 'ग्राम पंचायत', 'शहर', 'राजस्थान', 'शिक्षा', 'युवा', 'अन्य'].map((cat) => (
+            <span
+              key={cat}
+              className="bg-white border border-emerald-200 text-emerald-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm"
+            >
               {cat}
             </span>
           ))}
         </div>
       </div>
 
-      {/* Professional Hindi Blog Section */}
+      {/* Article */}
       <div className="bg-white rounded-2xl p-6 md:p-8 border border-emerald-100 shadow-sm mb-10 space-y-4">
         <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 uppercase tracking-wide">
           जनता की आवाज़ • विशेष लेख
@@ -100,81 +119,75 @@ export default async function Home() {
         </h2>
         <div className="text-sm text-gray-600 leading-relaxed space-y-3">
           <p>
-            लोकतंत्र की असल खूबसूरती इस बात में है कि शासन व्यवस्था में हर व्यक्ति की आवाज़ सुनी जाए। एक स्वस्थ समाज के निर्माण के लिए यह जरूरी है कि स्थानीय मुद्दों, विकास कार्यों, शिक्षा, स्वास्थ्य और युवाओं से जुड़े विषयों पर खुलकर चर्चा हो। सवाल पूछना केवल राजनेताओं या पत्रकारों का काम नहीं है, बल्कि यह जागरूक जनता का सबसे बड़ा अधिकार और कर्तव्य है।
+            लोकतंत्र की असल खूबसूरती इस बात में है कि शासन व्यवस्था में हर व्यक्ति की आवाज़ सुनी जाए। एक स्वस्थ समाज के निर्माण के लिए यह जरूरी है कि स्थानीय मुद्दों, विकास कार्यों, शिक्षा, स्वास्थ्य और युवाओं से जुड़े विषयों पर खुलकर चर्चा हो।
           </p>
           <p>
-            <strong>JanPoll</strong> इसी सोच के साथ राजस्थान के हर कोने तक जनता की राय पहुँचाने का एक निष्पक्ष डिजिटल मंच है। यहाँ गाँव की ग्राम पंचायत से लेकर पूरे प्रदेश के स्तर तक, हर नागरिक को अपने मन की बात रखने और यह जानने का मौका मिलता है कि बाकी जनता क्या सोचती है। आपका एक वोट और आपका एक सवाल व्यवस्था को बेहतर बनाने में अहम भूमिका निभा सकता है।
+            <strong>JanPoll</strong> इसी सोच के साथ राजस्थान के हर कोने तक जनता की राय पहुँचाने का एक निष्पक्ष डिजिटल मंच है। आपका एक वोट और आपका एक सवाल व्यवस्था को बेहतर बनाने में अहम भूमिका निभा सकता है।
           </p>
-        </div>
-
-        {/* Create Poll Call-to-Action inside Blog */}
-        <div className="pt-4 border-t border-emerald-100 flex flex-col md:flex-row items-center justify-between gap-4 bg-emerald-50/50 p-5 rounded-xl border border-emerald-200">
-          <div>
-            <h4 className="font-bold text-emerald-900 text-base">क्या आपके मन में भी कोई सवाल है?</h4>
-            <p className="text-xs text-gray-600 mt-0.5">अपना खुद का पोल बनाएं और राजस्थान की जनता की राय जानें।</p>
-          </div>
-          <Link
-            href="/create"
-            className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-6 py-3 rounded-xl shadow transition text-sm whitespace-nowrap"
-          >
-            ＋ अपना पोल बनाएँ (Create Poll)
-          </Link>
         </div>
       </div>
 
-      {/* Recent Polls Section (Real Data) */}
+      {/* Recent Polls */}
       <div id="recent-polls" className="mb-10">
         <h2 className="text-2xl font-bold text-emerald-900 mb-6 flex items-center gap-2">
-          🔥 ताज़ा पोल्स (Recent Polls)
+          🔥 ताज़ा पोल्स
         </h2>
 
-        {dbError ? (
-          <div className="bg-amber-50 border border-amber-200 text-amber-800 p-6 rounded-xl text-center">
-            डेटाबेस कनेक्ट हो रहा है... कृपया 5 सेकंड बाद पेज को रिफ्रेश (Refresh) करें।
-          </div>
-        ) : polls.length === 0 ? (
+        {polls.length === 0 ? (
           <div className="bg-white rounded-xl p-8 text-center border border-emerald-100 text-gray-500 shadow-sm">
-            अभी तक कोई पोल नहीं बना है। सबसे पहला पोल आप बनाएँ!
+            अभी कोई पोल चालू नहीं है। सबसे पहला पोल आप बनाएँ!
             <div className="mt-4">
               <Link href="/create" className="text-emerald-700 font-bold underline hover:text-emerald-800">
-                Create Poll Now
+                पोल बनाएँ
               </Link>
             </div>
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-4">
             {polls.map((poll) => {
-              const voteCount = poll.votes ? poll.votes.length : 0;
+              const pollTotalVotes = poll.options.reduce((sum, opt) => sum + opt.voteCount, 0);
+
               return (
-                <div key={poll.id} className="bg-white p-5 rounded-xl border border-emerald-100 shadow-sm hover:shadow-md transition flex flex-col justify-between">
-                  <div>
-                    <div className="flex justify-between items-center text-xs text-emerald-700 font-semibold mb-2">
-                      <span>📍 राजस्थान</span>
-                      <span className="bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 text-[10px]">
-                        ⏳ अवधि: {poll.deadlineDays} दिन
-                      </span>
-                    </div>
-                    <h3 className="font-bold text-base text-gray-800 mb-3 line-clamp-2">
-                      {poll.question}
-                    </h3>
-                    <div className="flex items-center gap-4 text-xs text-gray-400 mb-4">
-                      <span>👥 {voteCount} Votes</span>
-                      <span>🕐 {new Date(poll.createdAt).toLocaleDateString('hi-IN')}</span>
-                    </div>
+                <div
+                  key={poll.id}
+                  className="bg-white rounded-2xl p-6 border border-emerald-100 shadow-sm hover:shadow-md transition"
+                >
+                  <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
+                    <span className="bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-md font-semibold border border-emerald-200">
+                      🗳️ कुल वोट: {pollTotalVotes.toLocaleString('en-IN')}
+                    </span>
+                    <span>{new Date(poll.createdAt).toLocaleDateString('hi-IN')}</span>
                   </div>
-                  <div className="flex gap-2">
+
+                  <h3 className="text-lg font-bold text-emerald-900 mb-4">{poll.question}</h3>
+
+                  <div className="space-y-2 mb-4">
+                    {poll.options.map((opt) => {
+                      const percentage =
+                        pollTotalVotes > 0
+                          ? ((opt.voteCount / pollTotalVotes) * 100).toFixed(1)
+                          : '0.0';
+
+                      return (
+                        <div
+                          key={opt.id}
+                          className="text-xs text-gray-700 bg-emerald-50/30 p-2.5 rounded-xl border border-emerald-100 flex justify-between items-center"
+                        >
+                          <span className="font-medium">{opt.text}</span>
+                          <span className="font-bold text-emerald-800">
+                            {opt.voteCount} वोट ({percentage}%)
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="flex justify-end">
                     <Link
                       href={`/poll/${poll.id}`}
-                      className="flex-1 text-center bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 rounded-lg transition text-xs shadow-xs"
+                      className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-5 py-2 rounded-xl text-xs transition shadow"
                     >
-                      वोट दें / परिणाम देखें &rarr;
-                    </Link>
-                    <Link
-                      href={`/poll/${poll.id}`}
-                      className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-lg text-xs transition flex items-center justify-center font-medium"
-                      title="Share Poll"
-                    >
-                      ↗ शेयर
+                      वोट दें और परिणाम देखें →
                     </Link>
                   </div>
                 </div>
@@ -183,28 +196,6 @@ export default async function Home() {
           </div>
         )}
       </div>
-
-      {/* Trust / How it works Section */}
-      <div className="bg-white rounded-2xl p-6 border border-emerald-100 shadow-sm mb-12">
-        <h3 className="text-lg font-bold text-emerald-900 mb-4 text-center">
-          ❓ JanPoll कैसे काम करता है?
-        </h3>
-        <div className="grid md:grid-cols-3 gap-4 text-center">
-          <div className="p-4 bg-emerald-50/50 rounded-xl border border-emerald-100">
-            <div className="font-bold text-emerald-800 text-base mb-1">① पोल बनाएँ</div>
-            <p className="text-xs text-gray-600">कोई भी नागरिक अपना सार्वजनिक पोल और समय सीमा (Deadline) सेट कर सकता है।</p>
-          </div>
-          <div className="p-4 bg-emerald-50/50 rounded-xl border border-emerald-100">
-            <div className="font-bold text-emerald-800 text-base mb-1">② जनता वोट करे</div>
-            <p className="text-xs text-gray-600">दिए गए विकल्पों में से सुरक्षित और आसान तरीके से अपनी पसंद चुनें।</p>
-          </div>
-          <div className="p-4 bg-emerald-50/50 rounded-xl border border-emerald-100">
-            <div className="font-bold text-emerald-800 text-base mb-1">③ परिणाम देखें</div>
-            <p className="text-xs text-gray-600">वोट सबमिट करने के तुरंत बाद लाइव परिणाम और आंकड़े देखें।</p>
-          </div>
-        </div>
-      </div>
-
     </div>
   );
 }
