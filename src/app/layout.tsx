@@ -16,11 +16,7 @@ export default function RootLayout({
   return (
     <html lang="hi">
       <head>
-        <script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4603205178906314"
-          crossOrigin="anonymous"
-        ></script>
+        <meta name="google-adsense-account" content="ca-pub-4603205178906314" />
       </head>
       <body className="min-h-screen flex flex-col bg-[#F8FAFC] text-[#111827] antialiased">
         <Navbar />
