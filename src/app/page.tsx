@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic';
 
 type HomePoll = {
   id: string;
+  slug: string | null;
   question: string;
   createdAt: Date;
   deadlineDays: number | null;
@@ -29,6 +30,7 @@ export default async function Home() {
         where: { active: true },
         select: {
           id: true,
+          slug: true,
           question: true,
           active: true,
           createdAt: true,
@@ -160,6 +162,9 @@ export default async function Home() {
           <div className="space-y-4">
             {polls.map((poll) => {
               const pollTotalVotes = poll.options.reduce((sum, opt) => sum + opt.voteCount, 0);
+              
+              // सुरक्षित लिंक: अगर slug है तो SEO URL, वरना पुरानी ID लिंक
+              const pollUrl = poll.slug ? `/poll/${poll.id}/${poll.slug}` : `/poll/${poll.id}`;
 
               return (
                 <div
@@ -201,7 +206,7 @@ export default async function Home() {
 
                   <div className="flex justify-end">
                     <Link
-                      href={`/poll/${poll.id}`}
+                      href={pollUrl}
                       className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-5 py-2 rounded-xl text-xs transition shadow"
                     >
                       वोट दें और परिणाम देखें →
