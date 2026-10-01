@@ -12,6 +12,7 @@ model Poll {
   question     String   @db.VarChar(500)
   creatorName  String?  @db.VarChar(100)
   creatorEmail String?  @db.VarChar(255)
+  creatorIp    String?  @db.VarChar(45)
   deadlineDays Int      @default(3)
   active       Boolean  @default(true)
   createdAt    DateTime @default(now())
@@ -43,19 +44,14 @@ model Vote {
   id              String   @id @default(uuid())
   pollId          String
   optionId        String
-  // Server-side device cookie ki ID (client se nahi aati)
   anonymousUserId String   @db.VarChar(100)
-  // IP ka salted hash (raw IP save nahi hota), 32 chars
   ipAddress       String?  @db.VarChar(45)
   createdAt       DateTime @default(now())
 
   poll   Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
   option PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
 
-  // Ek device ek poll par sirf ek vote de sakta hai
   @@unique([pollId, anonymousUserId])
-
-  // IP par limit code me hai (MAX_VOTES_PER_IP), yahan sirf tez lookup ke liye index
   @@index([pollId, ipAddress])
   @@index([pollId])
   @@index([optionId])
