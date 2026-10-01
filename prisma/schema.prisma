@@ -12,6 +12,7 @@ model Poll {
   question     String   @db.VarChar(500)
   creatorName  String?  @db.VarChar(100)
   creatorEmail String?  @db.VarChar(255)
+  isVerified   Boolean  @default(false) // 👈 Ye check karega ki Google se verified hai ya nahi
   creatorIp    String?  @db.VarChar(45)
   deadlineDays Int      @default(3)
   active       Boolean  @default(true)
@@ -23,7 +24,6 @@ model Poll {
 
   @@index([active])
   @@index([createdAt])
-  @@index([active, createdAt])
 }
 
 model PollOption {
