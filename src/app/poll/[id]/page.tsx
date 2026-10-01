@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { cookies } from 'next/headers';
 
 import { db } from '@/lib/db';
 import { isPollOpen } from '@/lib/poll-utils';
-import { hasAlreadyVoted } from '@/lib/voter';
+import { DEVICE_COOKIE } from '@/lib/voter';
 import PollClientView from './PollClientView';
 
 export const dynamic = 'force-dynamic';
@@ -34,8 +35,25 @@ export default async function PollPage({ params }: PollPageProps) {
     notFound();
   }
 
-  // Server पर चेक: IP या device cookie से पहले वोट दिया है या नहीं
-  const alreadyVoted = await hasAlreadyVoted(poll.id);
+  // Server par strict deviceId cookie se check karein (IP se check nahi hoga)
+  const cookieStore = await cookies();
+  const deviceId = cookieStore.get(DEVICE_COOKIE)?.value;
+
+  let alreadyVoted = false;
+  if (deviceId) {
+    const existingVote = await db.vote.findUnique({
+      where: {
+        pollId_anonymousUserId: {
+          pollId: poll.id,
+          anonymousUserId: deviceId,
+        },
+      },
+    });
+    if (existingVote) {
+      alreadyVoted = true;
+    }
+  }
+
   const isOpen = isPollOpen(poll);
 
   return (

@@ -40,6 +40,7 @@ export async function castVote(
       return { success: false, code: 'CLOSED', message: 'यह पोल बंद हो चुका है।' };
     }
 
+    // 1. Get or create unique cookie deviceId for this browser/device
     const cookieStore = await cookies();
     let deviceId = cookieStore.get(DEVICE_COOKIE)?.value;
 
@@ -54,6 +55,7 @@ export async function castVote(
       });
     }
 
+    // 2. Check ONLY by deviceId cookie (No IP restriction)
     const existingVote = await db.vote.findUnique({
       where: {
         pollId_anonymousUserId: {
@@ -71,12 +73,14 @@ export async function castVote(
       };
     }
 
+    // 3. Save vote securely with transaction
     await db.$transaction([
       db.vote.create({
         data: {
           pollId,
           optionId,
           anonymousUserId: deviceId,
+          ipAddress: null, // IP bypass to prevent shared proxy network blocks
         },
       }),
       db.pollOption.update({
@@ -90,7 +94,6 @@ export async function castVote(
 
     return { success: true };
   } catch (error: any) {
-    // Unique constraint violation code 'P2002' check karein
     if (error?.code === 'P2002') {
       return {
         success: false,
