@@ -25,7 +25,7 @@ export default async function PollPage({ params }: PollPageProps) {
       createdAt: true,
       options: {
         select: { id: true, text: true, voteCount: true },
-        orderBy: { id: 'asc' },
+        orderBy: { createdAt: 'asc' },
       },
     },
   });

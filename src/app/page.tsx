@@ -1,18 +1,27 @@
 import Link from 'next/link';
 
 import { db } from '@/lib/db';
-import { isPollOpen } from '@/lib/poll-utils';
+import { getDeadline, isPollOpen } from '@/lib/poll-utils';
 
 export const dynamic = 'force-dynamic';
 
+type HomePoll = {
+  id: string;
+  question: string;
+  createdAt: Date;
+  deadlineDays: number | null;
+  options: { id: string; text: string; voteCount: number }[];
+};
+
+function daysLeft(poll: HomePoll) {
+  const ms = getDeadline(poll.createdAt, poll.deadlineDays).getTime() - Date.now();
+  return Math.max(1, Math.ceil(ms / (24 * 60 * 60 * 1000)));
+}
+
 export default async function Home() {
-  let polls: Array<{
-    id: string;
-    question: string;
-    createdAt: Date;
-    options: { id: string; text: string; voteCount: number }[];
-  }> = [];
+  let polls: HomePoll[] = [];
   let totalVotesCount = 0;
+  let dbError = false;
 
   try {
     const [allPolls, voteSum] = await Promise.all([
@@ -26,7 +35,7 @@ export default async function Home() {
           deadlineDays: true,
           options: {
             select: { id: true, text: true, voteCount: true },
-            orderBy: { id: 'asc' },
+            orderBy: { createdAt: 'asc' },
           },
         },
         orderBy: { createdAt: 'desc' },
@@ -39,6 +48,7 @@ export default async function Home() {
     totalVotesCount = voteSum._sum.voteCount ?? 0;
   } catch (error) {
     console.error('Error fetching home polls:', error);
+    dbError = true;
   }
 
   const runningPollsCount = polls.length;
@@ -133,7 +143,11 @@ export default async function Home() {
           🔥 ताज़ा पोल्स
         </h2>
 
-        {polls.length === 0 ? (
+        {dbError ? (
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 p-6 rounded-xl text-center">
+            डेटाबेस से कनेक्ट नहीं हो पाया। कृपया थोड़ी देर बाद रिफ्रेश करें।
+          </div>
+        ) : polls.length === 0 ? (
           <div className="bg-white rounded-xl p-8 text-center border border-emerald-100 text-gray-500 shadow-sm">
             अभी कोई पोल चालू नहीं है। सबसे पहला पोल आप बनाएँ!
             <div className="mt-4">
@@ -152,11 +166,14 @@ export default async function Home() {
                   key={poll.id}
                   className="bg-white rounded-2xl p-6 border border-emerald-100 shadow-sm hover:shadow-md transition"
                 >
-                  <div className="flex justify-between items-center text-xs text-gray-500 mb-2">
+                  <div className="flex flex-wrap justify-between items-center gap-2 text-xs text-gray-500 mb-2">
                     <span className="bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-md font-semibold border border-emerald-200">
                       🗳️ कुल वोट: {pollTotalVotes.toLocaleString('en-IN')}
                     </span>
-                    <span>{new Date(poll.createdAt).toLocaleDateString('hi-IN')}</span>
+                    <span className="flex items-center gap-3">
+                      <span>⏳ {daysLeft(poll)} दिन बचे</span>
+                      <span>{new Date(poll.createdAt).toLocaleDateString('hi-IN')}</span>
+                    </span>
                   </div>
 
                   <h3 className="text-lg font-bold text-emerald-900 mb-4">{poll.question}</h3>

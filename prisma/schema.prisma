@@ -8,14 +8,14 @@ generator client {
 }
 
 model Poll {
-  id           String       @id @default(uuid())
-  question    String       @db.VarChar(500)
-  creatorName  String?      @db.VarChar(100)
-  creatorEmail String?      @db.VarChar(255)
-  deadlineDays Int          @default(3)
-  active       Boolean      @default(true)
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  id           String   @id @default(uuid())
+  question     String   @db.VarChar(500)
+  creatorName  String?  @db.VarChar(100)
+  creatorEmail String?  @db.VarChar(255)
+  deadlineDays Int      @default(3)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   options PollOption[]
   votes   Vote[]
@@ -40,19 +40,23 @@ model PollOption {
 }
 
 model Vote {
-  id              String     @id @default(uuid())
+  id              String   @id @default(uuid())
   pollId          String
   optionId        String
-  anonymousUserId String     @db.VarChar(100)
-  ipAddress       String?    @db.VarChar(45)
-  createdAt       DateTime   @default(now())
+  // Server-side device cookie ki ID (client se nahi aati)
+  anonymousUserId String   @db.VarChar(100)
+  // IP ka salted hash (raw IP save nahi hota), 32 chars
+  ipAddress       String?  @db.VarChar(45)
+  createdAt       DateTime @default(now())
 
   poll   Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
   option PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
 
-  // एक anonymous user एक poll पर केवल एक बार vote कर सकता है
+  // Ek device ek poll par sirf ek vote de sakta hai
   @@unique([pollId, anonymousUserId])
 
+  // IP par limit code me hai (MAX_VOTES_PER_IP), yahan sirf tez lookup ke liye index
+  @@index([pollId, ipAddress])
   @@index([pollId])
   @@index([optionId])
   @@index([anonymousUserId])

@@ -7,13 +7,18 @@ import { Prisma } from '@prisma/client';
 
 import { db } from '@/lib/db';
 import { isPollOpen } from '@/lib/poll-utils';
-import { DEVICE_COOKIE, getVoterIdentity, hasAlreadyVoted } from '@/lib/voter';
+import {
+  DEVICE_COOKIE,
+  MAX_VOTES_PER_IP,
+  getVoterIdentity,
+  hasAlreadyVoted,
+} from '@/lib/voter';
 
 export type VoteResult =
   | { success: true }
   | {
       success: false;
-      code: 'INVALID' | 'CLOSED' | 'ALREADY_VOTED' | 'ERROR';
+      code: 'INVALID' | 'CLOSED' | 'ALREADY_VOTED' | 'IP_LIMIT' | 'ERROR';
       message: string;
     };
 
@@ -41,6 +46,7 @@ export async function castVote(
       return { success: false, code: 'CLOSED', message: 'यह पोल बंद हो चुका है।' };
     }
 
+    // इसी device से पहले वोट हो चुका है?
     if (await hasAlreadyVoted(pollId)) {
       return {
         success: false,
@@ -49,7 +55,24 @@ export async function castVote(
       };
     }
 
-    // Device cookie server बनाएगा, client नहीं (client का ID नकली हो सकता है)
+    // एक IP से सीमित वोट (शेयर्ड WiFi / मोबाइल नेटवर्क के लिए छूट)
+    const { ipHash } = await getVoterIdentity();
+
+    if (ipHash) {
+      const votesFromIp = await db.vote.count({
+        where: { pollId, ipAddress: ipHash },
+      });
+
+      if (votesFromIp >= MAX_VOTES_PER_IP) {
+        return {
+          success: false,
+          code: 'IP_LIMIT',
+          message: 'इस नेटवर्क से वोट की सीमा पूरी हो चुकी है।',
+        };
+      }
+    }
+
+    // Device cookie server बनाएगा
     const cookieStore = await cookies();
     let deviceId = cookieStore.get(DEVICE_COOKIE)?.value;
 
@@ -64,11 +87,8 @@ export async function castVote(
       });
     }
 
-    const { ipHash } = await getVoterIdentity();
-
-    // Vote और count एक साथ सेव होंगे, या दोनों नहीं
     await db.$transaction([
-            db.vote.create({
+      db.vote.create({
         data: {
           pollId,
           optionId,
@@ -87,7 +107,6 @@ export async function castVote(
 
     return { success: true };
   } catch (error) {
-    // Unique constraint: दो request एक साथ आईं तो भी दूसरा वोट रुकेगा
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === 'P2002'
