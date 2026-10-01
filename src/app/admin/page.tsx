@@ -1,64 +1,71 @@
-import { db } from '@/lib/db';
-import { revalidatePath } from 'next/cache';
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { revalidatePath } from 'next/cache';
+
+import { db } from '@/lib/db';
+import {
+  adminConfigured,
+  createAdminSession,
+  destroyAdminSession,
+  isAdmin,
+  safeEqual,
+} from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 
-// Admin Login Server Action
+// Search engines में admin page न दिखे
+export const metadata = {
+  robots: { index: false, follow: false },
+};
+
 async function handleLogin(formData: FormData) {
   'use server';
-  const username = formData.get('username');
-  const password = formData.get('password');
 
-  if (
-    username === process.env.ADMIN_USER &&
-    password === process.env.ADMIN_PASS
-  ) {
-    const cookieStore = await cookies();
-    cookieStore.set('janpoll_admin_auth', 'authenticated_secure_token', {
-      httpOnly: true,
-      secure: true, // Strictly HTTPS only security requirement
-      maxAge: 60 * 60 * 24, // Valid for 1 day
-      path: '/',
-    });
+  const username = String(formData.get('username') ?? '').trim();
+  const password = String(formData.get('password') ?? '');
+
+  if (!adminConfigured()) {
+    redirect('/admin?error=config');
   }
 
-  redirect('/admin');
+  const adminUser = process.env.ADMIN_USER!.trim();
+  const adminPass = process.env.ADMIN_PASS!.trim();
+
+  if (safeEqual(username, adminUser) && safeEqual(password, adminPass)) {
+    await createAdminSession();
+    redirect('/admin');
+  }
+
+  redirect('/admin?error=invalid');
 }
 
-// Admin Logout Action
 async function handleLogout() {
   'use server';
-  const cookieStore = await cookies();
-  cookieStore.delete('janpoll_admin_auth');
+  await destroyAdminSession();
   redirect('/admin');
 }
 
-// Poll Delete Action
 async function deletePoll(formData: FormData) {
   'use server';
-  const cookieStore = await cookies();
-  if (cookieStore.get('janpoll_admin_auth')?.value !== 'authenticated_secure_token') {
-    return;
-  }
 
-  const pollId = formData.get('pollId') as string;
-  if (pollId) {
-    await db.poll.delete({ where: { id: pollId } });
-    revalidatePath('/admin');
-    revalidatePath('/');
-  }
+  if (!(await isAdmin())) return;
+
+  const pollId = String(formData.get('pollId') ?? '');
+  if (!pollId) return;
+
+  await db.poll.delete({ where: { id: pollId } });
+  revalidatePath('/admin');
+  revalidatePath('/');
 }
 
-export default async function AdminPage() {
-  const cookieStore = await cookies();
-  const isAuthenticated =
-    cookieStore.get('janpoll_admin_auth')?.value === 'authenticated_secure_token';
+type AdminPageProps = {
+  searchParams: Promise<{ error?: string }>;
+};
 
-  // If not authenticated, render professional login interface
-  if (!isAuthenticated) {
+export default async function AdminPage({ searchParams }: AdminPageProps) {
+  const { error } = await searchParams;
+
+  if (!(await isAdmin())) {
     return (
       <div className="max-w-md mx-auto mt-20 px-4">
         <div className="bg-white p-8 rounded-2xl shadow-md border border-emerald-100">
@@ -69,6 +76,19 @@ export default async function AdminPage() {
             Authorized Personnel Only. Please enter your credentials.
           </p>
 
+          {error === 'invalid' && (
+            <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center text-xs font-semibold text-red-700">
+              Username या Password गलत है।
+            </div>
+          )}
+
+          {error === 'config' && (
+            <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-xs font-semibold text-amber-800">
+              Server पर ADMIN_USER, ADMIN_PASS या ADMIN_SECRET सेट नहीं है।
+              Environment Variables जाँचकर Redeploy करें।
+            </div>
+          )}
+
           <form action={handleLogin} className="space-y-4">
             <div>
               <label className="block text-xs font-bold text-gray-700 mb-1">Username</label>
@@ -76,6 +96,7 @@ export default async function AdminPage() {
                 type="text"
                 name="username"
                 required
+                autoComplete="username"
                 className="w-full px-3 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 placeholder="Enter username"
               />
@@ -86,6 +107,7 @@ export default async function AdminPage() {
                 type="password"
                 name="password"
                 required
+                autoComplete="current-password"
                 className="w-full px-3 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 placeholder="Enter password"
               />
@@ -108,15 +130,31 @@ export default async function AdminPage() {
     );
   }
 
-  // Fetch all polls for management dashboard
-  let polls: any[] = [];
+  let polls: Array<{
+    id: string;
+    question: string;
+    creatorName: string | null;
+    creatorEmail: string | null;
+    createdAt: Date;
+    active: boolean;
+    options: { voteCount: number }[];
+  }> = [];
+
   try {
     polls = await db.poll.findMany({
-      include: { options: true, votes: true },
+      select: {
+        id: true,
+        question: true,
+        creatorName: true,
+        creatorEmail: true,
+        createdAt: true,
+        active: true,
+        options: { select: { voteCount: true } },
+      },
       orderBy: { createdAt: 'desc' },
     });
-  } catch (error) {
-    console.error('Error loading admin polls:', error);
+  } catch (err) {
+    console.error('Error loading admin polls:', err);
   }
 
   return (
@@ -124,10 +162,15 @@ export default async function AdminPage() {
       <div className="flex justify-between items-center mb-8 bg-white p-6 rounded-2xl shadow-sm border border-emerald-100">
         <div>
           <h1 className="text-2xl font-black text-emerald-900">🛠 Admin Management Dashboard</h1>
-          <p className="text-xs text-gray-500 mt-1">Monitor, review, and moderate user-generated public polls.</p>
+          <p className="text-xs text-gray-500 mt-1">
+            Monitor, review, and moderate user-generated public polls.
+          </p>
         </div>
         <div className="flex items-center gap-3">
-          <Link href="/" className="px-3 py-2 bg-emerald-50 text-emerald-800 text-xs font-bold rounded-xl border border-emerald-200">
+          <Link
+            href="/"
+            className="px-3 py-2 bg-emerald-50 text-emerald-800 text-xs font-bold rounded-xl border border-emerald-200"
+          >
             Home &rarr;
           </Link>
           <form action={handleLogout}>
@@ -149,20 +192,26 @@ export default async function AdminPage() {
 
         <div className="divide-y divide-emerald-100">
           {polls.length === 0 ? (
-            <p className="p-8 text-center text-gray-500 text-sm">No polls available in the database.</p>
+            <p className="p-8 text-center text-gray-500 text-sm">
+              No polls available in the database.
+            </p>
           ) : (
             polls.map((poll) => {
-              const totalVotes = poll.options.reduce((sum: number, opt: any) => sum + opt.voteCount, 0);
+              const totalVotes = poll.options.reduce((sum, opt) => sum + opt.voteCount, 0);
+
               return (
-                <div key={poll.id} className="p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div
+                  key={poll.id}
+                  className="p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
+                >
                   <div className="space-y-1">
                     <h3 className="font-bold text-base text-gray-900">{poll.question}</h3>
                     <div className="text-xs text-gray-500 flex flex-wrap gap-3">
                       <span>👤 Creator: {poll.creatorName || 'Anonymous'}</span>
                       <span>📧 Email: {poll.creatorEmail || 'N/A'}</span>
-                      <span>🌐 IP Address: <code className="bg-gray-100 px-1 py-0.5 rounded text-gray-700">{poll.creatorIp || 'N/A'}</code></span>
                       <span>👥 Total Votes: {totalVotes}</span>
                       <span>📅 Created: {new Date(poll.createdAt).toLocaleDateString('hi-IN')}</span>
+                      <span>{poll.active ? '🟢 Active' : '⚪ Inactive'}</span>
                     </div>
                   </div>
 
