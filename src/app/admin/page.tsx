@@ -58,6 +58,19 @@ async function deletePoll(formData: FormData) {
   revalidatePath('/');
 }
 
+// Contact message delete action
+async function deleteMessage(formData: FormData) {
+  'use server';
+
+  if (!(await isAdmin())) return;
+
+  const msgId = String(formData.get('msgId') ?? '');
+  if (!msgId) return;
+
+  await db.contactMessage.delete({ where: { id: msgId } });
+  revalidatePath('/admin');
+}
+
 type AdminPageProps = {
   searchParams: Promise<{ error?: string }>;
 };
@@ -140,6 +153,14 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     options: { voteCount: number }[];
   }> = [];
 
+  let messages: Array<{
+    id: string;
+    name: string;
+    email: string;
+    message: string;
+    createdAt: Date;
+  }> = [];
+
   try {
     polls = await db.poll.findMany({
       select: {
@@ -153,8 +174,12 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       },
       orderBy: { createdAt: 'desc' },
     });
+
+    messages = await db.contactMessage.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
   } catch (err) {
-    console.error('Error loading admin polls:', err);
+    console.error('Error loading admin data:', err);
   }
 
   return (
@@ -163,7 +188,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         <div>
           <h1 className="text-2xl font-black text-emerald-900">🛠 Admin Management Dashboard</h1>
           <p className="text-xs text-gray-500 mt-1">
-            Monitor, review, and moderate user-generated public polls.
+            Monitor, review, and moderate user-generated public polls and contact messages.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -184,7 +209,8 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-emerald-100 overflow-hidden">
+      {/* Polls Section */}
+      <div className="bg-white rounded-2xl shadow-sm border border-emerald-100 overflow-hidden mb-8">
         <div className="p-4 bg-emerald-50 border-b border-emerald-100 font-bold text-sm text-emerald-900 flex justify-between">
           <span>Total Registered Polls</span>
           <span>{polls.length}</span>
@@ -236,6 +262,50 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                 </div>
               );
             })
+          )}
+        </div>
+      </div>
+
+      {/* Contact Messages Section */}
+      <div className="bg-white rounded-2xl shadow-sm border border-emerald-100 overflow-hidden">
+        <div className="p-4 bg-emerald-50 border-b border-emerald-100 font-bold text-sm text-emerald-900 flex justify-between">
+          <span>✉️ User Contact Messages</span>
+          <span>{messages.length}</span>
+        </div>
+
+        <div className="divide-y divide-emerald-100">
+          {messages.length === 0 ? (
+            <p className="p-8 text-center text-gray-500 text-sm">
+              No contact messages received yet.
+            </p>
+          ) : (
+            messages.map((msg) => (
+              <div
+                key={msg.id}
+                className="p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
+              >
+                <div className="space-y-1">
+                  <h3 className="font-bold text-base text-gray-900">{msg.name}</h3>
+                  <div className="text-xs text-emerald-700 font-semibold">📧 {msg.email}</div>
+                  <p className="text-sm text-gray-700 mt-1 bg-emerald-50/40 p-3 rounded-xl border border-emerald-100">
+                    {msg.message}
+                  </p>
+                  <span className="text-[10px] text-gray-400">
+                    Received: {new Date(msg.createdAt).toLocaleString('hi-IN')}
+                  </span>
+                </div>
+
+                <form action={deleteMessage} className="self-end md:self-center">
+                  <input type="hidden" name="msgId" value={msg.id} />
+                  <button
+                    type="submit"
+                    className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold rounded-lg border border-red-200 transition"
+                  >
+                    Delete Message
+                  </button>
+                </form>
+              </div>
+            ))
           )}
         </div>
       </div>

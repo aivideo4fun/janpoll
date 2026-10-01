@@ -9,10 +9,11 @@ generator client {
 
 model Poll {
   id           String   @id @default(uuid())
+  slug         String?  @db.VarChar(500) // 👈 Optional rakha hai taaki purane polls safe rahein
   question     String   @db.VarChar(500)
   creatorName  String?  @db.VarChar(100)
   creatorEmail String?  @db.VarChar(255)
-  isVerified   Boolean  @default(false) // 👈 Ye check karega ki Google se verified hai ya nahi
+  isVerified   Boolean  @default(false)
   creatorIp    String?  @db.VarChar(45)
   deadlineDays Int      @default(3)
   active       Boolean  @default(true)
@@ -58,4 +59,14 @@ model Vote {
   @@index([anonymousUserId])
   @@index([createdAt])
   @@index([pollId, createdAt])
+}
+
+model ContactMessage {
+  id        String   @id @default(uuid())
+  name      String   @db.VarChar(100)
+  email     String   @db.VarChar(255)
+  message   String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
 }

@@ -5,8 +5,24 @@ import Footer from '@/components/Footer';
 import Providers from './providers'; // 👈 Providers import kiya gaya hai
 
 export const metadata: Metadata = {
-  title: 'JanPoll — आपकी राय, जनता की आवाज़',
-  description: 'राजस्थान के लोगों की राय जानिए और अपनी राय दें।',
+  title: 'JanPoll — राजस्थान की सबसे भरोसेमंद पब्लिक पोलिंग वेबसाइट',
+  description: 'राजस्थान के मुद्दों और चुनावों पर अपनी राय दें। Rajasthan public opinion poll, political surveys, and secure voting platform.',
+  keywords: [
+    'Rajasthan public opinion poll',
+    'Rajasthan political survey online',
+    'JanPoll Rajasthan',
+    'राजस्थान चुनावी सर्वे',
+    'राजस्थान की जनता की राय',
+    'online voting poll India'
+  ],
+  openGraph: {
+    title: 'JanPoll — आपकी राय, जनता की आवाज़',
+    description: 'राजस्थान के लोगों की राय जानिए और अपनी राय दें।',
+    url: 'https://janpoll.in',
+    siteName: 'JanPoll',
+    locale: 'hi_IN',
+    type: 'website',
+  },
 };
 
 export default function RootLayout({
