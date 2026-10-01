@@ -3,22 +3,16 @@
 import { randomUUID } from 'crypto';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
-import { Prisma } from '@prisma/client';
 
 import { db } from '@/lib/db';
 import { isPollOpen } from '@/lib/poll-utils';
-import {
-  DEVICE_COOKIE,
-  MAX_VOTES_PER_IP,
-  getVoterIdentity,
-  hasAlreadyVoted,
-} from '@/lib/voter';
+import { DEVICE_COOKIE } from '@/lib/voter';
 
 export type VoteResult =
   | { success: true }
   | {
       success: false;
-      code: 'INVALID' | 'CLOSED' | 'ALREADY_VOTED' | 'IP_LIMIT' | 'ERROR';
+      code: 'INVALID' | 'CLOSED' | 'ALREADY_VOTED' | 'ERROR';
       message: string;
     };
 
@@ -46,33 +40,6 @@ export async function castVote(
       return { success: false, code: 'CLOSED', message: 'यह पोल बंद हो चुका है।' };
     }
 
-    // इसी device से पहले वोट हो चुका है?
-    if (await hasAlreadyVoted(pollId)) {
-      return {
-        success: false,
-        code: 'ALREADY_VOTED',
-        message: 'आप इस पोल में पहले ही वोट दे चुके हैं।',
-      };
-    }
-
-    // एक IP से सीमित वोट (शेयर्ड WiFi / मोबाइल नेटवर्क के लिए छूट)
-    const { ipHash } = await getVoterIdentity();
-
-    if (ipHash) {
-      const votesFromIp = await db.vote.count({
-        where: { pollId, ipAddress: ipHash },
-      });
-
-      if (votesFromIp >= MAX_VOTES_PER_IP) {
-        return {
-          success: false,
-          code: 'IP_LIMIT',
-          message: 'इस नेटवर्क से वोट की सीमा पूरी हो चुकी है।',
-        };
-      }
-    }
-
-    // Device cookie server बनाएगा
     const cookieStore = await cookies();
     let deviceId = cookieStore.get(DEVICE_COOKIE)?.value;
 
@@ -87,13 +54,29 @@ export async function castVote(
       });
     }
 
+    const existingVote = await db.vote.findUnique({
+      where: {
+        pollId_anonymousUserId: {
+          pollId,
+          anonymousUserId: deviceId,
+        },
+      },
+    });
+
+    if (existingVote) {
+      return {
+        success: false,
+        code: 'ALREADY_VOTED',
+        message: 'आप इस पोल में पहले ही वोट दे चुके हैं।',
+      };
+    }
+
     await db.$transaction([
       db.vote.create({
         data: {
           pollId,
           optionId,
           anonymousUserId: deviceId,
-          ipAddress: ipHash,
         },
       }),
       db.pollOption.update({
@@ -106,11 +89,9 @@ export async function castVote(
     revalidatePath(`/poll/${pollId}`);
 
     return { success: true };
-  } catch (error) {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === 'P2002'
-    ) {
+  } catch (error: any) {
+    // Unique constraint violation code 'P2002' check karein
+    if (error?.code === 'P2002') {
       return {
         success: false,
         code: 'ALREADY_VOTED',
