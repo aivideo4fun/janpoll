@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { cookies } from 'next/headers';
+import type { Metadata } from 'next';
 
 import { db } from '@/lib/db';
 import { isPollOpen } from '@/lib/poll-utils';
@@ -12,6 +13,33 @@ export const dynamic = 'force-dynamic';
 type PollPageProps = {
   params: Promise<{ id: string }>;
 };
+
+// Google SEO aur Search ranking ke liye dynamic metadata
+export async function generateMetadata({ params }: PollPageProps): Promise<Metadata> {
+  const { id } = await params;
+  
+  const poll = await db.poll.findUnique({
+    where: { id },
+    select: { question: true },
+  });
+
+  if (!poll) {
+    return {
+      title: 'पोल नहीं मिला - JanPoll',
+      description: 'यह पोल अब उपलब्ध नहीं है।',
+    };
+  }
+
+  return {
+    title: `${poll.question} - JanPoll Rajasthan`,
+    description: `इस विषय पर अपना वोट दें और राजस्थान की जनता का मत जानें।`,
+    openGraph: {
+      title: poll.question,
+      description: 'JanPoll पर अपना वोट दर्ज करें और परिणाम देखें।',
+      type: 'article',
+    },
+  };
+}
 
 export default async function PollPage({ params }: PollPageProps) {
   const { id } = await params;
@@ -73,7 +101,7 @@ export default async function PollPage({ params }: PollPageProps) {
             id: poll.id,
             question: poll.question,
             deadlineDays: poll.deadlineDays,
-            createdAt: poll.createdAt.toISOString(), // 👈 Countdown ke liye bheja gaya hai
+            createdAt: poll.createdAt.toISOString(),
             options: poll.options,
           }}
           alreadyVoted={alreadyVoted}
