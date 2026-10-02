@@ -58,16 +58,13 @@ export default async function Home() {
       db.pollOption.aggregate({ _sum: { voteCount: true } }),
     ]);
 
-    // सिर्फ़ चालू पोल्स
     const activePolls = allPolls.filter(isPollOpen);
 
-    // कुल वोट कैलकुलेट करके 'totalVotes' जोड़ें
     const pollsWithVotes = activePolls.map((poll) => {
       const totalVotes = poll.options.reduce((sum, opt) => sum + opt.voteCount, 0);
       return { ...poll, totalVotes };
     });
 
-    // 🏆 सबसे ज्यादा वोट पाने वाले पोल को सबसे ऊपर (Trending) सॉर्ट करें
     pollsWithVotes.sort((a, b) => b.totalVotes - a.totalVotes);
 
     polls = pollsWithVotes;
@@ -114,7 +111,7 @@ export default async function Home() {
           <div className="text-2xl md:text-3xl font-black text-emerald-800">
             {runningPollsCount.toLocaleString('en-IN')}
           </div>
-          <div className="text-xs text-gray-500 font-medium mt-1">🗳️ चल रहे पोल</div>
+          <div className="text-xs text-gray-500 font-medium mt-1">🗳️️ चल रहे पोल</div>
         </div>
         <div className="bg-white p-4 rounded-xl border border-emerald-100 text-center shadow-sm">
           <div className="text-2xl md:text-3xl font-black text-emerald-800">
@@ -205,17 +202,14 @@ export default async function Home() {
 
                   <h3 className="text-lg font-bold text-emerald-900 mb-4">{poll.question}</h3>
 
-                  {/* Home page options (without individual vote counts) */}
+                  {/* Options list without fake select buttons */}
                   <div className="space-y-2 mb-5">
                     {poll.options.map((opt) => (
                       <div
                         key={opt.id}
-                        className="text-sm font-medium text-gray-700 bg-emerald-50/20 p-3 rounded-xl border border-emerald-100 flex items-center justify-between"
+                        className="text-sm font-medium text-gray-700 bg-emerald-50/20 p-3 rounded-xl border border-emerald-100"
                       >
                         <span>{opt.text}</span>
-                        <span className="text-xs text-emerald-700 font-semibold bg-emerald-100/60 px-2 py-1 rounded-lg">
-                          चुनें →
-                        </span>
                       </div>
                     ))}
                   </div>
