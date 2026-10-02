@@ -35,7 +35,6 @@ export default async function PollPage({ params }: PollPageProps) {
     notFound();
   }
 
-  // Server par strict deviceId cookie se check karein (IP se check nahi hoga)
   const cookieStore = await cookies();
   const deviceId = cookieStore.get(DEVICE_COOKIE)?.value;
 
@@ -59,7 +58,7 @@ export default async function PollPage({ params }: PollPageProps) {
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
-        <nav aria-label="Breadcrumb" className="mb-6">
+        <nav aria-label="Breadcrumb" className="mb-6 flex justify-between items-center">
           <Link
             href="/"
             className="inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-50 hover:text-emerald-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
@@ -74,6 +73,7 @@ export default async function PollPage({ params }: PollPageProps) {
             id: poll.id,
             question: poll.question,
             deadlineDays: poll.deadlineDays,
+            createdAt: poll.createdAt.toISOString(), // 👈 Countdown ke liye bheja gaya hai
             options: poll.options,
           }}
           alreadyVoted={alreadyVoted}

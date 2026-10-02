@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Cell,
@@ -12,6 +12,7 @@ import {
 } from 'recharts';
 
 import { castVote } from '@/lib/actions';
+import { getDeadline } from '@/lib/poll-utils';
 
 const COLORS = [
   '#10B981', // हरा
@@ -34,6 +35,7 @@ type Poll = {
   id: string;
   question: string;
   deadlineDays: number | null;
+  createdAt: string | Date; // 👈 टाइप जोड़ा गया
   options: PollOption[];
 };
 
@@ -48,6 +50,56 @@ type ChartDataItem = {
   votes: number;
   percentage: number;
 };
+
+// रियल-टाइम काउंटडाउन कंपोनेंट
+function LiveCountdown({ createdAt, deadlineDays, isOpen }: { createdAt: string | Date; deadlineDays: number | null; isOpen: boolean }) {
+  const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const deadlineDate = getDeadline(new Date(createdAt), deadlineDays).getTime();
+
+    const updateTimer = () => {
+      const now = new Date().getTime();
+      const difference = deadlineDate - now;
+
+      if (difference <= 0) {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        return;
+      }
+
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+      setTimeLeft({ days, hours, minutes, seconds });
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [createdAt, deadlineDays, isOpen]);
+
+  if (!isOpen) {
+    return <span>पोल बंद हो चुका है</span>;
+  }
+
+  if (!timeLeft) {
+    const defaultDays = deadlineDays ?? 3;
+    return <span>समय सीमा: {defaultDays} दिन</span>;
+  }
+
+  if (timeLeft.days === 0 && timeLeft.hours === 0 && timeLeft.minutes === 0 && timeLeft.seconds === 0) {
+    return <span className="text-red-600 font-bold">पोल समाप्त</span>;
+  }
+
+  return (
+    <span className="font-mono font-bold text-emerald-900">
+      शेष: {timeLeft.days} दिन {String(timeLeft.hours).padStart(2, '0')}:{String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
+    </span>
+  );
+}
 
 export default function PollClientView({
   poll,
@@ -100,7 +152,7 @@ export default function PollClientView({
       if (response.success) {
         setHasVoted(true);
         setMessage('आपका वोट सफलतापूर्वक दर्ज हो गया।');
-        router.refresh(); // सर्वर से नई गिनती लाओ
+        router.refresh();
         return;
       }
 
@@ -140,8 +192,6 @@ export default function PollClientView({
     }
   };
 
-  const deadline = poll.deadlineDays ?? 3;
-
   return (
     <section className="mx-auto w-full max-w-2xl">
       <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
@@ -154,7 +204,7 @@ export default function PollClientView({
 
             <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm">
               <span aria-hidden="true">⏳</span>
-              {isOpen ? `समय सीमा: ${deadline} दिन` : 'पोल बंद हो चुका है'}
+              <LiveCountdown createdAt={poll.createdAt} deadlineDays={poll.deadlineDays} isOpen={isOpen} />
             </span>
           </div>
 

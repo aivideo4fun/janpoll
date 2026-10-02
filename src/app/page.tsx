@@ -171,7 +171,7 @@ export default async function Home() {
                   key={poll.id}
                   className="bg-white rounded-2xl p-6 border border-emerald-100 shadow-sm hover:shadow-md transition"
                 >
-                  <div className="flex flex-wrap justify-between items-center gap-2 text-xs text-gray-500 mb-2">
+                  <div className="flex flex-wrap justify-between items-center gap-2 text-xs text-gray-500 mb-3">
                     <span className="bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-md font-semibold border border-emerald-200">
                       🗳️ कुल वोट: {pollTotalVotes.toLocaleString('en-IN')}
                     </span>
@@ -183,31 +183,25 @@ export default async function Home() {
 
                   <h3 className="text-lg font-bold text-emerald-900 mb-4">{poll.question}</h3>
 
-                  <div className="space-y-2 mb-4">
-                    {poll.options.map((opt) => {
-                      const percentage =
-                        pollTotalVotes > 0
-                          ? ((opt.voteCount / pollTotalVotes) * 100).toFixed(1)
-                          : '0.0';
-
-                      return (
-                        <div
-                          key={opt.id}
-                          className="text-xs text-gray-700 bg-emerald-50/30 p-2.5 rounded-xl border border-emerald-100 flex justify-between items-center"
-                        >
-                          <span className="font-medium">{opt.text}</span>
-                          <span className="font-bold text-emerald-800">
-                            {opt.voteCount} वोट ({percentage}%)
-                          </span>
-                        </div>
-                      );
-                    })}
+                  {/* Home page par sirf options dikhenge, kisko kitne votes mile woh nahi */}
+                  <div className="space-y-2 mb-5">
+                    {poll.options.map((opt) => (
+                      <div
+                        key={opt.id}
+                        className="text-sm font-medium text-gray-700 bg-emerald-50/20 p-3 rounded-xl border border-emerald-100 flex items-center justify-between"
+                      >
+                        <span>{opt.text}</span>
+                        <span className="text-xs text-emerald-700 font-semibold bg-emerald-100/60 px-2 py-1 rounded-lg">
+                          चुनें →
+                        </span>
+                      </div>
+                    ))}
                   </div>
 
                   <div className="flex justify-end">
                     <Link
                       href={pollUrl}
-                      className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-5 py-2 rounded-xl text-xs transition shadow"
+                      className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-5 py-2.5 rounded-xl text-xs transition shadow"
                     >
                       वोट दें और परिणाम देखें →
                     </Link>
