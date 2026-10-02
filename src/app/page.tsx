@@ -1,9 +1,22 @@
 import Link from 'next/link';
-
+import type { Metadata } from 'next';
 import { db } from '@/lib/db';
 import { getDeadline, isPollOpen } from '@/lib/poll-utils';
 
 export const dynamic = 'force-dynamic';
+export const metadata: Metadata = {
+  title: 'JanPoll Rajasthan - राजस्थान की जनता की राय और ऑनलाइन पोल',
+  description: 'राजस्थान के स्थानीय मुद्दों, ग्राम पंचायत, सरपंच चुनाव और राजनीतिक विषयों पर ऑनलाइन वोटिंग करें और जनता की राय जानें।',
+  keywords: ['rajasthan poll', 'sarpanch poll', 'vote poll', 'create poll', 'rajasthan public poll', 'janpoll'],
+  openGraph: {
+    title: 'JanPoll - राजस्थान पब्लिक पोल',
+    description: 'अपने स्थानीय मुद्दों पर अपनी राय दें और देखें जनता क्या सोचती है।',
+    url: 'https://janpoll.in',
+    siteName: 'JanPoll',
+    locale: 'hi_IN',
+    type: 'website',
+  },
+};
 
 type HomePoll = {
   id: string;
@@ -12,6 +25,7 @@ type HomePoll = {
   createdAt: Date;
   deadlineDays: number | null;
   options: { id: string; text: string; voteCount: number }[];
+  totalVotes: number;
 };
 
 function daysLeft(poll: HomePoll) {
@@ -40,13 +54,23 @@ export default async function Home() {
             orderBy: { createdAt: 'asc' },
           },
         },
-        orderBy: { createdAt: 'desc' },
       }),
       db.pollOption.aggregate({ _sum: { voteCount: true } }),
     ]);
 
-    // सिर्फ़ वही पोल जो अभी चल रहे हैं (समय सीमा खत्म नहीं हुई)
-    polls = allPolls.filter(isPollOpen);
+    // सिर्फ़ चालू पोल्स
+    const activePolls = allPolls.filter(isPollOpen);
+
+    // कुल वोट कैलकुलेट करके 'totalVotes' जोड़ें
+    const pollsWithVotes = activePolls.map((poll) => {
+      const totalVotes = poll.options.reduce((sum, opt) => sum + opt.voteCount, 0);
+      return { ...poll, totalVotes };
+    });
+
+    // 🏆 सबसे ज्यादा वोट पाने वाले पोल को सबसे ऊपर (Trending) सॉर्ट करें
+    pollsWithVotes.sort((a, b) => b.totalVotes - a.totalVotes);
+
+    polls = pollsWithVotes;
     totalVotesCount = voteSum._sum.voteCount ?? 0;
   } catch (error) {
     console.error('Error fetching home polls:', error);
@@ -79,7 +103,7 @@ export default async function Home() {
             href="#recent-polls"
             className="bg-emerald-900/40 hover:bg-emerald-900/60 text-white font-medium px-5 py-2.5 rounded-xl transition text-base border border-emerald-500/30 inline-block"
           >
-            ताज़ा पोल देखें ↓
+            लोकप्रिय पोल देखें ↓
           </a>
         </div>
       </div>
@@ -139,10 +163,10 @@ export default async function Home() {
         </div>
       </div>
 
-      {/* Recent Polls */}
+      {/* Trending / Active Polls */}
       <div id="recent-polls" className="mb-10">
         <h2 className="text-2xl font-bold text-emerald-900 mb-6 flex items-center gap-2">
-          🔥 ताज़ा पोल्स
+          🔥 सर्वाधिक लोकप्रिय पोल्स (Trending)
         </h2>
 
         {dbError ? (
@@ -162,8 +186,6 @@ export default async function Home() {
           <div className="space-y-4">
             {polls.map((poll) => {
               const pollTotalVotes = poll.options.reduce((sum, opt) => sum + opt.voteCount, 0);
-              
-              // सुरक्षित लिंक: अगर slug है तो SEO URL, वरना पुरानी ID लिंक
               const pollUrl = poll.slug ? `/poll/${poll.id}/${poll.slug}` : `/poll/${poll.id}`;
 
               return (
@@ -183,7 +205,7 @@ export default async function Home() {
 
                   <h3 className="text-lg font-bold text-emerald-900 mb-4">{poll.question}</h3>
 
-                  {/* Home page par sirf options dikhenge, kisko kitne votes mile woh nahi */}
+                  {/* Home page options (without individual vote counts) */}
                   <div className="space-y-2 mb-5">
                     {poll.options.map((opt) => (
                       <div
@@ -198,10 +220,20 @@ export default async function Home() {
                     ))}
                   </div>
 
-                  <div className="flex justify-end">
+                  {/* Actions: WhatsApp Share & Vote Button */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100">
+                    <a
+                      href={`https://wa.me/?text=${encodeURIComponent(`🗳️ ${poll.question}\nअपनी राय दें: https://janpoll.in${pollUrl}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 bg-green-50 hover:bg-green-100 text-green-800 border border-green-200 font-bold px-4 py-2.5 rounded-xl text-xs transition"
+                    >
+                      <span>💬</span> WhatsApp पर भेजें
+                    </a>
+
                     <Link
                       href={pollUrl}
-                      className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-5 py-2.5 rounded-xl text-xs transition shadow"
+                      className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-5 py-2.5 rounded-xl text-xs transition shadow ml-auto"
                     >
                       वोट दें और परिणाम देखें →
                     </Link>
