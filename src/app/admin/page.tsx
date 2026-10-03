@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
 
 import { db } from '@/lib/db';
 import {
@@ -33,6 +34,19 @@ async function handleLogin(formData: FormData) {
 
   if (safeEqual(username, adminUser) && safeEqual(password, adminPass)) {
     await createAdminSession();
+
+    // 🍪 मिडलवेयर के लिए कुकी सेट करें ताकि लॉगिन सफल हो सके
+    const cookieStore = await cookies();
+    cookieStore.set({
+      name: 'admin_session',
+      value: 'authenticated',
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 24, // 1 दिन
+      path: '/',
+    });
+
     redirect('/admin');
   }
 
@@ -42,6 +56,11 @@ async function handleLogin(formData: FormData) {
 async function handleLogout() {
   'use server';
   await destroyAdminSession();
+
+  // 🗑️ लॉगआउट पर कुकी हटा दें
+  const cookieStore = await cookies();
+  cookieStore.delete('admin_session');
+
   redirect('/admin');
 }
 
