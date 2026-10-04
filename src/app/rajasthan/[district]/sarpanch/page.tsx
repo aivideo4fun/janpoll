@@ -9,71 +9,118 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { district } = await params;
   return {
-    title: `${district.toUpperCase()} - सरपंच चुनाव / पंचायत समिति सूची | JanPoll`,
-    description: 'अपनी पंचायत समिति का चयन करें और ग्राम पंचायत वार सरपंच उम्मीदवारों की सूची देखें।',
+    title: `${district.toUpperCase()} - सरपंच चुनाव एवं ग्राम पंचायत सूची | JanPoll`,
+    description: `राजस्थान के ${district} जिले में तहसील, पंचायत समिति और ग्राम पंचायत वार सरपंच चुनाव के पोल देखें।`,
   };
 }
 
-export default async function SarpanchIndexPage({ params }: Props) {
+export default async function DistrictSarpanchPage({ params }: Props) {
   const { district } = await params;
 
-  let mandals: { id: string; nameEn: string; nameHi: string }[] = [];
+  let districtData = null;
   try {
-    const districtRecord = await db.district.findFirst({
+    districtData = await db.district.findFirst({
       where: { nameEn: { equals: district, mode: 'insensitive' } },
-      include: { mandals: { orderBy: { nameHi: 'asc' } } },
+      include: {
+        tehsils: {
+          orderBy: { nameHi: 'asc' },
+          include: {
+            panchayatSamitis: {
+              include: {
+                gramPanchayats: {
+                  orderBy: { nameHi: 'asc' },
+                },
+              },
+            },
+          },
+        },
+      },
     });
-    if (districtRecord) {
-      mandals = districtRecord.mandals;
-    }
   } catch (error) {
-    console.error('Error fetching mandals:', error);
+    console.error('Error fetching sarpanch hierarchy:', error);
   }
+
+  const displayNameHi = districtData ? districtData.nameHi : district;
+  const tehsils = districtData?.tehsils || [];
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 text-gray-800">
       <div className="mb-6">
-        <Link href={`/rajasthan/${district}`} className="inline-flex items-center gap-2 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-4 py-2 rounded-xl text-sm font-bold transition">
-          ← जिला श्रेणियों पर वापस जाएं
+        <Link
+          href={`/rajasthan/${district}`}
+          className="inline-flex items-center gap-2 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-4 py-2 rounded-xl text-sm font-bold transition"
+        >
+          ← जिला मेनू पर वापस जाएं
         </Link>
       </div>
 
       <div className="bg-gradient-to-r from-emerald-800 to-green-700 text-white rounded-3xl p-6 md:p-8 mb-8 text-center shadow-md">
-        <h1 className="text-2xl md:text-3xl font-black mb-2">
-          🟢 सरपंच चुनाव - पंचायत समिति चयन ({district.toUpperCase()})
+        <span className="bg-white/20 text-emerald-100 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+          जिला: {displayNameHi} &bull; सरपंच चुनाव
+        </span>
+        <h1 className="text-2xl md:text-3xl font-black mt-3 mb-2">
+          तहसील और ग्राम पंचायत चयन
         </h1>
         <p className="text-emerald-100 text-xs md:text-sm">
-          अपनी पंचायत समिति चुनें ताकि उसके अंतर्गत आने वाली ग्राम पंचायतें दिखाई दे सकें।
+          तहसील &rarr; पंचायत समिति &rarr; ग्राम पंचायत चुनकर सरपंच पद के पोल देखें।
         </p>
       </div>
 
-      {mandals.length === 0 ? (
+      {tehsils.length === 0 ? (
         <div className="bg-amber-50 border border-amber-200 text-amber-800 p-6 rounded-2xl text-center">
-          इस जिले के लिए अभी पंचायत समितियों का डेटा लोड नहीं किया गया है। आप चाहें तो नीचे सीधा पोल बना सकते हैं।
+          इस जिले के लिए अभी तहसील और पंचायत डेटा अपलोड नहीं किया गया है। आप चाहें तो अपना नया पोल बना सकते हैं!
           <div className="mt-4">
-            <Link href="/create" className="bg-emerald-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs inline-block">
-              ＋ पोल बनाएँ
+            <Link href="/create" className="bg-amber-600 text-white font-bold px-4 py-2 rounded-xl text-xs inline-block">
+              ＋ नया पोल बनाएँ
             </Link>
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {mandals.map((mandal) => (
-            <Link
-              key={mandal.id}
-              href={`/rajasthan/${district}/sarpanch/${mandal.nameEn.toLowerCase()}`}
-              className="bg-white hover:bg-emerald-50/60 p-5 rounded-2xl border border-emerald-100 shadow-sm hover:shadow transition flex items-center justify-between group"
-            >
-              <div>
-                <h3 className="text-base font-bold text-emerald-900 group-hover:text-emerald-700">
-                  {mandal.nameHi}
-                </h3>
-                <span className="text-xs text-gray-400 font-medium">{mandal.nameEn} Samiti</span>
-              </div>
-              <span className="text-emerald-600 font-bold text-sm bg-emerald-50 px-3 py-1.5 rounded-xl group-hover:bg-emerald-700 group-hover:text-white transition">
-                खोलें →
-              </span>
-            </Link>
+        <div className="space-y-6">
+          {tehsils.map((tehsil) => (
+            <div key={tehsil.id} className="bg-white rounded-2xl p-6 border border-emerald-100 shadow-sm">
+              <h2 className="text-xl font-bold text-emerald-900 mb-4 pb-2 border-b border-emerald-50 flex items-center gap-2">
+                <span>🏛️ तहसील:</span> {tehsil.nameHi} <span className="text-xs text-gray-400">({tehsil.nameEn})</span>
+              </h2>
+
+              {tehsil.panchayatSamitis.length === 0 ? (
+                <p className="text-xs text-gray-500 italic">इस तहसील के अंतर्गत अभी पंचायत समितियाँ उपलब्ध नहीं हैं।</p>
+              ) : (
+                <div className="space-y-4">
+                  {tehsil.panchayatSamitis.map((samiti) => (
+                    <div key={samiti.id} className="bg-emerald-50/40 rounded-xl p-4 border border-emerald-100">
+                      <h3 className="text-base font-bold text-emerald-800 mb-2 flex items-center gap-2">
+                        <span>🔵 पंचायत समिति:</span> {samiti.nameHi}
+                      </h3>
+
+                      {samiti.gramPanchayats.length === 0 ? (
+                        <p className="text-xs text-gray-500 italic pl-4">ग्राम पंचायतें अभी अपडेट नहीं हैं।</p>
+                      ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                          {samiti.gramPanchayats.map((gp) => (
+                            <div
+                              key={gp.id}
+                              className="bg-white p-3 rounded-xl border border-emerald-200 shadow-sm flex flex-col justify-between"
+                            >
+                              <div>
+                                <h4 className="text-sm font-bold text-gray-800">{gp.nameHi}</h4>
+                                <span className="text-[10px] text-gray-400">{gp.nameEn}</span>
+                              </div>
+                              <Link
+                                href={`/create?gp=${encodeURIComponent(gp.nameHi)}&samiti=${encodeURIComponent(samiti.nameHi)}&district=${encodeURIComponent(displayNameHi)}`}
+                                className="mt-3 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-[11px] py-1.5 px-3 rounded-lg text-center transition block"
+                              >
+                                सरपंच पोल देखें / बनाएँ →
+                              </Link>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           ))}
         </div>
       )}

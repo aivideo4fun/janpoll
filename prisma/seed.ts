@@ -1,63 +1,162 @@
 import { PrismaClient } from '@prisma/client';
+import fs from 'fs';
+import path from 'path';
 
 const prisma = new PrismaClient();
 
+type LocationData = {
+  districts: {
+    nameEn: string;
+    nameHi: string;
+
+    tehsils: {
+      nameEn: string;
+      nameHi: string;
+
+      panchayatSamitis: {
+        nameEn: string;
+        nameHi: string;
+
+        gramPanchayats: {
+          nameEn: string;
+          nameHi: string;
+        }[];
+      }[];
+    }[];
+  }[];
+};
+
 async function main() {
-  console.log('🌱 Rajasthan hierarchy data seeding shuru ho rahi hai...');
+  console.log('');
+  console.log('🇮🇳 Rajasthan Location Master Seeding Started...');
+  console.log('');
 
-  // 1. Pehle District banayein ya upsert karein
-  const jaipur = await prisma.district.upsert({
-    where: { nameEn: 'Jaipur' },
-    update: {},
-    create: {
-      nameEn: 'Jaipur',
-      nameHi: 'जयपुर',
-    },
-  });
+  const filePath = path.join(
+    process.cwd(),
+    'prisma',
+    'data',
+    'rajasthan-locations.json'
+  );
 
-  // 2. Us District ke antargat Panchayat Samiti (Mandal) banayein
-  const amerSamiti = await prisma.panchayatSamiti.upsert({
-    where: { 
-      // Agar nameEn unique nahi hai toh districtId ke sath check karne ke liye id use hoti hai, 
-      // par yahan hum simple create/upsert rakhte hain:
-      id: 'jaipur-amer-samiti' // ya koi bhi unique identifier ya check
-    },
-    update: {},
-    create: {
-      id: 'jaipur-amer-samiti',
-      nameEn: 'Amer',
-      nameHi: 'आमेर',
-      districtId: jaipur.id,
-    },
-  }).catch(async () => {
-    // Agar id se error aaye toh find karke update/create kar lein
-    return await prisma.panchayatSamiti.create({
-      data: {
-        nameEn: 'Amer',
-        nameHi: 'आमेर',
-        districtId: jaipur.id,
-      }
+  if (!fs.existsSync(filePath)) {
+    throw new Error(
+      `Location data file nahi mili:\n${filePath}`
+    );
+  }
+
+  const rawData = fs.readFileSync(filePath, 'utf-8');
+
+  const data: LocationData = JSON.parse(rawData);
+
+  let districtCount = 0;
+  let tehsilCount = 0;
+  let samitiCount = 0;
+  let gramPanchayatCount = 0;
+
+  for (const district of data.districts) {
+    console.log(`📍 District: ${district.nameEn}`);
+
+    const districtRecord = await prisma.district.upsert({
+      where: {
+        nameEn: district.nameEn,
+      },
+      update: {
+        nameHi: district.nameHi,
+      },
+      create: {
+        nameEn: district.nameEn,
+        nameHi: district.nameHi,
+      },
     });
-  });
 
-  // 3. Gram Panchayat banayein jisme districtId aur samitiId dono diye gaye hon
-  await prisma.gramPanchayat.create({
-    data: {
-      nameEn: 'Kunda',
-      nameHi: 'कुंडा',
-      districtId: jaipur.id,
-      samitiId: amerSamiti.id,
-    },
-  }).catch(() => {
-    console.log('Gram panchayat pehle se mojood ho sakti hai.');
-  });
+    districtCount++;
 
-  console.log('✅ Seeding successfully poori ho gayi hai!');
+    for (const tehsil of district.tehsils) {
+      const tehsilRecord = await prisma.tehsil.upsert({
+        where: {
+          districtId_nameEn: {
+            districtId: districtRecord.id,
+            nameEn: tehsil.nameEn,
+          },
+        },
+        update: {
+          nameHi: tehsil.nameHi,
+        },
+        create: {
+          nameEn: tehsil.nameEn,
+          nameHi: tehsil.nameHi,
+          districtId: districtRecord.id,
+        },
+      });
+
+      tehsilCount++;
+
+      for (const samiti of tehsil.panchayatSamitis) {
+        const samitiRecord =
+          await prisma.panchayatSamiti.upsert({
+            where: {
+              districtId_nameEn: {
+                districtId: districtRecord.id,
+                nameEn: samiti.nameEn,
+              },
+            },
+            update: {
+              nameHi: samiti.nameHi,
+              tehsilId: tehsilRecord.id,
+            },
+            create: {
+              nameEn: samiti.nameEn,
+              nameHi: samiti.nameHi,
+              districtId: districtRecord.id,
+              tehsilId: tehsilRecord.id,
+            },
+          });
+
+        samitiCount++;
+
+        for (const gp of samiti.gramPanchayats) {
+          await prisma.gramPanchayat.upsert({
+            where: {
+              samitiId_nameEn: {
+                samitiId: samitiRecord.id,
+                nameEn: gp.nameEn,
+              },
+            },
+            update: {
+              nameHi: gp.nameHi,
+              districtId: districtRecord.id,
+            },
+            create: {
+              nameEn: gp.nameEn,
+              nameHi: gp.nameHi,
+              districtId: districtRecord.id,
+              samitiId: samitiRecord.id,
+            },
+          });
+
+          gramPanchayatCount++;
+        }
+      }
+    }
+  }
+
+  console.log('');
+  console.log('======================================');
+  console.log('✅ Rajasthan Location Seeding Complete');
+  console.log('======================================');
+  console.log(`Districts          : ${districtCount}`);
+  console.log(`Tehsils            : ${tehsilCount}`);
+  console.log(`Panchayat Samitis  : ${samitiCount}`);
+  console.log(`Gram Panchayats    : ${gramPanchayatCount}`);
+  console.log('======================================');
+  console.log('');
 }
 
 main()
-  .catch((e) => {
-    console.error('❌ Seeding mein error aayi hai:', e);
+  .catch((error) => {
+    console.error('');
+    console.error('❌ SEEDING ERROR');
+    console.error(error);
     process.exit(1);
   })
   .finally(async () => {

@@ -36,6 +36,7 @@ function daysLeft(poll: HomePoll) {
 export default async function Home() {
   let polls: HomePoll[] = [];
   let totalVotesCount = 0;
+  let totalRunningPollsCount = 0;
   let dbError = false;
 
   try {
@@ -59,6 +60,7 @@ export default async function Home() {
     ]);
 
     const activePolls = allPolls.filter(isPollOpen);
+    totalRunningPollsCount = activePolls.length; // ✅ Fix: Total running active polls count
 
     const pollsWithVotes = activePolls.map((poll) => {
       const totalVotes = poll.options.reduce((sum, opt) => sum + opt.voteCount, 0);
@@ -73,8 +75,6 @@ export default async function Home() {
     console.error('Error fetching home polls:', error);
     dbError = true;
   }
-
-  const runningPollsCount = polls.length;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 text-gray-800">
@@ -91,17 +91,17 @@ export default async function Home() {
         </p>
         <div className="flex flex-wrap justify-center gap-3">
           <Link
+            href="/rajasthan"
+            className="bg-amber-400 hover:bg-amber-500 text-gray-900 font-bold px-6 py-2.5 rounded-xl shadow transition text-base inline-block"
+          >
+            📍 राजस्थान चुनाव / जिला चयन →
+          </Link>
+          <Link
             href="/create"
             className="bg-white hover:bg-emerald-50 text-emerald-900 font-bold px-6 py-2.5 rounded-xl shadow transition text-base inline-block"
           >
             ＋ पोल बनाएँ
           </Link>
-          <a
-            href="#recent-polls"
-            className="bg-emerald-900/40 hover:bg-emerald-900/60 text-white font-medium px-5 py-2.5 rounded-xl transition text-base border border-emerald-500/30 inline-block"
-          >
-            लोकप्रिय पोल देखें ↓
-          </a>
         </div>
       </div>
 
@@ -130,7 +130,7 @@ export default async function Home() {
       <div className="grid grid-cols-3 gap-3 mb-10">
         <div className="bg-white p-4 rounded-xl border border-emerald-100 text-center shadow-sm">
           <div className="text-2xl md:text-3xl font-black text-emerald-800">
-            {runningPollsCount.toLocaleString('en-IN')}
+            {totalRunningPollsCount.toLocaleString('en-IN')}
           </div>
           <div className="text-xs text-gray-500 font-medium mt-1">🗳 चल रहे पोल</div>
         </div>
@@ -154,36 +154,28 @@ export default async function Home() {
         <div className="flex flex-wrap gap-2">
           <Link
             href="/rajasthan"
-            className="bg-white border border-emerald-200 text-emerald-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-emerald-50 transition"
+            className="bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-emerald-100 transition"
           >
             🟢 सरपंच चुनाव
           </Link>
           <Link
             href="/rajasthan"
-            className="bg-white border border-emerald-200 text-emerald-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-emerald-50 transition"
+            className="bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-emerald-100 transition"
           >
             🏛️ ग्राम पंचायत
           </Link>
           <Link
             href="/rajasthan"
-            className="bg-white border border-emerald-200 text-emerald-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-emerald-50 transition"
+            className="bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-emerald-100 transition"
           >
             🔵 पंचायत समिति
           </Link>
           <Link
             href="/rajasthan"
-            className="bg-white border border-emerald-200 text-emerald-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-emerald-50 transition"
+            className="bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-emerald-100 transition"
           >
             🟠 जिला परिषद
           </Link>
-          {['स्थानीय मुद्दे', 'राजस्थान', 'युवा'].map((cat) => (
-            <span
-              key={cat}
-              className="bg-white border border-emerald-200 text-emerald-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm"
-            >
-              {cat}
-            </span>
-          ))}
         </div>
       </div>
 

@@ -21,10 +21,10 @@ export default async function MandalIndexPage({ params }: Props) {
   try {
     const districtRecord = await db.district.findFirst({
       where: { nameEn: { equals: district, mode: 'insensitive' } },
-      include: { mandals: { orderBy: { nameHi: 'asc' } } },
+      include: { panchayatSamitis: { orderBy: { nameHi: 'asc' } } },
     });
     if (districtRecord) {
-      mandals = districtRecord.mandals;
+      mandals = districtRecord.panchayatSamitis;
     }
   } catch (error) {
     console.error('Error fetching mandals:', error);

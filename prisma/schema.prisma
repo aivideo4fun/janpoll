@@ -16,7 +16,7 @@ model Poll {
   isVerified   Boolean  @default(false)
   creatorIp    String?  @db.VarChar(45)
   deadlineDays Int      @default(3)
-  active       Boolean  @default(true)
+  active       Boolean  @default(true) // false hone par poll closed maana jayega, delete nahi hoga
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -72,26 +72,53 @@ model ContactMessage {
 }
 
 // ---------------------------------------------------------
-// RAJASTHAN LOCAL BODY HIERARCHY MODELS (District -> Samiti -> Panchayat)
+// RAJASTHAN LOCAL BODY HIERARCHY MODELS
 // ---------------------------------------------------------
 
 model District {
-  id             String            @id @default(cuid())
-  nameEn         String            @unique
-  nameHi         String
-  mandals        PanchayatSamiti[]
-  gramPanchayats GramPanchayat[]
-  createdAt      DateTime          @default(now())
+  id               String             @id @default(cuid())
+  nameEn           String             @unique
+  nameHi           String
+  tehsils          Tehsil[]
+  panchayatSamitis PanchayatSamiti[]
+  gramPanchayats   GramPanchayat[]
+  zilaWards        ZilaParishadWard[]
+  createdAt        DateTime           @default(now())
+}
+
+model ZilaParishadWard {
+  id         String   @id @default(cuid())
+  wardNo     Int
+  nameHi     String
+  districtId String
+  district   District @relation(fields: [districtId], references: [id], onDelete: Cascade)
+
+  @@unique([districtId, wardNo])
+}
+
+model Tehsil {
+  id               String            @id @default(cuid())
+  nameEn           String
+  nameHi           String
+  districtId       String
+  district         District          @relation(fields: [districtId], references: [id], onDelete: Cascade)
+  panchayatSamitis PanchayatSamiti[]
+
+  @@unique([districtId, nameEn])
 }
 
 model PanchayatSamiti {
-  id             String            @id @default(cuid())
+  id             String          @id @default(cuid())
   nameEn         String
   nameHi         String
   districtId     String
-  district       District          @relation(fields: [districtId], references: [id], onDelete: Cascade)
+  district       District        @relation(fields: [districtId], references: [id], onDelete: Cascade)
+  tehsilId       String?
+  tehsil         Tehsil?         @relation(fields: [tehsilId], references: [id], onDelete: SetNull)
   gramPanchayats GramPanchayat[]
-  createdAt      DateTime          @default(now())
+
+  @@unique([districtId, nameEn])
+  @@index([tehsilId])
 }
 
 model GramPanchayat {
@@ -103,4 +130,7 @@ model GramPanchayat {
   samitiId   String
   samiti     PanchayatSamiti @relation(fields: [samitiId], references: [id], onDelete: Cascade)
   createdAt  DateTime        @default(now())
+
+  @@unique([samitiId, nameEn])
+  @@index([districtId])
 }

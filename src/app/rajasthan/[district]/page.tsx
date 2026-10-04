@@ -49,6 +49,7 @@ export default async function DistrictPage({ params }: Props) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Sarpanch Election */}
         <Link
           href={`/rajasthan/${district}/sarpanch`}
           className="bg-white hover:bg-emerald-50/60 p-6 rounded-2xl border border-emerald-100 shadow-sm transition flex flex-col justify-between group"
@@ -59,14 +60,15 @@ export default async function DistrictPage({ params }: Props) {
               ग्राम पंचायत (सरपंच चुनाव)
             </h3>
             <p className="text-xs text-gray-500">
-              अपनी पंचायत समिति और ग्राम पंचायत चुनकर सरपंच पद के पोल देखें।
-            </p>
+  तहसील &rarr; पंचायत समिति &rarr; ग्राम पंचायत चुनकर सरपंच पद के पोल देखें।
+</p>
           </div>
           <div className="mt-6 text-emerald-700 font-bold text-xs bg-emerald-50 py-2 px-4 rounded-xl text-center group-hover:bg-emerald-700 group-hover:text-white transition">
             सरपंच सूची देखें →
           </div>
         </Link>
 
+        {/* Mandal / Panchayat Samiti */}
         <Link
           href={`/rajasthan/${district}/mandal`}
           className="bg-white hover:bg-emerald-50/60 p-6 rounded-2xl border border-emerald-100 shadow-sm transition flex flex-col justify-between group"
@@ -77,7 +79,7 @@ export default async function DistrictPage({ params }: Props) {
               पंचायत समिति (मंडल सदस्य)
             </h3>
             <p className="text-xs text-gray-500">
-              पंचायत समिति सदस्यों के चुनाव के लिए जनता का रुझान जानें।
+              तहसील और पंचायत समिति सदस्यों के चुनाव के लिए जनता का रुझान जानें।
             </p>
           </div>
           <div className="mt-6 text-emerald-700 font-bold text-xs bg-emerald-50 py-2 px-4 rounded-xl text-center group-hover:bg-emerald-700 group-hover:text-white transition">
@@ -85,6 +87,7 @@ export default async function DistrictPage({ params }: Props) {
           </div>
         </Link>
 
+        {/* Zila Parishad */}
         <Link
           href={`/rajasthan/${district}/zila-parishad`}
           className="bg-white hover:bg-emerald-50/60 p-6 rounded-2xl border border-emerald-100 shadow-sm transition flex flex-col justify-between group"
