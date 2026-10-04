@@ -19,11 +19,13 @@ export default async function PanchayatPollingPage({ params }: Props) {
 
   let panchayats: { id: string; nameEn: string; nameHi: string }[] = [];
   try {
-    const samitiRecord = await db.pachayatSamiti ?? await db.panchayatSamiti.findFirst({
+    // 👈 Yahan logic ko sudhara gaya hai taaki findFirst sahi tarike se chal sake
+    const samitiRecord = (await db.panchayatSamiti.findFirst({
       where: { nameEn: { equals: samiti, mode: 'insensitive' } },
       include: { gramPanchayats: { orderBy: { nameHi: 'asc' } } },
-    });
-    if (samitiRecord) {
+    })) as { gramPanchayats: { id: string; nameEn: string; nameHi: string }[] } | null;
+
+    if (samitiRecord && samitiRecord.gramPanchayats) {
       panchayats = samitiRecord.gramPanchayats;
     }
   } catch (error) {
