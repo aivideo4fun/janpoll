@@ -60,7 +60,7 @@ export default async function Home() {
     ]);
 
     const activePolls = allPolls.filter(isPollOpen);
-    totalRunningPollsCount = activePolls.length; // ✅ Fix: Total running active polls count
+    totalRunningPollsCount = activePolls.length;
 
     const pollsWithVotes = activePolls.map((poll) => {
       const totalVotes = poll.options.reduce((sum, opt) => sum + opt.voteCount, 0);
@@ -127,7 +127,7 @@ export default async function Home() {
       </div>
 
       {/* Live Stats */}
-      <div className="grid grid-cols-3 gap-3 mb-10">
+      <div className="grid grid-cols-3 gap-3 mb-6">
         <div className="bg-white p-4 rounded-xl border border-emerald-100 text-center shadow-sm">
           <div className="text-2xl md:text-3xl font-black text-emerald-800">
             {totalRunningPollsCount.toLocaleString('en-IN')}
@@ -144,6 +144,16 @@ export default async function Home() {
           <div className="text-2xl md:text-3xl font-black text-emerald-800">राजस्थान</div>
           <div className="text-xs text-gray-500 font-medium mt-1">📍 कवरेज</div>
         </div>
+      </div>
+
+      {/* 📁 Closed Polls Quick Navigation Link */}
+      <div className="mb-8 text-center">
+        <Link
+          href="/closed-polls"
+          className="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 font-semibold px-5 py-2.5 rounded-xl text-xs md:text-sm transition shadow-sm"
+        >
+          <span>📁</span> समाप्त हो चुके पोल्स और पुराना इतिहास देखें →
+        </Link>
       </div>
 
       {/* Interactive Categories Linked to Hierarchy */}
