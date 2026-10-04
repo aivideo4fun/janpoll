@@ -9,7 +9,7 @@ generator client {
 
 model Poll {
   id           String   @id @default(uuid())
-  slug         String?  @db.VarChar(500) // 👈 Optional rakha hai taaki purane polls safe rahein
+  slug         String?  @db.VarChar(500)
   question     String   @db.VarChar(500)
   creatorName  String?  @db.VarChar(100)
   creatorEmail String?  @db.VarChar(255)
@@ -69,4 +69,38 @@ model ContactMessage {
   createdAt DateTime @default(now())
 
   @@index([createdAt])
+}
+
+// ---------------------------------------------------------
+// RAJASTHAN LOCAL BODY HIERARCHY MODELS (District -> Samiti -> Panchayat)
+// ---------------------------------------------------------
+
+model District {
+  id             String            @id @default(cuid())
+  nameEn         String            @unique
+  nameHi         String
+  mandals        PanchayatSamiti[]
+  gramPanchayats GramPanchayat[]
+  createdAt      DateTime          @default(now())
+}
+
+model PanchayatSamiti {
+  id             String            @id @default(cuid())
+  nameEn         String
+  nameHi         String
+  districtId     String
+  district       District          @relation(fields: [districtId], references: [id], onDelete: Cascade)
+  gramPanchayats GramPanchayat[]
+  createdAt      DateTime          @default(now())
+}
+
+model GramPanchayat {
+  id         String          @id @default(cuid())
+  nameEn     String
+  nameHi     String
+  districtId String
+  district   District        @relation(fields: [districtId], references: [id], onDelete: Cascade)
+  samitiId   String
+  samiti     PanchayatSamiti @relation(fields: [samitiId], references: [id], onDelete: Cascade)
+  createdAt  DateTime        @default(now())
 }

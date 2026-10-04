@@ -66,8 +66,8 @@ export default async function Home() {
     });
 
     pollsWithVotes.sort((a, b) => b.totalVotes - a.totalVotes);
+    polls = pollsWithVotes.slice(0, 10);
 
-    polls = pollsWithVotes;
     totalVotesCount = voteSum._sum.voteCount ?? 0;
   } catch (error) {
     console.error('Error fetching home polls:', error);
@@ -79,7 +79,7 @@ export default async function Home() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 text-gray-800">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-emerald-800 to-green-700 text-white rounded-2xl p-6 md:p-10 mb-8 text-center shadow-md">
+      <div className="bg-gradient-to-r from-emerald-800 to-green-700 text-white rounded-2xl p-6 md:p-10 mb-6 text-center shadow-md">
         <span className="bg-white/20 text-emerald-100 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider backdrop-blur-sm">
           राजस्थान की जनता की राय, एक जगह
         </span>
@@ -87,7 +87,7 @@ export default async function Home() {
           आपकी राय, जनता की आवाज़।
         </h1>
         <p className="text-emerald-100 text-sm md:text-base max-w-lg mx-auto mb-6">
-          राजस्थान के मुद्दों और स्थानीय विषयों पर अपनी राय दें और देखें कि जनता क्या सोचती है।
+          राजस्थान के स्थानीय मुद्दों, ग्राम पंचायत और सरपंच चुनाव पर अपनी राय दें और देखें कि जनता क्या सोचती है।
         </p>
         <div className="flex flex-wrap justify-center gap-3">
           <Link
@@ -105,13 +105,34 @@ export default async function Home() {
         </div>
       </div>
 
+      {/* 📢 Rajasthan Panchayati Raj Election 2026 Notice Box */}
+      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 md:p-6 mb-8 shadow-sm">
+        <div className="flex items-start gap-3">
+          <span className="text-2xl">📢</span>
+          <div>
+            <h2 className="text-base font-bold text-amber-900 mb-1">
+              राजस्थान पंचायती राज आम चुनाव, 2026 विशेष अपडेट
+            </h2>
+            <p className="text-xs md:text-sm text-amber-800 leading-relaxed mb-3">
+              राज्य निर्वाचन आयोग, राजस्थान द्वारा पंचायतीराज संस्थाओं के आम चुनाव कुल <strong>4 चरणों</strong> में घोषित कर दिए गए हैं।
+            </p>
+            <Link
+              href="/rajasthan-election-2026"
+              className="inline-flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition shadow-sm"
+            >
+              👉 चुनाव का पूरा चरणवार कार्यक्रम और विस्तृत सूची यहाँ देखें →
+            </Link>
+          </div>
+        </div>
+      </div>
+
       {/* Live Stats */}
       <div className="grid grid-cols-3 gap-3 mb-10">
         <div className="bg-white p-4 rounded-xl border border-emerald-100 text-center shadow-sm">
           <div className="text-2xl md:text-3xl font-black text-emerald-800">
             {runningPollsCount.toLocaleString('en-IN')}
           </div>
-          <div className="text-xs text-gray-500 font-medium mt-1">🗳️️ चल रहे पोल</div>
+          <div className="text-xs text-gray-500 font-medium mt-1">🗳 चल रहे पोल</div>
         </div>
         <div className="bg-white p-4 rounded-xl border border-emerald-100 text-center shadow-sm">
           <div className="text-2xl md:text-3xl font-black text-emerald-800">
@@ -125,13 +146,37 @@ export default async function Home() {
         </div>
       </div>
 
-      {/* Categories */}
+      {/* Interactive Categories Linked to Hierarchy */}
       <div className="mb-10">
         <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">
-          📂 पोल की श्रेणियाँ
+          📂 पोल की श्रेणियाँ एवं स्तर
         </h3>
         <div className="flex flex-wrap gap-2">
-          {['स्थानीय मुद्दे', 'ग्राम पंचायत', 'शहर', 'राजस्थान', 'शिक्षा', 'युवा', 'अन्य'].map((cat) => (
+          <Link
+            href="/rajasthan"
+            className="bg-white border border-emerald-200 text-emerald-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-emerald-50 transition"
+          >
+            🟢 सरपंच चुनाव
+          </Link>
+          <Link
+            href="/rajasthan"
+            className="bg-white border border-emerald-200 text-emerald-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-emerald-50 transition"
+          >
+            🏛️ ग्राम पंचायत
+          </Link>
+          <Link
+            href="/rajasthan"
+            className="bg-white border border-emerald-200 text-emerald-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-emerald-50 transition"
+          >
+            🔵 पंचायत समिति
+          </Link>
+          <Link
+            href="/rajasthan"
+            className="bg-white border border-emerald-200 text-emerald-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-emerald-50 transition"
+          >
+            🟠 जिला परिषद
+          </Link>
+          {['स्थानीय मुद्दे', 'राजस्थान', 'युवा'].map((cat) => (
             <span
               key={cat}
               className="bg-white border border-emerald-200 text-emerald-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm"
@@ -142,28 +187,10 @@ export default async function Home() {
         </div>
       </div>
 
-      {/* Article */}
-      <div className="bg-white rounded-2xl p-6 md:p-8 border border-emerald-100 shadow-sm mb-10 space-y-4">
-        <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 uppercase tracking-wide">
-          जनता की आवाज़ • विशेष लेख
-        </span>
-        <h2 className="text-2xl md:text-3xl font-black text-emerald-900 leading-snug">
-          सवाल पूछना जनता का काम है, और अपनी राय रखना हर नागरिक का अधिकार!
-        </h2>
-        <div className="text-sm text-gray-600 leading-relaxed space-y-3">
-          <p>
-            लोकतंत्र की असल खूबसूरती इस बात में है कि शासन व्यवस्था में हर व्यक्ति की आवाज़ सुनी जाए। एक स्वस्थ समाज के निर्माण के लिए यह जरूरी है कि स्थानीय मुद्दों, विकास कार्यों, शिक्षा, स्वास्थ्य और युवाओं से जुड़े विषयों पर खुलकर चर्चा हो।
-          </p>
-          <p>
-            <strong>JanPoll</strong> इसी सोच के साथ राजस्थान के हर कोने तक जनता की राय पहुँचाने का एक निष्पक्ष डिजिटल मंच है। आपका एक वोट और आपका एक सवाल व्यवस्था को बेहतर बनाने में अहम भूमिका निभा सकता है।
-          </p>
-        </div>
-      </div>
-
-      {/* Trending / Active Polls */}
+      {/* Real Top 10 Trending / Active Polls from DB */}
       <div id="recent-polls" className="mb-10">
         <h2 className="text-2xl font-bold text-emerald-900 mb-6 flex items-center gap-2">
-          🔥 सर्वाधिक लोकप्रिय पोल्स (Trending)
+          🔥 सर्वाधिक लोकप्रिय पोल्स (शीर्ष 10 ट्रेंडिंग)
         </h2>
 
         {dbError ? (
@@ -192,7 +219,7 @@ export default async function Home() {
                 >
                   <div className="flex flex-wrap justify-between items-center gap-2 text-xs text-gray-500 mb-3">
                     <span className="bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-md font-semibold border border-emerald-200">
-                      🗳️ कुल वोट: {pollTotalVotes.toLocaleString('en-IN')}
+                      🗳 कुल वोट: {pollTotalVotes.toLocaleString('en-IN')}
                     </span>
                     <span className="flex items-center gap-3">
                       <span>⏳ {daysLeft(poll)} दिन बचे</span>
@@ -202,7 +229,6 @@ export default async function Home() {
 
                   <h3 className="text-lg font-bold text-emerald-900 mb-4">{poll.question}</h3>
 
-                  {/* Options list without fake select buttons */}
                   <div className="space-y-2 mb-5">
                     {poll.options.map((opt) => (
                       <div
@@ -214,7 +240,6 @@ export default async function Home() {
                     ))}
                   </div>
 
-                  {/* Actions: WhatsApp Share & Vote Button */}
                   <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100">
                     <a
                       href={`https://wa.me/?text=${encodeURIComponent(`🗳️ ${poll.question}\nअपनी राय दें: https://janpoll.in${pollUrl}`)}`}
@@ -237,6 +262,20 @@ export default async function Home() {
             })}
           </div>
         )}
+      </div>
+
+      {/* Page Ending Create Poll Call-to-Action */}
+      <div className="bg-gradient-to-r from-emerald-900 to-emerald-800 text-white rounded-3xl p-8 text-center shadow-lg my-10">
+        <h2 className="text-2xl font-black mb-2">क्या आप अपनी पंचायत या वार्ड का पोल बनाना चाहते हैं?</h2>
+        <p className="text-emerald-100 text-xs md:text-sm max-w-md mx-auto mb-6">
+          अपने गाँव, सरपंच पद या मंडल सदस्य के लिए तुरंत डिजिटल ओपिनियन पोल शुरू करें और जनता की राय जानें।
+        </p>
+        <Link
+          href="/create"
+          className="bg-white hover:bg-emerald-50 text-emerald-900 font-bold px-8 py-3 rounded-2xl shadow transition text-base inline-block"
+        >
+          ＋ नया पोल बनाएँ
+        </Link>
       </div>
     </div>
   );
