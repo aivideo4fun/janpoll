@@ -16,7 +16,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // 📍 Request body se question, deadline, options ke sath location fields bhi destructure karein
     const { question, deadlineDays, options, district, samiti, gramPanchayat } = await req.json();
 
     if (!question || !options || options.length < 2) {
@@ -30,7 +29,6 @@ export async function POST(req: Request) {
     const forwardedFor = headersList.get('x-forwarded-for');
     const creatorIp = forwardedFor ? forwardedFor.split(',')[0] : '127.0.0.1';
 
-    // Sawal se SEO Slug generate karein
     const slugText = generateSlug(question);
 
     const poll = await db.poll.create({
@@ -41,12 +39,14 @@ export async function POST(req: Request) {
         creatorEmail: session.user.email,
         creatorIp,
         deadlineDays: parseInt(deadlineDays) || 3,
-        // 📍 Yahan location fields database me save hongi
         districtName: district || null,
         samitiName: samiti || null,
         gramPanchayatName: gramPanchayat || null,
         options: {
-          create: options.map((text: string) => ({ text })),
+          create: options.map((text: string, index: number) => ({ 
+            text, 
+            order: index 
+          })),
         },
       },
     });

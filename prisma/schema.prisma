@@ -40,13 +40,13 @@ model PollOption {
   pollId    String
   text      String   @db.VarChar(255)
   voteCount Int      @default(0)
+  order     Int?     // 👈 इसे Optional (Int?) रखें ताकि पुराने पोल्स सुरक्षित रहें
   createdAt DateTime @default(now())
 
   poll  Poll   @relation(fields: [pollId], references: [id], onDelete: Cascade)
   votes Vote[]
 
   @@index([pollId])
-  @@index([pollId, createdAt])
 }
 
 model Vote {

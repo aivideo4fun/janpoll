@@ -14,7 +14,6 @@ type PollPageProps = {
   params: Promise<{ id: string }>;
 };
 
-// Google SEO aur Search ranking ke liye dynamic metadata
 export async function generateMetadata({ params }: PollPageProps): Promise<Metadata> {
   const { id } = await params;
   
@@ -25,17 +24,17 @@ export async function generateMetadata({ params }: PollPageProps): Promise<Metad
 
   if (!poll) {
     return {
-      title: 'पोल नहीं मिला - JanPoll',
-      description: 'यह पोल अब उपलब्ध नहीं है।',
+      title: 'Poll nahi mila - JanPoll',
+      description: 'Yeh poll ab uplabdh nahi hai.',
     };
   }
 
   return {
     title: `${poll.question} - JanPoll Rajasthan`,
-    description: `इस विषय पर अपना वोट दें और राजस्थान की जनता का मत जानें।`,
+    description: `Is vishay par apna vote dein aur Rajasthan ki janta ka mat janein.`,
     openGraph: {
       title: poll.question,
-      description: 'JanPoll पर अपना वोट दर्ज करें और परिणाम देखें।',
+      description: 'JanPoll par apna vote darj karein aur parinaam dekhein.',
       type: 'article',
     },
   };
@@ -53,8 +52,7 @@ export default async function PollPage({ params }: PollPageProps) {
       active: true,
       createdAt: true,
       options: {
-        select: { id: true, text: true, voteCount: true },
-        orderBy: { createdAt: 'asc' },
+        select: { id: true, text: true, voteCount: true, order: true, createdAt: true },
       },
     },
   });
@@ -62,6 +60,14 @@ export default async function PollPage({ params }: PollPageProps) {
   if (!poll) {
     notFound();
   }
+
+  // 🛡️ Safe Sorting: Naye polls 'order' se aur purane polls 'createdAt' se sort honge
+  const sortedOptions = poll.options.sort((a, b) => {
+    if (a.order !== null && b.order !== null && a.order !== undefined && b.order !== undefined) {
+      return a.order - b.order;
+    }
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+  });
 
   const cookieStore = await cookies();
   const deviceId = cookieStore.get(DEVICE_COOKIE)?.value;
@@ -92,7 +98,7 @@ export default async function PollPage({ params }: PollPageProps) {
             className="inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-50 hover:text-emerald-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
           >
             <span aria-hidden="true">←</span>
-            होम पेज पर वापस जाएं
+            Home page par vapas jayein
           </Link>
         </nav>
 
@@ -102,15 +108,14 @@ export default async function PollPage({ params }: PollPageProps) {
             question: poll.question,
             deadlineDays: poll.deadlineDays,
             createdAt: poll.createdAt.toISOString(),
-            options: poll.options,
+            options: sortedOptions,
           }}
           alreadyVoted={alreadyVoted}
           isOpen={isOpen}
         />
 
-        {/* 📢 Poll Page / Result Section Ad Unit */}
         <div className="mt-8 p-4 bg-white rounded-2xl border border-emerald-100 shadow-sm text-center">
-          <span className="text-[10px] text-gray-400 block mb-2 uppercase tracking-wider font-semibold">विज्ञापन</span>
+          <span className="text-[10px] text-gray-400 block mb-2 uppercase tracking-wider font-semibold">Vigyaapan</span>
           <ins className="adsbygoogle"
                style={{ display: 'block' }}
                data-ad-client="ca-pub-4603205178906314"
