@@ -107,6 +107,18 @@ export default async function PollPage({ params }: PollPageProps) {
           alreadyVoted={alreadyVoted}
           isOpen={isOpen}
         />
+
+        {/* 📢 Poll Page / Result Section Ad Unit */}
+        <div className="mt-8 p-4 bg-white rounded-2xl border border-emerald-100 shadow-sm text-center">
+          <span className="text-[10px] text-gray-400 block mb-2 uppercase tracking-wider font-semibold">विज्ञापन</span>
+          <ins className="adsbygoogle"
+               style={{ display: 'block' }}
+               data-ad-client="ca-pub-4603205178906314"
+               data-ad-slot="YOUR_POLL_PAGE_AD_SLOT"
+               data-ad-format="auto"
+               data-full-width-responsive="true"></ins>
+          <script dangerouslySetInnerHTML={{ __html: '(adsbygoogle = window.adsbygoogle || []).push({});' }} />
+        </div>
       </div>
     </main>
   );

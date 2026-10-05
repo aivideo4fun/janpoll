@@ -26,6 +26,17 @@ export default function Footer() {
           JanPoll के परिणाम आधिकारिक चुनाव परिणाम नहीं माने जाने चाहिए।
         </div>
 
+        {/* 📢 Footer AdSense Banner */}
+        <div className="my-6 py-2 bg-emerald-900/30 rounded-xl flex justify-center items-center overflow-hidden border border-emerald-800/40">
+          <ins className="adsbygoogle"
+               style={{ display: 'block', textAlign: 'center' }}
+               data-ad-client="ca-pub-4603205178906314"
+               data-ad-slot="YOUR_FOOTER_AD_SLOT"
+               data-ad-format="auto"
+               data-full-width-responsive="true"></ins>
+          <script dangerouslySetInnerHTML={{ __html: '(adsbygoogle = window.adsbygoogle || []).push({});' }} />
+        </div>
+
         <div className="text-center text-xs text-emerald-300/60 pt-2 flex flex-col md:flex-row justify-between items-center gap-2">
           <span>© {new Date().getFullYear()} JanPoll.in — All rights reserved.</span>
           <span className="text-[11px]">Designed for Rajasthan Public Opinion Platform</span>
