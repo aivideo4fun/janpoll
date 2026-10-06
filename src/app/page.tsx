@@ -2,15 +2,16 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { db } from '@/lib/db';
 import { getDeadline, isPollOpen } from '@/lib/poll-utils';
+import NativeBanner from '@/components/NativeBanner'; // 👈 नेटिव बैनर इम्पोर्ट किया
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
-  title: 'JanPoll Rajasthan - राजस्थान की जनता की राय और ऑनलाइन पोल',
-  description: 'राजस्थान के स्थानीय मुद्दों, ग्राम पंचायत, सरपंच चुनाव और राजनीतिक विषयों पर ऑनलाइन वोटिंग करें और जनता की राय जानें।',
+  title: 'JanPoll Rajasthan - Rajasthan ki janta ki ray aur online poll',
+  description: 'Rajasthan ke sthaniya muddo, gram panchayat, sarpanch chunav aur raajnitik vishayo par online voting karein aur janta ki ray janein.',
   keywords: ['rajasthan poll', 'sarpanch poll', 'vote poll', 'create poll', 'rajasthan public poll', 'janpoll'],
   openGraph: {
-    title: 'JanPoll - राजस्थान पब्लिक पोल',
-    description: 'अपने स्थानीय मुद्दों पर अपनी राय दें और देखें जनता क्या सोचती है।',
+    title: 'JanPoll - Rajasthan Public Poll',
+    description: 'Apne sthaniya muddo par apni ray dein aur dekhein janta kya sochti hai.',
     url: 'https://janpoll.in',
     siteName: 'JanPoll',
     locale: 'hi_IN',
@@ -81,26 +82,26 @@ export default async function Home() {
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-emerald-800 to-green-700 text-white rounded-2xl p-6 md:p-10 mb-6 text-center shadow-md">
         <span className="bg-white/20 text-emerald-100 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider backdrop-blur-sm">
-          राजस्थान की जनता की राय, एक जगह
+          Rajasthan ki janta ki ray, ek jagah
         </span>
         <h1 className="text-3xl md:text-4xl font-black mt-3 mb-2 tracking-tight">
-          आपकी राय, जनता की आवाज़।
+          Aapki ray, janta ki aawaz.
         </h1>
         <p className="text-emerald-100 text-sm md:text-base max-w-lg mx-auto mb-6">
-          राजस्थान के स्थानीय मुद्दों, ग्राम पंचायत और सरपंच चुनाव पर अपनी राय दें और देखें कि जनता क्या सोचती है।
+          Rajasthan ke sthaniya muddo, gram panchayat aur sarpanch chunav par apni ray dein aur dekhein ki janta kya sochti hai.
         </p>
         <div className="flex flex-wrap justify-center gap-3">
           <Link
             href="/rajasthan"
             className="bg-amber-400 hover:bg-amber-500 text-gray-900 font-bold px-6 py-2.5 rounded-xl shadow transition text-base inline-block"
           >
-            📍 राजस्थान चुनाव / जिला चयन →
+            📍 Rajasthan Chunav / Zila Chayan →
           </Link>
           <Link
             href="/create"
             className="bg-white hover:bg-emerald-50 text-emerald-900 font-bold px-6 py-2.5 rounded-xl shadow transition text-base inline-block"
           >
-            ＋ पोल बनाएँ
+            ＋ Poll Banayein
           </Link>
         </div>
       </div>
@@ -111,16 +112,16 @@ export default async function Home() {
           <span className="text-2xl">📢</span>
           <div>
             <h2 className="text-base font-bold text-amber-900 mb-1">
-              राजस्थान पंचायती राज आम चुनाव, 2026 विशेष अपडेट
+              Rajasthan Panchayati Raj Aam Chunav, 2026 Vishesh Update
             </h2>
             <p className="text-xs md:text-sm text-amber-800 leading-relaxed mb-3">
-              राज्य निर्वाचन आयोग, राजस्थान द्वारा पंचायतीराज संस्थाओं के आम चुनाव कुल <strong>4 चरणों</strong> में घोषित कर दिए गए हैं।
+              Rajya Nirvachan Aayog, Rajasthan dwara panchayatiraj sansthaon ke aam chunav kul <strong>4 charno</strong> mein ghoshit kar diye gaye hain.
             </p>
             <Link
               href="/rajasthan-election-2026"
               className="inline-flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition shadow-sm"
             >
-              👉 चुनाव का पूरा चरणवार कार्यक्रम और विस्तृत सूची यहाँ देखें →
+              👉 Chunav ka pura charanwar karyakram aur vistrit suchi yahan dekhein →
             </Link>
           </div>
         </div>
@@ -132,17 +133,17 @@ export default async function Home() {
           <div className="text-2xl md:text-3xl font-black text-emerald-800">
             {totalRunningPollsCount.toLocaleString('en-IN')}
           </div>
-          <div className="text-xs text-gray-500 font-medium mt-1">🗳 चल रहे पोल</div>
+          <div className="text-xs text-gray-500 font-medium mt-1">🗳 Chal rahe poll</div>
         </div>
         <div className="bg-white p-4 rounded-xl border border-emerald-100 text-center shadow-sm">
           <div className="text-2xl md:text-3xl font-black text-emerald-800">
             {totalVotesCount.toLocaleString('en-IN')}
           </div>
-          <div className="text-xs text-gray-500 font-medium mt-1">👥 कुल वोट</div>
+          <div className="text-xs text-gray-500 font-medium mt-1">👥 Kul votes</div>
         </div>
         <div className="bg-white p-4 rounded-xl border border-emerald-100 text-center shadow-sm">
-          <div className="text-2xl md:text-3xl font-black text-emerald-800">राजस्थान</div>
-          <div className="text-xs text-gray-500 font-medium mt-1">📍 कवरेज</div>
+          <div className="text-2xl md:text-3xl font-black text-emerald-800">Rajasthan</div>
+          <div className="text-xs text-gray-500 font-medium mt-1">📍 Coverage</div>
         </div>
       </div>
 
@@ -152,59 +153,50 @@ export default async function Home() {
           href="/closed-polls"
           className="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 font-semibold px-5 py-2.5 rounded-xl text-xs md:text-sm transition shadow-sm"
         >
-          <span>📁</span> समाप्त हो चुके पोल्स और पुराना इतिहास देखें →
+          <span>📁</span> Samapt ho chuke polls aur purana itihas dekhein →
         </Link>
       </div>
 
-      {/* Interactive Categories Linked to Hierarchy */}
+      {/* Categories */}
       <div className="mb-10">
         <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">
-          📂 पोल की श्रेणियाँ एवं स्तर
+          📂 Poll ki Shreniyan evam Star
         </h3>
         <div className="flex flex-wrap gap-2">
-          <Link
-            href="/rajasthan"
-            className="bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-emerald-100 transition"
-          >
-            🟢 सरपंच चुनाव
+          <Link href="/rajasthan" className="bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-emerald-100 transition">
+            🟢 Sarpanch Chunav
           </Link>
-          <Link
-            href="/rajasthan"
-            className="bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-emerald-100 transition"
-          >
-            🏛️ ग्राम पंचायत
+          <Link href="/rajasthan" className="bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-emerald-100 transition">
+            🏛️ Gram Panchayat
           </Link>
-          <Link
-            href="/rajasthan"
-            className="bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-emerald-100 transition"
-          >
-            🔵 पंचायत समिति
+          <Link href="/rajasthan" className="bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-emerald-100 transition">
+            🔵 Panchayat Samiti
           </Link>
-          <Link
-            href="/rajasthan"
-            className="bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-emerald-100 transition"
-          >
-            🟠 जिला परिषद
+          <Link href="/rajasthan" className="bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-emerald-100 transition">
+            🟠 Zila Parishad
           </Link>
         </div>
       </div>
 
-      {/* Real Top 10 Trending / Active Polls from DB */}
+      {/* 📢 Home Page Adsterra Native Banner */}
+      <NativeBanner />
+
+      {/* Real Top 10 Trending / Active Polls */}
       <div id="recent-polls" className="mb-10">
         <h2 className="text-2xl font-bold text-emerald-900 mb-6 flex items-center gap-2">
-          🔥 सर्वाधिक लोकप्रिय पोल्स (शीर्ष 10 ट्रेंडिंग)
+          🔥 Sarvadhik Lokpriya Polls (Sh शीर्ष 10 Trending)
         </h2>
 
         {dbError ? (
           <div className="bg-amber-50 border border-amber-200 text-amber-800 p-6 rounded-xl text-center">
-            डेटाबेस से कनेक्ट नहीं हो पाया। कृपया थोड़ी देर बाद रिफ्रेश करें।
+            Database se connect nahi ho paya. Kripya thodi der baad refresh karein.
           </div>
         ) : polls.length === 0 ? (
           <div className="bg-white rounded-xl p-8 text-center border border-emerald-100 text-gray-500 shadow-sm">
-            अभी कोई पोल चालू नहीं है। सबसे पहला पोल आप बनाएँ!
+            Abhi koi poll chalu nahi hai. Sabse pehla poll aap banayein!
             <div className="mt-4">
               <Link href="/create" className="text-emerald-700 font-bold underline hover:text-emerald-800">
-                पोल बनाएँ
+                Poll Banayein
               </Link>
             </div>
           </div>
@@ -221,10 +213,10 @@ export default async function Home() {
                 >
                   <div className="flex flex-wrap justify-between items-center gap-2 text-xs text-gray-500 mb-3">
                     <span className="bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-md font-semibold border border-emerald-200">
-                      🗳 कुल वोट: {pollTotalVotes.toLocaleString('en-IN')}
+                      🗳 Kul Votes: {pollTotalVotes.toLocaleString('en-IN')}
                     </span>
                     <span className="flex items-center gap-3">
-                      <span>⏳ {daysLeft(poll)} दिन बचे</span>
+                      <span>⏳ {daysLeft(poll)} din bache</span>
                       <span>{new Date(poll.createdAt).toLocaleDateString('hi-IN')}</span>
                     </span>
                   </div>
@@ -244,19 +236,19 @@ export default async function Home() {
 
                   <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100">
                     <a
-                      href={`https://wa.me/?text=${encodeURIComponent(`🗳️ ${poll.question}\nअपनी राय दें: https://janpoll.in${pollUrl}`)}`}
+                      href={`https://wa.me/?text=${encodeURIComponent(`🗳️ ${poll.question}\nApni ray dein: https://janpoll.in${pollUrl}`)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 bg-green-50 hover:bg-green-100 text-green-800 border border-green-200 font-bold px-4 py-2.5 rounded-xl text-xs transition"
                     >
-                      <span>💬</span> WhatsApp पर भेजें
+                      <span>💬</span> WhatsApp par bhejein
                     </a>
 
                     <Link
                       href={pollUrl}
                       className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-5 py-2.5 rounded-xl text-xs transition shadow ml-auto"
                     >
-                      वोट दें और परिणाम देखें →
+                      Vote dein aur parinaam dekhein →
                     </Link>
                   </div>
                 </div>
@@ -268,15 +260,15 @@ export default async function Home() {
 
       {/* Page Ending Create Poll Call-to-Action */}
       <div className="bg-gradient-to-r from-emerald-900 to-emerald-800 text-white rounded-3xl p-8 text-center shadow-lg my-10">
-        <h2 className="text-2xl font-black mb-2">क्या आप अपनी पंचायत या वार्ड का पोल बनाना चाहते हैं?</h2>
+        <h2 className="text-2xl font-black mb-2">Kya aap apni panchayat ya ward ka poll banana chahte hain?</h2>
         <p className="text-emerald-100 text-xs md:text-sm max-w-md mx-auto mb-6">
-          अपने गाँव, सरपंच पद या मंडल सदस्य के लिए तुरंत डिजिटल ओपिनियन पोल शुरू करें और जनता की राय जानें।
+          Apne gaon, sarpanch pad ya mandal sadasya ke liye turant digital opinion poll shuru karein aur janta ki ray janein.
         </p>
         <Link
           href="/create"
           className="bg-white hover:bg-emerald-50 text-emerald-900 font-bold px-8 py-3 rounded-2xl shadow transition text-base inline-block"
         >
-          ＋ नया पोल बनाएँ
+          ＋ Naya Poll Banayein
         </Link>
       </div>
     </div>

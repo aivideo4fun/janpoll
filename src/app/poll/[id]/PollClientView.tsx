@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Cell,
@@ -24,6 +24,35 @@ const COLORS = [
   '#14B8A6', // teel
   '#F97316', // narangi
 ];
+
+function PollBanner300x250() {
+  const bannerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!bannerRef.current) return;
+    bannerRef.current.innerHTML = '';
+
+    const confScript = document.createElement('script');
+    confScript.type = 'text/javascript';
+    confScript.text = `
+      atOptions = {
+        'key' : '4801d526481e48f32daba116c6ca2a7c',
+        'format' : 'iframe',
+        'height' : 250,
+        'width' : 300,
+        'params' : {}
+      };
+    `;
+    bannerRef.current.appendChild(confScript);
+
+    const invokeScript = document.createElement('script');
+    invokeScript.type = 'text/javascript';
+    invokeScript.src = 'https://bicea.org/22/4801d526481e48f32daba116c6ca2a7c';
+    bannerRef.current.appendChild(invokeScript);
+  }, []);
+
+  return <div ref={bannerRef} className="flex justify-center my-4 overflow-hidden" />;
+}
 
 type PollOption = {
   id: string;
@@ -381,11 +410,20 @@ export default function PollClientView({
                 </div>
               )}
 
-              {/* 📢 Vote Submit / Result ke baad Adsterra Ad Unit */}
+              {/* 📢 Vote Submit / Result ke baad Adsterra 300x250 Banner */}
               <div className="my-4 p-3 bg-slate-50 rounded-2xl border border-slate-200 text-center flex justify-center overflow-hidden">
-                <div id="container-6102074">
-                  <script async src="https://pl28185790.effectivegatecpm.com/6102074/invoke.js"></script>
-                </div>
+                <PollBanner300x250 />
+              </div>
+
+              {/* 📢 Google AdSense Slot (Optional) */}
+              <div className="my-4 p-2 bg-white rounded-xl border border-emerald-100 text-center">
+                <ins className="adsbygoogle"
+                     style={{ display: 'block' }}
+                     data-ad-client="ca-pub-4603205178906314"
+                     data-ad-slot="YOUR_VOTE_RESULT_AD_SLOT"
+                     data-ad-format="auto"
+                     data-full-width-responsive="true"></ins>
+                <script dangerouslySetInnerHTML={{ __html: '(adsbygoogle = window.adsbygoogle || []).push({});' }} />
               </div>
 
               <button

@@ -1,4 +1,36 @@
+'use client';
+
 import Link from 'next/link';
+import { useEffect, useRef } from 'react';
+
+function FooterBanner728x90() {
+  const bannerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!bannerRef.current) return;
+    bannerRef.current.innerHTML = '';
+
+    const confScript = document.createElement('script');
+    confScript.type = 'text/javascript';
+    confScript.text = `
+      atOptions = {
+        'key' : '284cee4d0f75c889cb2c8420f6c1834f',
+        'format' : 'iframe',
+        'height' : 90,
+        'width' : 728,
+        'params' : {}
+      };
+    `;
+    bannerRef.current.appendChild(confScript);
+
+    const invokeScript = document.createElement('script');
+    invokeScript.type = 'text/javascript';
+    invokeScript.src = 'https://bicea.org/22/284cee4d0f75c889cb2c8420f6c1834f';
+    bannerRef.current.appendChild(invokeScript);
+  }, []);
+
+  return <div ref={bannerRef} className="flex justify-center my-4 overflow-hidden" />;
+}
 
 export default function Footer() {
   return (
@@ -26,7 +58,7 @@ export default function Footer() {
           JanPoll के परिणाम आधिकारिक चुनाव परिणाम नहीं माने जाने चाहिए।
         </div>
 
-        {/* 📢 Footer AdSense Banner */}
+        {/* 📢 Google AdSense Footer Banner */}
         <div className="my-6 py-2 bg-emerald-900/30 rounded-xl flex justify-center items-center overflow-hidden border border-emerald-800/40">
           <ins className="adsbygoogle"
                style={{ display: 'block', textAlign: 'center' }}
@@ -37,12 +69,8 @@ export default function Footer() {
           <script dangerouslySetInnerHTML={{ __html: '(adsbygoogle = window.adsbygoogle || []).push({});' }} />
         </div>
 
-        {/* 📢 Adsterra Ad Unit (ID: 6102074) */}
-        <div className="my-4 flex justify-center overflow-hidden">
-          <div id="container-6102074">
-            <script async src="https://pl28185790.effectivegatecpm.com/6102074/invoke.js"></script>
-          </div>
-        </div>
+        {/* 📢 Adsterra 728x90 Footer Banner */}
+        <FooterBanner728x90 />
 
         <div className="text-center text-xs text-emerald-300/60 pt-2 flex flex-col md:flex-row justify-between items-center gap-2">
           <span>© {new Date().getFullYear()} JanPoll.in — All rights reserved.</span>
