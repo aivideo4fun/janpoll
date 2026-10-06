@@ -10,21 +10,20 @@ export async function GET(request: Request) {
       return NextResponse.json({ pollId: null }, { status: 400 });
     }
 
-    // डेटाबेस में ग्राम पंचायत के नाम से एक्टिव पोल ढूंढें
-    const poll = await db.poll.findFirst({
-      where: {
-        active: true,
-        gramPanchayatName: {
-          equals: gp.trim(),
-          mode: 'insensitive',
-        },
-      },
-      select: { id: true },
-      orderBy: { createdAt: 'desc' },
-    });
+    const decodedGp = decodeURIComponent(gp).trim();
 
-    if (poll) {
-      return NextResponse.json({ pollId: poll.id });
+    // 🛡️ टाइपकास्टिंग के साथ डेटाबेस से सभी एक्टिव पोल्स फेच करें
+    const polls = (await db.poll.findMany({
+      where: { active: true },
+      select: { id: true, gramPanchayatName: true },
+    })) as { id: string; gramPanchayatName: string | null }[];
+
+    const matchedPoll = polls.find(
+      (p) => p.gramPanchayatName && p.gramPanchayatName.trim().toLowerCase() === decodedGp.toLowerCase()
+    );
+
+    if (matchedPoll) {
+      return NextResponse.json({ pollId: matchedPoll.id });
     }
 
     return NextResponse.json({ pollId: null });
