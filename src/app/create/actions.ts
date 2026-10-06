@@ -10,15 +10,21 @@ import { safeDecode } from '@/lib/location';
 import { googleAuthOptions } from '@/lib/google-auth';
 
 function readText(formData: FormData, keys: string[], fallbackUrl: URL | null) {
+  // 1. Pehle FormData me check karein
   for (const key of keys) {
     const fromForm = formData.get(key);
     if (typeof fromForm === 'string' && fromForm.trim()) {
       return safeDecode(fromForm.trim());
     }
   }
-  for (const key of keys) {
-    const fromUrl = fallbackUrl?.searchParams.get(key);
-    if (fromUrl && fromUrl.trim()) return safeDecode(fromUrl.trim());
+  // 2. Agar FormData me na ho, toh fallbackUrl (URL parameters) me check karein
+  if (fallbackUrl) {
+    for (const key of keys) {
+      const fromUrl = fallbackUrl.searchParams.get(key);
+      if (fromUrl && fromUrl.trim()) {
+        return safeDecode(fromUrl.trim());
+      }
+    }
   }
   return null;
 }
@@ -54,12 +60,19 @@ export async function createPollAction(formData: FormData) {
     referrerUrl = null;
   }
 
+  // 🔍 लोकेशन और आईडी को फॉर्म या URL से पकड़ना
   const gramPanchayat = readText(formData, ['gramPanchayat', 'gp'], referrerUrl);
   const gpIdStr = readText(formData, ['gramPanchayatId', 'gpId'], referrerUrl);
   const gramPanchayatId = gpIdStr ? parseInt(gpIdStr, 10) : null;
 
   const samiti = readText(formData, ['samiti'], referrerUrl);
   const district = readText(formData, ['district'], referrerUrl);
+
+  console.log('--- CREATING POLL WITH LOCATION & ID ---');
+  console.log('District:', district);
+  console.log('Samiti:', samiti);
+  console.log('Gram Panchayat:', gramPanchayat);
+  console.log('Gram Panchayat ID:', gramPanchayatId);
 
   const forwardedFor = headersList.get('x-forwarded-for');
   const creatorIp = (forwardedFor ? forwardedFor.split(',')[0].trim() : '127.0.0.1').slice(0, 45);
@@ -76,11 +89,11 @@ export async function createPollAction(formData: FormData) {
       districtName: district,
       samitiName: samiti,
       gramPanchayatName: gramPanchayat,
-      gramPanchayatId: gramPanchayatId && !isNaN(gramPanchayatId) ? gramPanchayatId : null,
+      gramPanchayatId: gramPanchayatId && !isNaN(gramPanchayatId) ? gramPanchayatId : null, // 👈 ID सुरक्षित सेव होगी
       options: {
         create: optionsText.map((text, index) => ({ text, order: index })),
       },
-    } as any, // 👈 टाइपकास्टिंग से यह एरर तुरंत बायपास हो जाएगी
+    } as any,
   });
 
   redirect(`/poll/${newPoll.id}`);

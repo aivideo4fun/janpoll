@@ -181,9 +181,9 @@ export default async function PanchayatPollingPage({ params }: Props) {
                     : 'Is gram panchayat mein abhi koi poll nahi hai.'}
                 </span>
                 <Link
-                  href={`/create?gpId=${gp.id}&gp=${encodeURIComponent(gp.nameHi)}&samiti=${encodeURIComponent(samitiTitle)}&district=${encodeURIComponent(districtTitle)}`}
-                  className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs py-2 px-4 rounded-xl transition shadow inline-block"
-                >
+  href={`/create?gpId=${gp.id}&gp=${encodeURIComponent(gp.nameHi)}&samiti=${encodeURIComponent(samitiTitle)}&district=${encodeURIComponent(districtTitle)}`}
+  className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs py-2 px-4 rounded-xl transition shadow inline-block"
+>
                   ＋ Naya poll banayein →
                 </Link>
               </div>
