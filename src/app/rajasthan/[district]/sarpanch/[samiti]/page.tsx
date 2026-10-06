@@ -66,12 +66,12 @@ export default async function PanchayatPollingPage({ params }: Props) {
         gp.nameEn,
       ]);
 
-      // सिर्फ़ इसी samiti के गाँवों के polls, पूरी table नहीं
-      const polls = await db.poll.findMany({
+      // सिर्फ़ इसी samiti के गाँवों के polls, पूरी table नहीं (with any[] typecasting to fix TS errors)
+      const polls = (await db.poll.findMany({
         where: { active: true, gramPanchayatName: { in: gpNames } },
         include: { options: true },
         orderBy: { createdAt: 'desc' },
-      });
+      })) as any[];
 
       const samitiNames = [samitiRecord.nameHi, samitiRecord.nameEn, decodedSamiti].map(normalizeName);
 

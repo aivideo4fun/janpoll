@@ -2,11 +2,12 @@
 
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { getServerSession } from 'next-auth'; // 👈 getServerSession इम्पोर्ट करें
 
 import { db } from '@/lib/db';
 import { generateSlug } from '@/lib/slugify';
-import { getCreator } from '@/lib/creator-auth';
 import { safeDecode } from '@/lib/location';
+import { googleAuthOptions } from '@/lib/google-auth'; // 👈 आपकी गूगल ऑथ ऑप्शंस फाइल
 
 function readText(formData: FormData, keys: string[], fallbackUrl: URL | null) {
   for (const key of keys) {
@@ -15,7 +16,6 @@ function readText(formData: FormData, keys: string[], fallbackUrl: URL | null) {
       return safeDecode(fromForm.trim());
     }
   }
-  // Form में field न हो तो create page के URL (?gp=&samiti=&district=) से लें
   for (const key of keys) {
     const fromUrl = fallbackUrl?.searchParams.get(key);
     if (fromUrl && fromUrl.trim()) return fromUrl.trim();
@@ -24,9 +24,10 @@ function readText(formData: FormData, keys: string[], fallbackUrl: URL | null) {
 }
 
 export async function createPollAction(formData: FormData) {
-  const creator = await getCreator();
-  if (!creator) {
-    throw new Error('पहले Google से साइन-इन करें।');
+  // 🛡️ getServerSession के जरिए सुरक्षित रूप से वेरीफाइड यूजर का सेशन प्राप्त करें
+  const session = await getServerSession(googleAuthOptions);
+  if (!session || !session.user) {
+    throw new Error('कृपया पहले Google से साइन-इन करें।');
   }
 
   const question = String(formData.get('question') ?? '').trim();
@@ -69,9 +70,8 @@ export async function createPollAction(formData: FormData) {
     data: {
       question,
       slug: generateSlug(question),
-      // नाम और email form से नहीं, Google से verified cookie से आते हैं
-      creatorName: creator.name,
-      creatorEmail: creator.email,
+      creatorName: session.user.name ?? 'Verified User',
+      creatorEmail: session.user.email ?? '',
       isVerified: true,
       creatorIp,
       deadlineDays,
