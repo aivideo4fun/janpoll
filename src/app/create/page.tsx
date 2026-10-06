@@ -13,6 +13,7 @@ function CreatePollContent() {
   const { data: session, status } = useSession();
 
   const gpParam = searchParams.get('gp');
+  const gpIdParam = searchParams.get('gpId'); // 👈 ID कैप्चर करने के लिए
   const samitiParam = searchParams.get('samiti');
   const districtParam = searchParams.get('district');
 
@@ -27,13 +28,14 @@ function CreatePollContent() {
 
   useEffect(() => {
     async function checkExistingPoll() {
-      if (!gpParam) {
+      if (!gpParam && !gpIdParam) {
         setCheckingExisting(false);
         return;
       }
 
       try {
-        const res = await fetch(`/api/polls/check?gp=${encodeURIComponent(gpParam)}`);
+        const queryKey = gpIdParam ? `gpId=${gpIdParam}` : `gp=${encodeURIComponent(gpParam!)}`;
+        const res = await fetch(`/api/polls/check?${queryKey}`);
         if (res.ok) {
           const data = await res.json();
           if (data && data.pollId) {
@@ -49,7 +51,7 @@ function CreatePollContent() {
     }
 
     checkExistingPoll();
-  }, [gpParam, router]);
+  }, [gpParam, gpIdParam, router]);
 
   const handleAddOption = () => {
     if (options.length < 8) {
@@ -102,6 +104,7 @@ function CreatePollContent() {
           districtName: districtParam || null,
           samitiName: samitiParam || null,
           gramPanchayatName: gpParam || null,
+          gramPanchayatId: gpIdParam ? parseInt(gpIdParam, 10) : null, // 👈 API में ID भेजना पक्का करें
         }),
       });
 
@@ -179,7 +182,6 @@ function CreatePollContent() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
-              
               <div>
                 <label className="block text-xs font-bold text-emerald-900 uppercase tracking-wider mb-1">
                   पोल का सवाल (Question) *
