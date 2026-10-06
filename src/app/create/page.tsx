@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession, signIn } from 'next-auth/react';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic'; 
 
-export default function CreatePoll() {
+function CreatePollContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
@@ -25,7 +25,6 @@ export default function CreatePoll() {
   const [loading, setLoading] = useState(false);
   const [checkingExisting, setCheckingExisting] = useState(true);
 
-  // 🔍 जैसे ही पेज खुले, चेक करें कि क्या इस ग्राम पंचायत का पोल पहले से मौजूद है या नहीं
   useEffect(() => {
     async function checkExistingPoll() {
       if (!gpParam) {
@@ -38,7 +37,6 @@ export default function CreatePoll() {
         if (res.ok) {
           const data = await res.json();
           if (data && data.pollId) {
-            // अगर पोल पहले से बना है, तो सीधा उस पोल पर भेजें (पुराने पोल सुरक्षित रहेंगे)
             router.replace(`/poll/${data.pollId}`);
             return;
           }
@@ -122,9 +120,9 @@ export default function CreatePoll() {
 
   if (status === 'loading' || checkingExisting) {
     return (
-      <main className="min-h-screen flex items-center justify-center text-emerald-800 font-semibold bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center text-emerald-800 font-semibold bg-slate-50">
         जांच की जा रही है कि क्या इस पंचायत में पहले से पोल मौजूद है...
-      </main>
+      </div>
     );
   }
 
@@ -132,7 +130,6 @@ export default function CreatePoll() {
     <div className="max-w-2xl mx-auto px-4 py-8 text-gray-800">
       <div className="bg-white rounded-2xl shadow-sm border border-emerald-100 p-6 md:p-8">
         
-        {/* Header */}
         <div className="mb-6 border-b border-emerald-100 pb-4 flex justify-between items-center">
           <div>
             <h1 className="text-2xl md:text-3xl font-black text-emerald-900">
@@ -183,7 +180,6 @@ export default function CreatePoll() {
 
             <form onSubmit={handleSubmit} className="space-y-5">
               
-              {/* Poll Question */}
               <div>
                 <label className="block text-xs font-bold text-emerald-900 uppercase tracking-wider mb-1">
                   पोल का सवाल (Question) *
@@ -198,7 +194,6 @@ export default function CreatePoll() {
                 />
               </div>
 
-              {/* Poll Duration */}
               <div>
                 <label className="block text-xs font-bold text-emerald-900 uppercase tracking-wider mb-1">
                   ⏳ पोल की समय-सीमा (Duration) *
@@ -215,7 +210,6 @@ export default function CreatePoll() {
                 </select>
               </div>
 
-              {/* Options */}
               <div>
                 <label className="block text-xs font-bold text-emerald-900 uppercase tracking-wider mb-2">
                   विकल्प (Options - Max 8) *
@@ -255,7 +249,6 @@ export default function CreatePoll() {
                 )}
               </div>
 
-              {/* Submit Button */}
               <div className="pt-4">
                 <button
                   type="submit"
@@ -272,5 +265,13 @@ export default function CreatePoll() {
 
       </div>
     </div>
+  );
+}
+
+export default function CreatePoll() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-emerald-800 font-semibold bg-slate-50">लोड हो रहा है...</div>}>
+      <CreatePollContent />
+    </Suspense>
   );
 }
