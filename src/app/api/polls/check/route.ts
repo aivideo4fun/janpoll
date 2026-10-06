@@ -12,11 +12,11 @@ export async function GET(request: Request) {
 
     const decodedGp = decodeURIComponent(gp).trim();
 
-    // 🛡️ टाइपकास्टिंग के साथ डेटाबेस से सभी एक्टिव पोल्स फेच करें
+    // 🛡️ Safe typecasting using any[] to prevent type conversion errors
     const polls = (await db.poll.findMany({
       where: { active: true },
       select: { id: true, gramPanchayatName: true },
-    })) as { id: string; gramPanchayatName: string | null }[];
+    })) as any[];
 
     const matchedPoll = polls.find(
       (p) => p.gramPanchayatName && p.gramPanchayatName.trim().toLowerCase() === decodedGp.toLowerCase()
