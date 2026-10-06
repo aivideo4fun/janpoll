@@ -6,7 +6,7 @@ import type { Metadata } from 'next';
 import { db } from '@/lib/db';
 import { isPollOpen } from '@/lib/poll-utils';
 import { DEVICE_COOKIE } from '@/lib/voter';
-import PollClientView from './PollClientView';
+import PollClientView from '@/app/poll/[id]/PollClientView'; // 👈 एब्सोल्यूट पाथ का उपयोग करें
 
 export const dynamic = 'force-dynamic';
 
