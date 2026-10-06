@@ -37,6 +37,13 @@ export default function Footer() {
           <script dangerouslySetInnerHTML={{ __html: '(adsbygoogle = window.adsbygoogle || []).push({});' }} />
         </div>
 
+        {/* 📢 Adsterra Ad Unit (ID: 6102074) */}
+        <div className="my-4 flex justify-center overflow-hidden">
+          <div id="container-6102074">
+            <script async src="https://pl28185790.effectivegatecpm.com/6102074/invoke.js"></script>
+          </div>
+        </div>
+
         <div className="text-center text-xs text-emerald-300/60 pt-2 flex flex-col md:flex-row justify-between items-center gap-2">
           <span>© {new Date().getFullYear()} JanPoll.in — All rights reserved.</span>
           <span className="text-[11px]">Designed for Rajasthan Public Opinion Platform</span>

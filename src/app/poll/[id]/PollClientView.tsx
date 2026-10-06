@@ -15,14 +15,14 @@ import { castVote } from '@/lib/actions';
 import { getDeadline } from '@/lib/poll-utils';
 
 const COLORS = [
-  '#10B981', // हरा
-  '#F59E0B', // केसरिया
-  '#3B82F6', // नीला
-  '#EF4444', // लाल
-  '#8B5CF6', // बैंगनी
-  '#EC4899', // गुलाबी
-  '#14B8A6', // टील
-  '#F97316', // नारंगी
+  '#10B981', // hara
+  '#F59E0B', // kesariya
+  '#3B82F6', // nila
+  '#EF4444', // laal
+  '#8B5CF6', // baangni
+  '#EC4899', // gulabi
+  '#14B8A6', // teel
+  '#F97316', // narangi
 ];
 
 type PollOption = {
@@ -35,7 +35,7 @@ type Poll = {
   id: string;
   question: string;
   deadlineDays: number | null;
-  createdAt: string | Date; // 👈 टाइप जोड़ा गया
+  createdAt: string | Date;
   options: PollOption[];
 };
 
@@ -51,7 +51,6 @@ type ChartDataItem = {
   percentage: number;
 };
 
-// रियल-टाइम काउंटडाउन कंपोनेंट
 function LiveCountdown({ createdAt, deadlineDays, isOpen }: { createdAt: string | Date; deadlineDays: number | null; isOpen: boolean }) {
   const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null);
 
@@ -82,21 +81,21 @@ function LiveCountdown({ createdAt, deadlineDays, isOpen }: { createdAt: string 
   }, [createdAt, deadlineDays, isOpen]);
 
   if (!isOpen) {
-    return <span>पोल बंद हो चुका है</span>;
+    return <span>Poll band ho chuka hai</span>;
   }
 
   if (!timeLeft) {
     const defaultDays = deadlineDays ?? 3;
-    return <span>समय सीमा: {defaultDays} दिन</span>;
+    return <span>Samay seema: {defaultDays} din</span>;
   }
 
   if (timeLeft.days === 0 && timeLeft.hours === 0 && timeLeft.minutes === 0 && timeLeft.seconds === 0) {
-    return <span className="text-red-600 font-bold">पोल समाप्त</span>;
+    return <span className="text-red-600 font-bold">Poll samapt</span>;
   }
 
   return (
     <span className="font-mono font-bold text-emerald-900">
-      शेष: {timeLeft.days} दिन {String(timeLeft.hours).padStart(2, '0')}:{String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
+      Shesh: {timeLeft.days} din {String(timeLeft.hours).padStart(2, '0')}:{String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
     </span>
   );
 }
@@ -112,7 +111,7 @@ export default function PollClientView({
   const [hasVoted, setHasVoted] = useState(alreadyVoted);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(
-    alreadyVoted ? 'आप इस पोल में पहले ही वोट दे चुके हैं।' : '',
+    alreadyVoted ? 'Aap is poll mein pehle hi vote de chuke hain.' : '',
   );
 
   const showResults = hasVoted || !isOpen;
@@ -139,7 +138,7 @@ export default function PollClientView({
     event.preventDefault();
 
     if (!selectedOption) {
-      setMessage('कृपया पहले कोई एक विकल्प चुनें।');
+      setMessage('Kripya pehle koi ek vikalp chunein.');
       return;
     }
 
@@ -151,7 +150,7 @@ export default function PollClientView({
 
       if (response.success) {
         setHasVoted(true);
-        setMessage('आपका वोट सफलतापूर्वक दर्ज हो गया।');
+        setMessage('Aapka vote safalpurvak darj ho gaya.');
         router.refresh();
         return;
       }
@@ -164,7 +163,7 @@ export default function PollClientView({
       }
     } catch (error) {
       console.error('Vote submission error:', error);
-      setMessage('वोट दर्ज करते समय समस्या आई। कृपया थोड़ी देर बाद दोबारा प्रयास करें।');
+      setMessage('Vote darj karte samay samasya aayi. Kripya thodi der baad dobara prayas karein.');
     } finally {
       setLoading(false);
     }
@@ -173,7 +172,7 @@ export default function PollClientView({
   const handleShare = async () => {
     const shareData = {
       title: poll.question,
-      text: `🗳️ इस JanPoll पर अपनी राय दें:\n\n${poll.question}`,
+      text: `🗳️ Is JanPoll par apni ray dein:\n\n${poll.question}`,
       url: window.location.href,
     };
 
@@ -184,10 +183,10 @@ export default function PollClientView({
       }
 
       await navigator.clipboard.writeText(shareData.url);
-      setMessage('पोल लिंक क्लिपबोर्ड पर कॉपी हो गया है।');
+      setMessage('Poll link clipboard par copy ho gaya hai.');
     } catch (error) {
       if ((error as DOMException)?.name !== 'AbortError') {
-        setMessage('पोल शेयर नहीं हो सका। कृपया दोबारा प्रयास करें।');
+        setMessage('Poll share nahi ho saka. Kripya dobara prayas karein.');
       }
     }
   };
@@ -199,7 +198,7 @@ export default function PollClientView({
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
             <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-3 py-1.5 text-xs font-bold text-emerald-800 shadow-sm">
               <span aria-hidden="true">📍</span>
-              राजस्थान पब्लिक पोल
+              Rajasthan Public Poll
             </span>
 
             <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm">
@@ -209,7 +208,7 @@ export default function PollClientView({
           </div>
 
           <p className="mb-2 text-xs font-bold uppercase tracking-wider text-emerald-700">
-            आपकी राय महत्वपूर्ण है
+            Aapki ray mahatvapurna hai
           </p>
 
           <h1 className="text-2xl font-black leading-tight tracking-tight text-slate-900 sm:text-3xl">
@@ -232,7 +231,7 @@ export default function PollClientView({
             <form onSubmit={handleVoteSubmit} className="space-y-5">
               <fieldset disabled={loading}>
                 <legend className="mb-3 text-sm font-bold text-slate-700">
-                  नीचे दिए गए विकल्पों में से एक चुनें
+                  Neeche diye gaye vikalpo mein se ek chunein
                 </legend>
 
                 <div className="space-y-3">
@@ -289,25 +288,25 @@ export default function PollClientView({
                       aria-hidden="true"
                       className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white"
                     />
-                    वोट सबमिट हो रहा है...
+                    Vote submit ho raha hai...
                   </>
                 ) : (
-                  'वोट सबमिट करें'
+                  'Vote Submit Karein'
                 )}
               </button>
             </form>
           ) : (
             <div className="space-y-7">
               <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-center">
-                <p className="font-bold text-emerald-900">✅ परिणाम और आंकड़े</p>
+                <p className="font-bold text-emerald-900">✅ Parinaam aur Aankde</p>
                 <p className="mt-1 text-sm text-emerald-700">
-                  अब तक कुल {totalVotes.toLocaleString('en-IN')} वोट
+                  Ab tak kul {totalVotes.toLocaleString('en-IN')} votes
                 </p>
               </div>
 
               {totalVotes > 0 ? (
                 <>
-                  <div className="h-72 w-full" aria-label="पोल परिणामों का pie chart">
+                  <div className="h-72 w-full" aria-label="Poll parinaamo ka pie chart">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
@@ -330,7 +329,7 @@ export default function PollClientView({
                           ))}
                         </Pie>
 
-                        <Tooltip formatter={(value, name) => [`${value} वोट`, name]} />
+                        <Tooltip formatter={(value, name) => [`${value} votes`, name]} />
 
                         <Legend
                           verticalAlign="bottom"
@@ -377,10 +376,17 @@ export default function PollClientView({
               ) : (
                 <div className="rounded-2xl border border-dashed border-slate-300 px-5 py-10 text-center">
                   <p className="text-sm font-semibold text-slate-600">
-                    अभी तक कोई वोट दर्ज नहीं हुआ है।
+                    Abhi tak koi vote darj nahi hua hai.
                   </p>
                 </div>
               )}
+
+              {/* 📢 Vote Submit / Result ke baad Adsterra Ad Unit */}
+              <div className="my-4 p-3 bg-slate-50 rounded-2xl border border-slate-200 text-center flex justify-center overflow-hidden">
+                <div id="container-6102074">
+                  <script async src="https://pl28185790.effectivegatecpm.com/6102074/invoke.js"></script>
+                </div>
+              </div>
 
               <button
                 type="button"
@@ -388,7 +394,7 @@ export default function PollClientView({
                 className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-700 px-5 py-3.5 text-base font-bold text-white shadow-sm transition-colors hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
               >
                 <span aria-hidden="true">📲</span>
-                पोल शेयर करें
+                Poll Share Karein
               </button>
             </div>
           )}
@@ -396,7 +402,7 @@ export default function PollClientView({
       </div>
 
       <aside className="mt-6 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-center text-xs leading-relaxed text-slate-500 shadow-sm">
-        JanPoll के सभी पोल्स केवल जनता की राय जानने के लिए हैं। यह किसी सरकारी संस्था या आधिकारिक चुनावी मतदान प्रणाली का हिस्सा नहीं है।
+        JanPoll ke sabhi polls kewal janata ki ray janne ke liye hain. Yeh kisi sarkari sanstha ya aadhikarika chunavi matdan pranali ka hissa nahi hai.
       </aside>
     </section>
   );
