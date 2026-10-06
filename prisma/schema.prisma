@@ -8,23 +8,23 @@ generator client {
 }
 
 model Poll {
-  id               String   @id @default(uuid())
-  slug             String?  @db.VarChar(500)
-  question         String   @db.VarChar(500)
-  creatorName      String?  @db.VarChar(100)
-  creatorEmail     String?  @db.VarChar(255)
-  isVerified       Boolean  @default(false)
-  creatorIp        String?  @db.VarChar(45)
-  deadlineDays     Int      @default(3)
-  active           Boolean  @default(true)
+  id                String   @id @default(uuid())
+  slug              String?  @db.VarChar(500)
+  question          String   @db.VarChar(500)
+  creatorName       String?  @db.VarChar(100)
+  creatorEmail      String?  @db.VarChar(255)
+  isVerified        Boolean  @default(false)
+  creatorIp         String?  @db.VarChar(45)
+  deadlineDays      Int      @default(3)
+  active            Boolean  @default(true)
   
-  // 📍 New Location Fields Jodein
-  districtName     String?  @db.VarChar(100)
-  samitiName       String?  @db.VarChar(100)
-  gramPanchayatName String? @db.VarChar(100)
+  // 📍 Location Fields (पुराने पोल्स सुरक्षित रखते हुए नए पोल्स के लिए)
+  districtName      String?  @db.VarChar(100)
+  samitiName        String?  @db.VarChar(100)
+  gramPanchayatName String?  @db.VarChar(100)
 
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   options PollOption[]
   votes   Vote[]
