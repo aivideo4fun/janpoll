@@ -26,7 +26,7 @@ function readText(formData: FormData, keys: string[], fallbackUrl: URL | null) {
 export async function createPollAction(formData: FormData) {
   const session = await getServerSession(googleAuthOptions);
   if (!session || !session.user) {
-    throw new Error('कृपया पहले Google से साइन-इन करें।');
+    throw new Error('Kripya pehle Google se sign-in karein.');
   }
 
   const question = String(formData.get('question') ?? '').trim();
@@ -42,7 +42,7 @@ export async function createPollAction(formData: FormData) {
     .slice(0, 8);
 
   if (!question || optionsText.length < 2) {
-    throw new Error('कृपया सवाल और कम से कम 2 विकल्प भरें।');
+    throw new Error('Kripya sawal aur kam se kam 2 vikalp bharein.');
   }
 
   const headersList = await headers();
@@ -54,15 +54,12 @@ export async function createPollAction(formData: FormData) {
     referrerUrl = null;
   }
 
-  // 🔍 यहाँ से लोकेशन को फॉर्म या URL से पकड़ा जाता है
   const gramPanchayat = readText(formData, ['gramPanchayat', 'gp'], referrerUrl);
+  const gpIdStr = readText(formData, ['gramPanchayatId', 'gpId'], referrerUrl);
+  const gramPanchayatId = gpIdStr ? parseInt(gpIdStr, 10) : null;
+
   const samiti = readText(formData, ['samiti'], referrerUrl);
   const district = readText(formData, ['district'], referrerUrl);
-
-  console.log('--- CREATING POLL WITH LOCATION ---');
-  console.log('District:', district);
-  console.log('Samiti:', samiti);
-  console.log('Gram Panchayat:', gramPanchayat);
 
   const forwardedFor = headersList.get('x-forwarded-for');
   const creatorIp = (forwardedFor ? forwardedFor.split(',')[0].trim() : '127.0.0.1').slice(0, 45);
@@ -78,7 +75,8 @@ export async function createPollAction(formData: FormData) {
       deadlineDays,
       districtName: district,
       samitiName: samiti,
-      gramPanchayatName: gramPanchayat, // 👈 यह पक्का करेगा कि नाम सेव हो रहा है
+      gramPanchayatName: gramPanchayat,
+      gramPanchayatId: isNaN(gramPanchayatId!) ? null : gramPanchayatId, // 👈 ID save hogi
       options: {
         create: optionsText.map((text, index) => ({ text, order: index })),
       },

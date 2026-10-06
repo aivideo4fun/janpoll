@@ -14,8 +14,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { samiti } = await params;
   const decodedSamiti = safeDecode(samiti);
   return {
-    title: `${decodedSamiti} पंचायत समिति - ग्राम पंचायत लिस्ट और लाइव पोल्स | JanPoll`,
-    description: 'अपनी ग्राम पंचायत चुनें और सरपंच चुनाव के लिए लाइव ओपिनियन पोल देखें व वोट दें।',
+    title: `${decodedSamiti} panchayat samiti - gram panchayat list aur live polls | JanPoll`,
+    description: 'Apni gram panchayat chunein aur sarpanch chunav ke liye live opinion poll dekhein v vote dein.',
   };
 }
 
@@ -60,7 +60,6 @@ export default async function PanchayatPollingPage({ params }: Props) {
 
       const panchayats = samitiRecord.gramPanchayats;
 
-      // 🛡️ बिना किसी कठिन शर्त के सारे एक्टिव पोल्स एक साथ निकाल लें
       const polls = (await db.poll.findMany({
         where: { active: true },
         include: { options: true },
@@ -69,13 +68,17 @@ export default async function PanchayatPollingPage({ params }: Props) {
 
       panchayatsWithPolls = panchayats.map((gp) => {
         const matchedPolls = polls.filter((p) => {
-          if (!p.gramPanchayatName) return false;
+          // 1. 100% accurate matching using ID
+          if (p.gramPanchayatId && p.gramPanchayatId === gp.id) {
+            return true;
+          }
 
+          // 2. Fallback matching using Normalized Name
+          if (!p.gramPanchayatName) return false;
           const dbName = normalizeName(p.gramPanchayatName);
           const hiName = normalizeName(gp.nameHi);
           const enName = normalizeName(gp.nameEn);
 
-          // 🔍 बिल्कुल सटीक और फ्लेक्सिबल मिलान
           return (
             dbName === hiName ||
             dbName === enName ||
@@ -98,26 +101,26 @@ export default async function PanchayatPollingPage({ params }: Props) {
           href={`/rajasthan/${district}/sarpanch`}
           className="inline-flex items-center gap-2 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-4 py-2 rounded-xl text-sm font-bold transition"
         >
-          ← पंचायत समिति सूची पर वापस जाएं
+          ← Panchayat samiti suchi par vapas jayein
         </Link>
       </div>
 
       <div className="bg-gradient-to-r from-emerald-800 to-green-700 text-white rounded-3xl p-6 md:p-8 mb-8 text-center shadow-md">
         <span className="bg-white/20 text-emerald-100 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-          समिति: {samitiTitle}
+          Samiti: {samitiTitle}
         </span>
         <h1 className="text-2xl md:text-3xl font-black mt-3 mb-2">
-          ग्राम पंचायत वार लाइव पोल्स और नए विकल्प
+          Gram Panchayat waar live polls aur naye vikalp
         </h1>
         <p className="text-emerald-100 text-xs md:text-sm">
-          अपनी ग्राम पंचायत चुनें, सक्रिय पोल्स पर वोट करें या नया पोल बनाएँ।
+          Apni gram panchayat chunein, active polls par vote karein ya naya poll banayein.
         </p>
       </div>
 
       {panchayatsWithPolls.length === 0 ? (
         <div className="bg-white border border-emerald-100 p-8 rounded-2xl text-center shadow-sm">
           <p className="text-gray-600 text-sm mb-4">
-            इस पंचायत समिति के अंतर्गत अभी ग्राम पंचायतों की सूची उपलब्ध नहीं है।
+            Is panchayat samiti ke antargat abhi gram panchayatein uplabdh nahi hain.
           </p>
         </div>
       ) : (
@@ -130,11 +133,11 @@ export default async function PanchayatPollingPage({ params }: Props) {
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 pb-3">
                 <div>
                   <h3 className="text-lg font-bold text-emerald-900">{gp.nameHi}</h3>
-                  <span className="text-xs text-gray-400 font-medium">{gp.nameEn} ग्राम पंचायत</span>
+                  <span className="text-xs text-gray-400 font-medium">{gp.nameEn} Gram Panchayat</span>
                 </div>
                 {gp.polls.length > 0 && (
                   <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">
-                    {gp.polls.length} पोल चालू
+                    {gp.polls.length} poll chalu
                   </span>
                 )}
               </div>
@@ -155,7 +158,7 @@ export default async function PanchayatPollingPage({ params }: Props) {
                       >
                         <div className="space-y-1">
                           <span className="inline-block bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">
-                            🗳 कुल वोट: {pollTotalVotes.toLocaleString('en-IN')}
+                            🗳 Kul vote: {pollTotalVotes.toLocaleString('en-IN')}
                           </span>
                           <h4 className="text-sm font-bold text-gray-900 leading-snug">{poll.question}</h4>
                         </div>
@@ -163,7 +166,7 @@ export default async function PanchayatPollingPage({ params }: Props) {
                           href={pollUrl}
                           className="shrink-0 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs py-2.5 px-4 rounded-xl transition shadow-sm"
                         >
-                          वोट दें और परिणाम देखें →
+                          Vote dein aur parinaam dekhein →
                         </Link>
                       </div>
                     );
@@ -174,14 +177,14 @@ export default async function PanchayatPollingPage({ params }: Props) {
               <div className="pt-2 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100">
                 <span className="text-xs text-slate-500 font-medium">
                   {gp.polls.length > 0
-                    ? 'क्या आपको नया या सुधार किया हुआ पोल बनाना है?'
-                    : 'इस ग्राम पंचायत में अभी कोई पोल नहीं है।'}
+                    ? 'Kya aapko naya ya sudhar kiya hua poll banana hai?'
+                    : 'Is gram panchayat mein abhi koi poll nahi hai.'}
                 </span>
                 <Link
-                  href={`/create?gp=${encodeURIComponent(gp.nameHi)}&samiti=${encodeURIComponent(samitiTitle)}&district=${encodeURIComponent(districtTitle)}`}
+                  href={`/create?gpId=${gp.id}&gp=${encodeURIComponent(gp.nameHi)}&samiti=${encodeURIComponent(samitiTitle)}&district=${encodeURIComponent(districtTitle)}`}
                   className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs py-2 px-4 rounded-xl transition shadow inline-block"
                 >
-                  ＋ नया पोल बनाएँ →
+                  ＋ Naya poll banayein →
                 </Link>
               </div>
             </div>

@@ -18,21 +18,23 @@ model Poll {
   deadlineDays      Int      @default(3)
   active            Boolean  @default(true)
   
-  // 📍 Location Fields (पुराने पोल्स सुरक्षित रखते हुए नए पोल्स के लिए)
+  // 📍 Location Fields (ID aur Name dono safe rakhne ke liye)
   districtName      String?  @db.VarChar(100)
   samitiName        String?  @db.VarChar(100)
   gramPanchayatName String?  @db.VarChar(100)
+  gramPanchayatId   Int?     // 👈 Sahi ID tracking ke liye
 
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  options PollOption[]
-  votes   Vote[]
+  options           Option[]
+  votes             Vote[]
 
   @@index([active])
   @@index([createdAt])
   @@index([districtName])
   @@index([gramPanchayatName])
+  @@index([gramPanchayatId])
 }
 
 model PollOption {
