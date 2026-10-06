@@ -6,15 +6,14 @@ import type { Metadata } from 'next';
 import { db } from '@/lib/db';
 import { isPollOpen } from '@/lib/poll-utils';
 import { DEVICE_COOKIE } from '@/lib/voter';
-import PollClientView from '@/app/poll/[id]/PollClientView'; // 👈 एब्सोल्यूट पाथ (इससे कभी मॉड्यूल नॉट फाउंड एरर नहीं आएगी)
+import PollClientView from './PollClientView';
 
 export const dynamic = 'force-dynamic';
 
 type PollPageProps = {
-  params: Promise<{ id: string; slug?: string[] }>;
+  params: Promise<{ id: string }>;
 };
 
-// Google SEO aur Search ranking ke liye dynamic metadata (Shuddh Hindi)
 export async function generateMetadata({ params }: PollPageProps): Promise<Metadata> {
   const { id } = await params;
   
@@ -52,6 +51,10 @@ export default async function PollPage({ params }: PollPageProps) {
       deadlineDays: true,
       active: true,
       createdAt: true,
+      districtName: true,
+      samitiName: true,
+      gramPanchayatName: true,
+      gramPanchayatId: true,
       options: {
         select: { id: true, text: true, voteCount: true, order: true, createdAt: true },
       },
@@ -62,7 +65,6 @@ export default async function PollPage({ params }: PollPageProps) {
     notFound();
   }
 
-  // 🛡️ Safe Sorting: Naye polls 'order' se aur purane polls 'createdAt' se sort honge
   const sortedOptions = poll.options.sort((a, b) => {
     if (a.order !== null && b.order !== null && a.order !== undefined && b.order !== undefined) {
       return a.order - b.order;
@@ -101,14 +103,24 @@ export default async function PollPage({ params }: PollPageProps) {
             <span aria-hidden="true">←</span>
             होम पेज पर वापस जाएं
           </Link>
+
+          {/* 🛠️ Safe optional chaining applied here */}
+          {poll?.gramPanchayatName && (
+            <Link
+              href={`/create?gpId=${poll.gramPanchayatId || ''}&gp=${encodeURIComponent(poll.gramPanchayatName)}&samiti=${encodeURIComponent(poll.samitiName || '')}&district=${encodeURIComponent(poll.districtName || '')}`}
+              className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs py-2 px-4 rounded-xl transition shadow inline-block"
+            >
+              ＋ इस पंचायत में नया पोल बनाएँ →
+            </Link>
+          )}
         </nav>
 
         <PollClientView
           poll={{
-            id: poll.id,
-            question: poll.question,
-            deadlineDays: poll.deadlineDays,
-            createdAt: poll.createdAt.toISOString(),
+            id: poll!.id,
+            question: poll!.question,
+            deadlineDays: poll!.deadlineDays,
+            createdAt: poll!.createdAt.toISOString(),
             options: sortedOptions,
           }}
           alreadyVoted={alreadyVoted}

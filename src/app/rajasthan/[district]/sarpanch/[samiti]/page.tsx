@@ -177,7 +177,7 @@ export default async function PanchayatPollingPage({ params }: Props) {
                   </div>
                 )}
 
-                {/* Naya Poll Banane ka Button aur Message */}
+              {/* Naya Poll Banane ka Button aur Message */}
                 <div className="pt-2 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100">
                   <span className="text-xs text-slate-500 font-medium">
                     {hasReachedLimit
@@ -195,12 +195,4 @@ export default async function PanchayatPollingPage({ params }: Props) {
                       ＋ नया पोल बनाएँ →
                     </Link>
                   )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
+                </div>  
