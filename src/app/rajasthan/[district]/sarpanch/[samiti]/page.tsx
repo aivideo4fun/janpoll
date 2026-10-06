@@ -14,8 +14,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { samiti } = await params;
   const decodedSamiti = safeDecode(samiti);
   return {
-    title: `${decodedSamiti} panchayat samiti - gram panchayat list aur live polls | JanPoll`,
-    description: 'Apni gram panchayat chunein aur sarpanch chunav ke liye live opinion poll dekhein v vote dein.',
+    title: `${decodedSamiti} पंचायत समिति - ग्राम पंचायत लिस्ट और लाइव पोल्स | JanPoll`,
+    description: 'अपनी ग्राम पंचायत चुनें और सरपंच चुनाव के लिए लाइव ओपिनियन पोल देखें व वोट दें।',
   };
 }
 
@@ -60,6 +60,7 @@ export default async function PanchayatPollingPage({ params }: Props) {
 
       const panchayats = samitiRecord.gramPanchayats;
 
+      // सभी सक्रिय पोल्स निकालें
       const polls = (await db.poll.findMany({
         where: { active: true },
         include: { options: true },
@@ -68,12 +69,12 @@ export default async function PanchayatPollingPage({ params }: Props) {
 
       panchayatsWithPolls = panchayats.map((gp) => {
         const matchedPolls = polls.filter((p) => {
-          // 1. 100% accurate matching using ID (Number conversion mate safe banavyu chhe)
+          // 1. आईडी आधारित सटीक मिलान
           if (p.gramPanchayatId && Number(p.gramPanchayatId) === Number(gp.id)) {
             return true;
           }
 
-          // 2. Fallback matching using Normalized Name
+          // 2. नाम आधारित मिलान (बैकअप)
           if (!p.gramPanchayatName) return false;
           const dbName = normalizeName(p.gramPanchayatName);
           const hiName = normalizeName(gp.nameHi);
@@ -101,94 +102,103 @@ export default async function PanchayatPollingPage({ params }: Props) {
           href={`/rajasthan/${district}/sarpanch`}
           className="inline-flex items-center gap-2 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-4 py-2 rounded-xl text-sm font-bold transition"
         >
-          ← Panchayat samiti suchi par vapas jayein
+          ← पंचायत समिति सूची पर वापस जाएं
         </Link>
       </div>
 
       <div className="bg-gradient-to-r from-emerald-800 to-green-700 text-white rounded-3xl p-6 md:p-8 mb-8 text-center shadow-md">
         <span className="bg-white/20 text-emerald-100 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-          Samiti: {samitiTitle}
+          समिति: {samitiTitle}
         </span>
         <h1 className="text-2xl md:text-3xl font-black mt-3 mb-2">
-          Gram Panchayat waar live polls aur naye vikalp
+          ग्राम पंचायत वार लाइव पोल्स और नए विकल्प
         </h1>
         <p className="text-emerald-100 text-xs md:text-sm">
-          Apni gram panchayat chunein, active polls par vote karein ya naya poll banayein.
+          अपनी ग्राम पंचायत चुनें, सक्रिय पोल्स पर वोट करें या नया पोल बनाएँ। (अधिकतम 5 पोल प्रति पंचायत)
         </p>
       </div>
 
       {panchayatsWithPolls.length === 0 ? (
         <div className="bg-white border border-emerald-100 p-8 rounded-2xl text-center shadow-sm">
           <p className="text-gray-600 text-sm mb-4">
-            Is panchayat samiti ke antargat abhi gram panchayatein uplabdh nahi hain.
+            इस पंचायत समिति के अंतर्गत अभी ग्राम पंचायतों की सूची उपलब्ध नहीं है।
           </p>
         </div>
       ) : (
         <div className="space-y-6">
-          {panchayatsWithPolls.map((gp) => (
-            <div
-              key={gp.id}
-              className="bg-white p-6 rounded-2xl border border-emerald-100 shadow-sm space-y-4"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 pb-3">
-                <div>
-                  <h3 className="text-lg font-bold text-emerald-900">{gp.nameHi}</h3>
-                  <span className="text-xs text-gray-400 font-medium">{gp.nameEn} Gram Panchayat</span>
-                </div>
-                {gp.polls.length > 0 && (
+          {panchayatsWithPolls.map((gp) => {
+            const hasReachedLimit = gp.polls.length >= 5; // अधिकतम 5 पोल की सीमा
+
+            return (
+              <div
+                key={gp.id}
+                className="bg-white p-6 rounded-2xl border border-emerald-100 shadow-sm space-y-4"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 pb-3">
+                  <div>
+                    <h3 className="text-lg font-bold text-emerald-900">{gp.nameHi}</h3>
+                    <span className="text-xs text-gray-400 font-medium">{gp.nameEn} ग्राम पंचायत</span>
+                  </div>
                   <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">
-                    {gp.polls.length} poll chalu
+                    {gp.polls.length}/5 पोल चालू
                   </span>
-                )}
-              </div>
-
-              {gp.polls.length > 0 && (
-                <div className="space-y-3">
-                  {gp.polls.map((poll: any) => {
-                    const pollUrl = poll.slug ? `/poll/${poll.id}/${poll.slug}` : `/poll/${poll.id}`;
-                    const pollTotalVotes = poll.options.reduce(
-                      (sum: number, opt: any) => sum + opt.voteCount,
-                      0,
-                    );
-
-                    return (
-                      <div
-                        key={poll.id}
-                        className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-                      >
-                        <div className="space-y-1">
-                          <span className="inline-block bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">
-                            🗳 Kul vote: {pollTotalVotes.toLocaleString('en-IN')}
-                          </span>
-                          <h4 className="text-sm font-bold text-gray-900 leading-snug">{poll.question}</h4>
-                        </div>
-                        <Link
-                          href={pollUrl}
-                          className="shrink-0 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs py-2.5 px-4 rounded-xl transition shadow-sm"
-                        >
-                          Vote dein aur parinaam dekhein →
-                        </Link>
-                      </div>
-                    );
-                  })}
                 </div>
-              )}
 
-              <div className="pt-2 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100">
-                <span className="text-xs text-slate-500 font-medium">
-                  {gp.polls.length > 0
-                    ? 'Kya aapko naya ya sudhar kiya hua poll banana hai?'
-                    : 'Is gram panchayat mein abhi koi poll nahi hai.'}
-                </span>
-                <Link
-                  href={`/create?gpId=${gp.id}&gp=${encodeURIComponent(gp.nameHi)}&samiti=${encodeURIComponent(samitiTitle)}&district=${encodeURIComponent(districtTitle)}`}
-                  className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs py-2 px-4 rounded-xl transition shadow inline-block"
-                >
-                  ＋ Naya poll banayein →
-                </Link>
+                {/* सभी को दिखने वाले पोल्स की सूची */}
+                {gp.polls.length > 0 && (
+                  <div className="space-y-3">
+                    {gp.polls.map((poll: any) => {
+                      const pollUrl = poll.slug ? `/poll/${poll.id}/${poll.slug}` : `/poll/${poll.id}`;
+                      const pollTotalVotes = poll.options.reduce(
+                        (sum: number, opt: any) => sum + opt.voteCount,
+                        0,
+                      );
+
+                      return (
+                        <div
+                          key={poll.id}
+                          className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                        >
+                          <div className="space-y-1">
+                            <span className="inline-block bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">
+                              🗳 कुल वोट: {pollTotalVotes.toLocaleString('en-IN')}
+                            </span>
+                            <h4 className="text-sm font-bold text-gray-900 leading-snug">{poll.question}</h4>
+                          </div>
+                          <Link
+                            href={pollUrl}
+                            className="shrink-0 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs py-2.5 px-4 rounded-xl transition shadow-sm"
+                          >
+                            वोट दें और परिणाम देखें →
+                          </Link>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* नया पोल बनाने या गलत पोल होने पर नया विकल्प जोड़ने का सेक्शन */}
+                <div className="pt-2 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100">
+                  <span className="text-xs text-slate-500 font-medium">
+                    {hasReachedLimit
+                      ? '⚠️ इस ग्राम पंचायत में अधिकतम 5 पोल की सीमा पूरी हो चुकी है।'
+                      : gp.polls.length > 0
+                      ? 'क्या कोई गलत पोल है? आप एक नया या सुधार किया हुआ पोल और बना सकते हैं।'
+                      : 'इस ग्राम पंचायत में अभी कोई पोल नहीं है।'}
+                  </span>
+
+                  {!hasReachedLimit && (
+                    <Link
+                      href={`/create?gpId=${gp.id}&gp=${encodeURIComponent(gp.nameHi)}&samiti=${encodeURIComponent(samitiTitle)}&district=${encodeURIComponent(districtTitle)}`}
+                      className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs py-2 px-4 rounded-xl transition shadow inline-block"
+                    >
+                      ＋ नया पोल बनाएँ →
+                    </Link>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
