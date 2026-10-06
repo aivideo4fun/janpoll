@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession, signIn } from 'next-auth/react';
 import Link from 'next/link';
 
@@ -9,13 +9,49 @@ export const dynamic = 'force-dynamic';
 
 export default function CreatePoll() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: session, status } = useSession();
 
-  const [question, setQuestion] = useState('');
+  const gpParam = searchParams.get('gp');
+  const samitiParam = searchParams.get('samiti');
+  const districtParam = searchParams.get('district');
+
+  const [question, setQuestion] = useState(
+    gpParam ? `${gpParam} ग्राम पंचायत में सरपंच पद के लिए सबसे योग्य उम्मीदवार कौन है?` : ''
+  );
   const [deadlineDays, setDeadlineDays] = useState('3');
   const [options, setOptions] = useState(['', '']);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [checkingExisting, setCheckingExisting] = useState(true);
+
+  // 🔍 जैसे ही पेज खुले, चेक करें कि क्या इस ग्राम पंचायत का पोल पहले से मौजूद है या नहीं
+  useEffect(() => {
+    async function checkExistingPoll() {
+      if (!gpParam) {
+        setCheckingExisting(false);
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/polls/check?gp=${encodeURIComponent(gpParam)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.pollId) {
+            // अगर पोल पहले से बना है, तो सीधा उस पोल पर भेजें (पुराने पोल सुरक्षित रहेंगे)
+            router.replace(`/poll/${data.pollId}`);
+            return;
+          }
+        }
+      } catch (err) {
+        console.error('Error checking existing poll:', err);
+      } finally {
+        setCheckingExisting(false);
+      }
+    }
+
+    checkExistingPoll();
+  }, [gpParam, router]);
 
   const handleAddOption = () => {
     if (options.length < 8) {
@@ -65,6 +101,9 @@ export default function CreatePoll() {
           question,
           deadlineDays: parseInt(deadlineDays),
           options: validOptions,
+          districtName: districtParam || null,
+          samitiName: samitiParam || null,
+          gramPanchayatName: gpParam || null,
         }),
       });
 
@@ -81,11 +120,11 @@ export default function CreatePoll() {
     }
   };
 
-  if (status === 'loading') {
+  if (status === 'loading' || checkingExisting) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-emerald-800 font-semibold">
-        लोड हो रहा है...
-      </div>
+      <main className="min-h-screen flex items-center justify-center text-emerald-800 font-semibold bg-slate-50">
+        जांच की जा रही है कि क्या इस पंचायत में पहले से पोल मौजूद है...
+      </main>
     );
   }
 
@@ -97,10 +136,10 @@ export default function CreatePoll() {
         <div className="mb-6 border-b border-emerald-100 pb-4 flex justify-between items-center">
           <div>
             <h1 className="text-2xl md:text-3xl font-black text-emerald-900">
-              नया सत्यापित पोल बनाएँ
+              नया सत्यापित पोल बनाएँ {gpParam ? `- ${gpParam}` : ''}
             </h1>
             <p className="text-xs md:text-sm text-gray-500 mt-1">
-              Google द्वारा सुरक्षित और वेरिफाइड पोल पब्लिश करें।
+              {gpParam ? `${districtParam || 'राजस्थान'} / ${samitiParam || ''} / ${gpParam}` : 'Google द्वारा सुरक्षित और वेरिफाइड पोल पब्लिश करें।'}
             </p>
           </div>
           <Link href="/" className="text-xs text-emerald-700 font-bold underline">
@@ -115,13 +154,12 @@ export default function CreatePoll() {
         )}
 
         {!session ? (
-          /* Agar user Google se sign-in nahi hai */
           <div className="text-center py-10 space-y-5 bg-emerald-50/50 rounded-2xl border border-emerald-100 p-6">
             <span className="text-4xl">🔐</span>
             <div>
               <h3 className="font-bold text-gray-900 text-base">Google पहचान सत्यापन आवश्यक है</h3>
               <p className="text-xs text-gray-500 mt-1">
-                फर्जी या आपत्तिजनक पोस्ट रोकने के लिए पोल बनाने से पहले अपने Google खाते से लॉगिन करें। कोई लंबी फॉर्म प्रक्रिया नहीं है!
+                फर्जी या आपत्तिजनक पोस्ट रोकने के लिए पोल बनाने से पहले अपने Google खाते से लॉगिन करें।
               </p>
             </div>
             <button
@@ -132,7 +170,6 @@ export default function CreatePoll() {
             </button>
           </div>
         ) : (
-          /* Agar user logged in hai, toh asli verified details ke sath form dikhayein */
           <div>
             <div className="mb-6 p-4 bg-emerald-50 rounded-xl border border-emerald-100 flex items-center justify-between">
               <div>
