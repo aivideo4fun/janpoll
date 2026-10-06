@@ -15,6 +15,11 @@ export const metadata: Metadata = {
     'राजस्थान की जनता की राय',
     'online voting poll India'
   ],
+  icons: {
+    icon: '/favicon.ico', // 👈 यहाँ favicon.ico का पाथ जोड़ा गया है
+    shortcut: '/favicon.ico',
+    apple: '/favicon.ico',
+  },
   openGraph: {
     title: 'JanPoll — आपकी राय, जनता की आवाज़',
     description: 'राजस्थान के लोगों की राय जानिए और अपनी राय दें।',
@@ -24,7 +29,6 @@ export const metadata: Metadata = {
     type: 'website',
   },
 };
-
 export default function RootLayout({
   children,
 }: {

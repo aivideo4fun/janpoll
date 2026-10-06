@@ -1,6 +1,10 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+
 import { db } from '@/lib/db';
+import { normalizeName, safeDecode } from '@/lib/location';
+
+export const dynamic = 'force-dynamic';
 
 type Props = {
   params: Promise<{ district: string; samiti: string }>;
@@ -8,7 +12,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { samiti } = await params;
-  const decodedSamiti = decodeURIComponent(samiti);
+  const decodedSamiti = safeDecode(samiti);
   return {
     title: `${decodedSamiti} पंचायत समिति - ग्राम पंचायत लिस्ट और लाइव पोल्स | JanPoll`,
     description: 'अपनी ग्राम पंचायत चुनें और सरपंच चुनाव के लिए लाइव ओपिनियन पोल देखें व वोट दें।',
@@ -17,43 +21,71 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PanchayatPollingPage({ params }: Props) {
   const { district, samiti } = await params;
-  const decodedSamiti = decodeURIComponent(samiti);
+  const decodedSamiti = safeDecode(samiti);
+  const decodedDistrict = safeDecode(district);
 
+  let samitiTitle = decodedSamiti;
+  let districtTitle = decodedDistrict;
   let panchayatsWithPolls: any[] = [];
+
   try {
+    // samiti का नाम कई जिलों में दोहराया जाता है, इसलिए जिला भी मिलाते हैं
     const samitiRecord = await db.panchayatSamiti.findFirst({
-      where: { nameEn: { equals: decodedSamiti, mode: 'insensitive' } },
+      where: {
+        AND: [
+          {
+            OR: [
+              { nameEn: { equals: decodedSamiti, mode: 'insensitive' } },
+              { nameHi: { equals: decodedSamiti } },
+            ],
+          },
+          {
+            district: {
+              OR: [
+                { nameEn: { equals: decodedDistrict, mode: 'insensitive' } },
+                { nameHi: { equals: decodedDistrict } },
+              ],
+            },
+          },
+        ],
+      },
       include: {
-        gramPanchayats: {
-          orderBy: { nameHi: 'asc' },
-        },
+        district: { select: { nameHi: true, nameEn: true } },
+        gramPanchayats: { orderBy: { nameHi: 'asc' } },
       },
     });
 
-    if (samitiRecord && samitiRecord.gramPanchayats) {
+    if (samitiRecord) {
+      samitiTitle = samitiRecord.nameHi;
+      districtTitle = samitiRecord.district.nameHi;
+
       const panchayats = samitiRecord.gramPanchayats;
-      
-      // 🛡️ Safe typecasting using any[] to prevent build/type errors
-      const allPolls = await db.poll.findMany({
-        where: { active: true },
+      const gpNames = panchayats.flatMap((gp) => [
+        gp.nameHi,
+        gp.nameHi.normalize('NFC'),
+        gp.nameEn,
+      ]);
+
+      // सिर्फ़ इसी samiti के गाँवों के polls, पूरी table नहीं
+      const polls = await db.poll.findMany({
+        where: { active: true, gramPanchayatName: { in: gpNames } },
         include: { options: true },
         orderBy: { createdAt: 'desc' },
-      }) as any[];
+      });
+
+      const samitiNames = [samitiRecord.nameHi, samitiRecord.nameEn, decodedSamiti].map(normalizeName);
 
       panchayatsWithPolls = panchayats.map((gp) => {
-        const matchedPolls = allPolls.filter((p) => {
-          if (!p.gramPanchayatName) return false;
-          const dbName = p.gramPanchayatName.trim().toLowerCase();
-          return (
-            dbName === gp.nameHi.trim().toLowerCase() ||
-            dbName === gp.nameEn.trim().toLowerCase()
-          );
+        const matchedPolls = polls.filter((p) => {
+          const dbName = normalizeName(p.gramPanchayatName);
+          const sameGp =
+            dbName === normalizeName(gp.nameHi) || dbName === normalizeName(gp.nameEn);
+          // पुराने polls में samiti खाली हो सकता है, उन्हें भी दिखाओ
+          const sameSamiti = !p.samitiName || samitiNames.includes(normalizeName(p.samitiName));
+          return sameGp && sameSamiti;
         });
 
-        return {
-          ...gp,
-          polls: matchedPolls,
-        };
+        return { ...gp, polls: matchedPolls };
       });
     }
   } catch (error) {
@@ -73,7 +105,7 @@ export default async function PanchayatPollingPage({ params }: Props) {
 
       <div className="bg-gradient-to-r from-emerald-800 to-green-700 text-white rounded-3xl p-6 md:p-8 mb-8 text-center shadow-md">
         <span className="bg-white/20 text-emerald-100 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-          समिति: {decodedSamiti.toUpperCase()}
+          समिति: {samitiTitle}
         </span>
         <h1 className="text-2xl md:text-3xl font-black mt-3 mb-2">
           ग्राम पंचायत वार लाइव पोल्स और नए विकल्प
@@ -101,16 +133,20 @@ export default async function PanchayatPollingPage({ params }: Props) {
                   <h3 className="text-lg font-bold text-emerald-900">{gp.nameHi}</h3>
                   <span className="text-xs text-gray-400 font-medium">{gp.nameEn} ग्राम पंचायत</span>
                 </div>
+                {gp.polls.length > 0 && (
+                  <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">
+                    {gp.polls.length} पोल चालू
+                  </span>
+                )}
               </div>
 
-              {/* अगर पोल बने हुए हैं तो उन्हें दिखाएं */}
               {gp.polls.length > 0 && (
                 <div className="space-y-3">
                   {gp.polls.map((poll: any) => {
                     const pollUrl = poll.slug ? `/poll/${poll.id}/${poll.slug}` : `/poll/${poll.id}`;
                     const pollTotalVotes = poll.options.reduce(
                       (sum: number, opt: any) => sum + opt.voteCount,
-                      0
+                      0,
                     );
 
                     return (
@@ -122,9 +158,7 @@ export default async function PanchayatPollingPage({ params }: Props) {
                           <span className="inline-block bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">
                             🗳 कुल वोट: {pollTotalVotes.toLocaleString('en-IN')}
                           </span>
-                          <h4 className="text-sm font-bold text-gray-900 leading-snug">
-                            {poll.question}
-                          </h4>
+                          <h4 className="text-sm font-bold text-gray-900 leading-snug">{poll.question}</h4>
                         </div>
                         <Link
                           href={pollUrl}
@@ -138,19 +172,19 @@ export default async function PanchayatPollingPage({ params }: Props) {
                 </div>
               )}
 
-              {/* ✅ चाहे पोल बना हो या ना बना हो, नीचे हमेशा नया पोल बनाने का ऑप्शन मौजूद रहेगा */}
-              <div className="pt-2 flex items-center justify-between border-t border-slate-100">
+              <div className="pt-2 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100">
                 <span className="text-xs text-slate-500 font-medium">
-                  {gp.polls.length > 0 ? 'क्या आपको नया या सुधार किया हुआ पोल बनाना है?' : 'इस ग्राम पंचायत में अभी कोई पोल नहीं है।'}
+                  {gp.polls.length > 0
+                    ? 'क्या आपको नया या सुधार किया हुआ पोल बनाना है?'
+                    : 'इस ग्राम पंचायत में अभी कोई पोल नहीं है।'}
                 </span>
                 <Link
-                  href={`/create?gp=${encodeURIComponent(gp.nameHi)}&samiti=${encodeURIComponent(decodedSamiti)}&district=${encodeURIComponent(district)}`}
+                  href={`/create?gp=${encodeURIComponent(gp.nameHi)}&samiti=${encodeURIComponent(samitiTitle)}&district=${encodeURIComponent(districtTitle)}`}
                   className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs py-2 px-4 rounded-xl transition shadow inline-block"
                 >
                   ＋ नया पोल बनाएँ →
                 </Link>
               </div>
-
             </div>
           ))}
         </div>
