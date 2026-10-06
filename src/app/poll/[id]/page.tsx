@@ -14,6 +14,7 @@ type PollPageProps = {
   params: Promise<{ id: string }>;
 };
 
+// Google SEO aur Search ranking ke liye dynamic metadata (Shuddh Hindi)
 export async function generateMetadata({ params }: PollPageProps): Promise<Metadata> {
   const { id } = await params;
   
@@ -24,17 +25,17 @@ export async function generateMetadata({ params }: PollPageProps): Promise<Metad
 
   if (!poll) {
     return {
-      title: 'Poll nahi mila - JanPoll',
-      description: 'Yeh poll ab uplabdh nahi hai.',
+      title: 'पोल नहीं मिला - JanPoll',
+      description: 'यह पोल अब उपलब्ध नहीं है।',
     };
   }
 
   return {
     title: `${poll.question} - JanPoll Rajasthan`,
-    description: `Is vishay par apna vote dein aur Rajasthan ki janta ka mat janein.`,
+    description: `इस विषय पर अपना वोट दें और राजस्थान की जनता का मत जानें।`,
     openGraph: {
       title: poll.question,
-      description: 'JanPoll par apna vote darj karein aur parinaam dekhein.',
+      description: 'JanPoll पर अपना वोट दर्ज करें और परिणाम देखें।',
       type: 'article',
     },
   };
@@ -98,7 +99,7 @@ export default async function PollPage({ params }: PollPageProps) {
             className="inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-50 hover:text-emerald-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
           >
             <span aria-hidden="true">←</span>
-            Home page par vapas jayein
+            होम पेज पर वापस जाएं
           </Link>
         </nav>
 
@@ -115,7 +116,7 @@ export default async function PollPage({ params }: PollPageProps) {
         />
 
         <div className="mt-8 p-4 bg-white rounded-2xl border border-emerald-100 shadow-sm text-center">
-          <span className="text-[10px] text-gray-400 block mb-2 uppercase tracking-wider font-semibold">Vigyaapan</span>
+          <span className="text-[10px] text-gray-400 block mb-2 uppercase tracking-wider font-semibold">विज्ञापन</span>
           <ins className="adsbygoogle"
                style={{ display: 'block' }}
                data-ad-client="ca-pub-4603205178906314"
