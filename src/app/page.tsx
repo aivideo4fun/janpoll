@@ -39,12 +39,15 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [dbError, setDbError] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
+  
+  // 📄 Pagination state (15 polls per page)
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const pollsPerPage = 15;
 
-  // 🔄 Realtime data fetching bina page refresh kiye
   useEffect(() => {
     const fetchPollsData = async () => {
       try {
-        const res = await fetch('/api/polls'); // ya aap apni API ya server action use kar sakte hain
+        const res = await fetch('/api/polls');
         if (!res.ok) throw new Error('Failed to fetch');
         const data = await res.json();
         
@@ -78,13 +81,32 @@ export default function Home() {
 
     fetchPollsData();
 
-    // Har 5 second mein automatic background refresh
     const interval = setInterval(fetchPollsData, 5000);
     return () => clearInterval(interval);
   }, [searchQuery]);
 
+  // Pagination calculation
+  const indexOfLastPoll = currentPage * pollsPerPage;
+  const indexOfFirstPoll = indexOfLastPoll - pollsPerPage;
+  const currentPolls = polls.slice(indexOfFirstPoll, indexOfLastPoll);
+  const totalPages = Math.ceil(polls.length / pollsPerPage);
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 text-gray-800">
+      
+      {/* 🛠️ Top Bar with Support Button */}
+      <div className="flex justify-between items-center mb-4">
+        <span className="text-xs font-semibold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+          📍 राजस्थान का नंबर 1 ओपिनियन पोल प्लेटफॉर्म
+        </span>
+        <Link
+          href="/contact"
+          className="inline-flex items-center gap-1 bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-3.5 py-1.5 rounded-xl text-xs shadow-sm transition"
+        >
+          <span>💬</span> सहायता / संपर्क
+        </Link>
+      </div>
+
       {/* मुख्य बैनर (Hero Section) */}
       <div className="bg-gradient-to-r from-emerald-800 to-green-700 text-white rounded-2xl p-6 md:p-10 mb-6 text-center shadow-md">
         <span className="bg-white/20 text-emerald-100 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider backdrop-blur-sm">
@@ -118,7 +140,10 @@ export default function Home() {
           <input
             type="text"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1); // Reset to page 1 on search
+            }}
             placeholder="अपनी ग्राम पंचायत, जिला या सवाल से पोल खोजें..."
             className="flex-1 px-4 py-2.5 border border-emerald-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-emerald-50/20"
           />
@@ -205,7 +230,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* सर्वाधिक लोकप्रिय पोल्स और स्मार्ट विज्ञापन (Smart Ads Every 20 Polls) */}
+      {/* सर्वाधिक लोकप्रिय पोल्स और स्मार्ट विज्ञापन */}
       <div id="recent-polls" className="mb-10">
         <h2 className="text-2xl font-bold text-emerald-900 mb-6 flex items-center gap-2">
           🔥 सक्रिय पोल्स की सूची {searchQuery ? `(खोज परिणाम: "${searchQuery}")` : ''}
@@ -219,7 +244,7 @@ export default function Home() {
           <div className="bg-white rounded-xl p-8 text-center border border-emerald-100 text-gray-500 shadow-sm">
             पोल लोड हो रहे हैं...
           </div>
-        ) : polls.length === 0 ? (
+        ) : currentPolls.length === 0 ? (
           <div className="bg-white rounded-xl p-8 text-center border border-emerald-100 text-gray-500 shadow-sm">
             {searchQuery ? 'आपके खोज शब्द से मिलता-जुलता कोई पोल नहीं मिला।' : 'अभी कोई पोल चालू नहीं है। सबसे पहला पोल आप बनाएँ!'}
             <div className="mt-4">
@@ -230,10 +255,10 @@ export default function Home() {
           </div>
         ) : (
           <div className="space-y-4">
-            {polls.map((poll, index) => {
+            {currentPolls.map((poll, index) => {
               const pollTotalVotes = poll.options.reduce((sum, opt) => sum + opt.voteCount, 0);
               const pollUrl = poll.slug ? `/poll/${poll.id}/${poll.slug}` : `/poll/${poll.id}`;
-              const showAdAfterThis = (index + 1) % 20 === 0;
+              const showAdAfterThis = (index + 1) % 5 === 0; // हर 5 पोल के बाद विज्ञापन ताकि मोबाइल यूज़र को बेहतर अनुभव मिले
 
               return (
                 <React.Fragment key={poll.id}>
@@ -288,6 +313,31 @@ export default function Home() {
                 </React.Fragment>
               );
             })}
+
+            {/* 📄 Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-3 pt-6 pb-2">
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 bg-white border border-emerald-200 rounded-xl text-xs font-bold text-emerald-900 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-emerald-50 transition shadow-sm"
+                >
+                  &larr; पिछला पेज
+                </button>
+
+                <span className="text-xs font-semibold text-gray-600">
+                  पेज {currentPage} / {totalPages}
+                </span>
+
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 bg-white border border-emerald-200 rounded-xl text-xs font-bold text-emerald-900 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-emerald-50 transition shadow-sm"
+                >
+                  अगला पेज &rarr;
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
