@@ -74,7 +74,7 @@ async function deletePoll(formData: FormData) {
   revalidatePath('/');
 }
 
-// 🛠️ Admin dwara naya option jodne ka action (Safe & Correct)
+// 🛠️ Admin dwara naya option jodne ka action
 async function addPollOption(formData: FormData) {
   'use server';
 
@@ -246,6 +246,50 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         </div>
       </div>
 
+      {/* ✉️ Contact Messages Section (Ab ise sabse upar rakh diya gaya hai) */}
+      <div className="bg-white rounded-2xl shadow-sm border border-emerald-100 overflow-hidden mb-8">
+        <div className="p-4 bg-emerald-50 border-b border-emerald-100 font-bold text-sm text-emerald-900 flex justify-between">
+          <span>✉️ यूजर संपर्क संदेश (Contact Messages)</span>
+          <span>{messages.length}</span>
+        </div>
+
+        <div className="divide-y divide-emerald-100">
+          {messages.length === 0 ? (
+            <p className="p-8 text-center text-gray-500 text-sm">
+              अभी तक कोई संपर्क संदेश प्राप्त नहीं हुआ है।
+            </p>
+          ) : (
+            messages.map((msg) => (
+              <div
+                key={msg.id}
+                className="p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
+              >
+                <div className="space-y-1">
+                  <h3 className="font-bold text-base text-gray-900">{msg.name}</h3>
+                  <div className="text-xs text-emerald-700 font-semibold">📧 {msg.email}</div>
+                  <p className="text-sm text-gray-700 mt-1 bg-emerald-50/40 p-3 rounded-xl border border-emerald-100">
+                    {msg.message}
+                  </p>
+                  <span className="text-[10px] text-gray-400">
+                    प्राप्त हुआ: {new Date(msg.createdAt).toLocaleString('hi-IN')}
+                  </span>
+                </div>
+
+                <form action={deleteMessage} className="self-end md:self-center">
+                  <input type="hidden" name="msgId" value={msg.id} />
+                  <button
+                    type="submit"
+                    className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold rounded-lg border border-red-200 transition"
+                  >
+                    संदेश डिलीट करें
+                  </button>
+                </form>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
       {/* Polls Section */}
       <div className="bg-white rounded-2xl shadow-sm border border-emerald-100 overflow-hidden mb-8">
         <div className="p-4 bg-emerald-50 border-b border-emerald-100 font-bold text-sm text-emerald-900 flex justify-between">
@@ -316,7 +360,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                       <input
                         type="text"
                         name="optionText"
-                        placeholder="नया विकल्प यहाँ जोड़ें..."
+                        placeholder="नया विकल्प यहाँ जोड़ें..."
                         required
                         className="flex-1 px-3 py-1.5 bg-white border border-emerald-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
                       />
@@ -324,7 +368,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                         type="submit"
                         className="px-4 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-xl transition shadow-sm"
                       >
-                        + विकल्प जोड़ें
+                        + विकल्प जोड़ें
                       </button>
                     </form>
                   </div>

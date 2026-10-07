@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link'; // 👈 Link import जोड़ दिया गया है
 import {
   Cell,
   Legend,
@@ -25,8 +26,38 @@ const COLORS = [
   '#F97316', // नारंगी
 ];
 
-// 📱 Optimized Mobile/Desktop Banner (320x50 or Responsive)
-function PollBanner320x50() {
+// 📱 Mobile ke liye Optimized 320x50 Ad Banner Component
+function MobileAdBanner320x50() {
+  const bannerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!bannerRef.current) return;
+    bannerRef.current.innerHTML = '';
+
+    const confScript = document.createElement('script');
+    confScript.type = 'text/javascript';
+    confScript.text = `
+      atOptions = {
+        'key' : '41a306430c4cf4c05f5cca80c78a3fef',
+        'format' : 'iframe',
+        'height' : 50,
+        'width' : 320,
+        'params' : {}
+      };
+    `;
+    bannerRef.current.appendChild(confScript);
+
+    const invokeScript = document.createElement('script');
+    invokeScript.type = 'text/javascript';
+    invokeScript.src = 'https://bicea.org/22/41a306430c4cf4c05f5cca80c78a3fef';
+    bannerRef.current.appendChild(invokeScript);
+  }, []);
+
+  return <div ref={bannerRef} className="flex justify-center my-4 overflow-hidden" />;
+}
+
+// 💻 Desktop ke liye 728x90 Leaderboard Ad Banner Component
+function DesktopAdBanner728x90() {
   const bannerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -39,8 +70,8 @@ function PollBanner320x50() {
       atOptions = {
         'key' : '4801d526481e48f32daba116c6ca2a7c',
         'format' : 'iframe',
-        'height' : 50,
-        'width' : 320,
+        'height' : 90,
+        'width' : 728,
         'params' : {}
       };
     `;
@@ -411,9 +442,16 @@ export default function PollClientView({
                 </div>
               )}
 
-              {/* 📢 Optimized Mobile 320x50 Ad Placement after results */}
+              {/* 📱 Responsive Ad Unit: Mobile par 320x50 aur Desktop par 728x90 */}
               <div className="my-4 p-3 bg-slate-50 rounded-2xl border border-slate-200 text-center flex justify-center overflow-hidden">
-                <PollBanner320x50 />
+                {/* Mobile View Ad (320x50) */}
+                <div className="block md:hidden">
+                  <MobileAdBanner320x50 />
+                </div>
+                {/* Desktop View Ad (728x90) */}
+                <div className="hidden md:block">
+                  <DesktopAdBanner728x90 />
+                </div>
               </div>
 
               {/* 📢 Google AdSense Slot */}
@@ -427,14 +465,33 @@ export default function PollClientView({
                 <script dangerouslySetInnerHTML={{ __html: '(adsbygoogle = window.adsbygoogle || []).push({});' }} />
               </div>
 
-              <button
-                type="button"
-                onClick={handleShare}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-700 px-5 py-3.5 text-base font-bold text-white shadow-sm transition-colors hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
-              >
-                <span aria-hidden="true">📲</span>
-                पोल शेयर करें
-              </button>
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={handleShare}
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-700 px-5 py-3.5 text-base font-bold text-white shadow-sm transition-colors hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+                >
+                  <span aria-hidden="true">📲</span>
+                  पोल शेयर करें
+                </button>
+
+                {/* 🔗 Trending Polls & Create Poll Quick Navigation Buttons */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                  <Link
+                    href="/"
+                    className="flex items-center justify-center gap-2 rounded-2xl bg-amber-500 hover:bg-amber-600 text-gray-900 px-4 py-3 text-sm font-bold shadow-sm transition"
+                  >
+                    <span>🔥</span> अन्य ट्रेंडिंग पोल्स देखें
+                  </Link>
+
+                  <Link
+                    href="/create"
+                    className="flex items-center justify-center gap-2 rounded-2xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 px-4 py-3 text-sm font-bold shadow-sm transition"
+                  >
+                    <span>＋</span> नया पोल बनाएँ
+                  </Link>
+                </div>
+              </div>
             </div>
           )}
         </div>
