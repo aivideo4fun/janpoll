@@ -1,97 +1,87 @@
-import Link from 'next/link';
-import React from 'react';
-import type { Metadata } from 'next';
-import { db } from '@/lib/db';
-import { getDeadline, isPollOpen } from '@/lib/poll-utils';
-import NativeBanner from '@/components/NativeBanner';
+'use client';
 
-export const dynamic = 'force-dynamic';
-export const metadata: Metadata = {
-  title: 'JanPoll Rajasthan - राजस्थान की जनता की राय और ऑनलाइन पोल',
-  description: 'राजस्थान के स्थानीय मुद्दों, ग्राम पंचायत, सरपंच चुनाव और राजनीतिक विषयों पर ऑनलाइन वोटिंग करें और जनता की राय जानें।',
-  keywords: ['rajasthan poll', 'sarpanch poll', 'vote poll', 'create poll', 'rajasthan public poll', 'janpoll'],
-  openGraph: {
-    title: 'JanPoll - राजस्थान पब्लिक पोल',
-    description: 'अपने स्थानीय मुद्दों पर अपनी राय दें और देखें जनता क्या सोचती है।',
-    url: 'https://janpoll.in',
-    siteName: 'JanPoll',
-    locale: 'hi_IN',
-    type: 'website',
-  },
-};
+import Link from 'next/link';
+import React, { useState, useEffect } from 'react';
+import NativeBanner from '@/components/NativeBanner';
 
 type HomePoll = {
   id: string;
   slug: string | null;
   question: string;
-  createdAt: Date;
+  createdAt: string | Date;
   deadlineDays: number | null;
   options: { id: string; text: string; voteCount: number }[];
   totalVotes: number;
 };
+
+function getDeadline(createdAt: string | Date, deadlineDays: number | null) {
+  const date = new Date(createdAt);
+  const days = deadlineDays ?? 3;
+  date.setDate(date.getDate() + days);
+  return date;
+}
+
+function isPollOpen(poll: { createdAt: string | Date; deadlineDays: number | null; active: boolean }) {
+  if (!poll.active) return false;
+  const deadline = getDeadline(poll.createdAt, poll.deadlineDays);
+  return new Date().getTime() < deadline.getTime();
+}
 
 function daysLeft(poll: HomePoll) {
   const ms = getDeadline(poll.createdAt, poll.deadlineDays).getTime() - Date.now();
   return Math.max(1, Math.ceil(ms / (24 * 60 * 60 * 1000)));
 }
 
-type HomeProps = {
-  searchParams: Promise<{ q?: string }>;
-};
+export default function Home() {
+  const [polls, setPolls] = useState<HomePoll[]>([]);
+  const [totalVotesCount, setTotalVotesCount] = useState<number>(0);
+  const [totalRunningPollsCount, setTotalRunningPollsCount] = useState<number>(0);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [dbError, setDbError] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
 
-export default async function Home({ searchParams }: HomeProps) {
-  const { q } = await searchParams;
-  const searchQuery = (q ?? '').trim().toLowerCase();
+  // 🔄 Realtime data fetching bina page refresh kiye
+  useEffect(() => {
+    const fetchPollsData = async () => {
+      try {
+        const res = await fetch('/api/polls'); // ya aap apni API ya server action use kar sakte hain
+        if (!res.ok) throw new Error('Failed to fetch');
+        const data = await res.json();
+        
+        const activePolls = (data.polls || []).filter(isPollOpen);
+        setTotalRunningPollsCount(activePolls.length);
 
-  let polls: HomePoll[] = [];
-  let totalVotesCount = 0;
-  let totalRunningPollsCount = 0;
-  let dbError = false;
+        let pollsWithVotes = activePolls.map((poll: any) => {
+          const totalVotes = poll.options.reduce((sum: number, opt: any) => sum + opt.voteCount, 0);
+          return { ...poll, totalVotes };
+        });
 
-  try {
-    const [allPolls, voteSum] = await Promise.all([
-      db.poll.findMany({
-        where: { active: true },
-        select: {
-          id: true,
-          slug: true,
-          question: true,
-          active: true,
-          createdAt: true,
-          deadlineDays: true,
-          options: {
-            select: { id: true, text: true, voteCount: true },
-            orderBy: { createdAt: 'asc' },
-          },
-        },
-      }),
-      db.pollOption.aggregate({ _sum: { voteCount: true } }),
-    ]);
+        // सर्वाधिक वोटों वाले पोल सबसे ऊपर
+        pollsWithVotes.sort((a: any, b: any) => b.totalVotes - a.totalVotes);
 
-    const activePolls = allPolls.filter(isPollOpen);
-    totalRunningPollsCount = activePolls.length;
+        if (searchQuery) {
+          pollsWithVotes = pollsWithVotes.filter((p: any) =>
+            p.question.toLowerCase().includes(searchQuery.toLowerCase())
+          );
+        }
 
-    let pollsWithVotes = activePolls.map((poll) => {
-      const totalVotes = poll.options.reduce((sum, opt) => sum + opt.voteCount, 0);
-      return { ...poll, totalVotes };
-    });
+        setPolls(pollsWithVotes);
+        setTotalVotesCount(data.totalVotesSum ?? 0);
+        setDbError(false);
+      } catch (err) {
+        console.error('डाटा लोड करने में त्रुटि:', err);
+        setDbError(true);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    // सर्वाधिक वोटों वाले पोल सबसे ऊपर
-    pollsWithVotes.sort((a, b) => b.totalVotes - a.totalVotes);
+    fetchPollsData();
 
-    // सर्च लॉजिक (सवाल के आधार पर)
-    if (searchQuery) {
-      pollsWithVotes = pollsWithVotes.filter((p) =>
-        p.question.toLowerCase().includes(searchQuery)
-      );
-    }
-
-    polls = pollsWithVotes;
-    totalVotesCount = voteSum._sum.voteCount ?? 0;
-  } catch (error) {
-    console.error('होम पोल लोड करने में त्रुटि:', error);
-    dbError = true;
-  }
+    // Har 5 second mein automatic background refresh
+    const interval = setInterval(fetchPollsData, 5000);
+    return () => clearInterval(interval);
+  }, [searchQuery]);
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 text-gray-800">
@@ -124,29 +114,23 @@ export default async function Home({ searchParams }: HomeProps) {
 
       {/* 🔍 सर्च बार (Search Bar) */}
       <div className="mb-6 bg-white p-4 rounded-2xl border border-emerald-100 shadow-sm">
-        <form method="GET" action="/" className="flex gap-2">
+        <div className="flex gap-2">
           <input
             type="text"
-            name="q"
-            defaultValue={searchQuery}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="अपनी ग्राम पंचायत, जिला या सवाल से पोल खोजें..."
             className="flex-1 px-4 py-2.5 border border-emerald-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-emerald-50/20"
           />
-          <button
-            type="submit"
-            className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition shadow-sm"
-          >
-            खोजें 🔍
-          </button>
           {searchQuery && (
-            <Link
-              href="/"
+            <button
+              onClick={() => setSearchQuery('')}
               className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold px-4 py-2.5 rounded-xl text-sm transition flex items-center"
             >
               रीसेट
-            </Link>
+            </button>
           )}
-        </form>
+        </div>
       </div>
 
       {/* 📢 राजस्थान पंचायती राज चुनाव 2026 सूचना बॉक्स */}
@@ -231,6 +215,10 @@ export default async function Home({ searchParams }: HomeProps) {
           <div className="bg-amber-50 border border-amber-200 text-amber-800 p-6 rounded-xl text-center">
             डेटाबेस से कनेक्ट नहीं हो पाया। कृपया थोड़ी देर बाद पुनः प्रयास करें।
           </div>
+        ) : loading ? (
+          <div className="bg-white rounded-xl p-8 text-center border border-emerald-100 text-gray-500 shadow-sm">
+            पोल लोड हो रहे हैं...
+          </div>
         ) : polls.length === 0 ? (
           <div className="bg-white rounded-xl p-8 text-center border border-emerald-100 text-gray-500 shadow-sm">
             {searchQuery ? 'आपके खोज शब्द से मिलता-जुलता कोई पोल नहीं मिला।' : 'अभी कोई पोल चालू नहीं है। सबसे पहला पोल आप बनाएँ!'}
@@ -245,8 +233,6 @@ export default async function Home({ searchParams }: HomeProps) {
             {polls.map((poll, index) => {
               const pollTotalVotes = poll.options.reduce((sum, opt) => sum + opt.voteCount, 0);
               const pollUrl = poll.slug ? `/poll/${poll.id}/${poll.slug}` : `/poll/${poll.id}`;
-
-              // हर 20 पोल के बाद विज्ञापन दिखाना
               const showAdAfterThis = (index + 1) % 20 === 0;
 
               return (
