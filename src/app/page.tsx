@@ -80,7 +80,7 @@ function getPageNumbers(current: number, total: number): (number | '…')[] {
   return result;
 }
 
-// स्क्रीन 768px या उससे बड़ी है या नहीं (सही साइज़ का विज्ञापन ही लोड हो)
+// स्क्रीन 768px या उससे बड़ी है या नहीं
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useState<boolean | null>(null);
 
@@ -95,7 +95,7 @@ function useIsDesktop() {
   return isDesktop;
 }
 
-// ---------- विज्ञापन की जगह (ऊँचाई पहले से तय, छोटी स्क्रीन पर पूरी चौड़ाई) ----------
+// ---------- विज्ञापन की जगह ----------
 function AdSlot({ kind, slotKey }: { kind: AdKind; slotKey: string }) {
   let content: React.ReactNode = null;
 
@@ -130,7 +130,7 @@ function AdSlot({ kind, slotKey }: { kind: AdKind; slotKey: string }) {
   );
 }
 
-// ---------- पेज बदलने के बटन ----------
+// ---------- पेज बदलने के बटन (Pagination) ----------
 function Pagination({
   current,
   total,
@@ -146,7 +146,7 @@ function Pagination({
     'min-h-[44px] min-w-[44px] rounded-xl border px-3 text-sm font-bold transition focus:outline-none focus:ring-2 focus:ring-emerald-500';
 
   return (
-    <nav aria-label="पोल पेज सूची" className="mt-6 space-y-3">
+    <nav aria-label="पोल पेज सूची" className="mt-8 space-y-3">
       <div className="flex items-center justify-between gap-2">
         <button
           type="button"
@@ -208,7 +208,7 @@ export default function Home() {
   const hasLoaded = useRef(false);
   const isDesktop = useIsDesktop();
 
-  // 🔄 बिना पेज रिफ्रेश किए आँकड़े अपडेट (टैब छुपा हो तो रुका रहता है)
+  // 🔄 डेटा फेचिंग
   useEffect(() => {
     let cancelled = false;
 
@@ -234,7 +234,6 @@ export default function Home() {
         hasLoaded.current = true;
       } catch (err) {
         console.error('डाटा लोड करने में त्रुटि:', err);
-        // पहले से दिख रहा डाटा न हटे, त्रुटि सिर्फ़ तब दिखे जब कभी डाटा आया ही नहीं
         if (!cancelled && !hasLoaded.current) setDbError(true);
       } finally {
         if (!cancelled) setLoading(false);
@@ -255,7 +254,7 @@ export default function Home() {
     };
   }, []);
 
-  // सर्वाधिक वोट वाले पोल सबसे ऊपर, बराबरी पर नया पोल पहले
+  // सर्वाधिक वोट वाले पोल सबसे ऊपर
   const sortedPolls = useMemo(
     () =>
       [...allPolls].sort(
@@ -277,14 +276,18 @@ export default function Home() {
   }, [sortedPolls, searchQuery]);
 
   const totalPages = Math.max(1, Math.ceil(filteredPolls.length / POLLS_PER_PAGE));
+  
+  // सुनिश्चित करें कि पेज सीमा से बाहर न जाए
   const currentPage = Math.min(page, totalPages);
-  const pagePolls = filteredPolls.slice(
-    (currentPage - 1) * POLLS_PER_PAGE,
-    currentPage * POLLS_PER_PAGE,
-  );
+  
+  const pagePolls = useMemo(() => {
+    const start = (currentPage - 1) * POLLS_PER_PAGE;
+    return filteredPolls.slice(start, start + POLLS_PER_PAGE);
+  }, [filteredPolls, currentPage]);
 
   const goToPage = (target: number) => {
-    setPage(Math.min(Math.max(target, 1), totalPages));
+    const safeTarget = Math.min(Math.max(target, 1), totalPages);
+    setPage(safeTarget);
     document.getElementById('recent-polls')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
@@ -292,7 +295,6 @@ export default function Home() {
     <div className="max-w-4xl mx-auto px-4 py-6 text-gray-800">
       {/* मुख्य बैनर (Hero Section) */}
       <div className="relative bg-gradient-to-r from-emerald-800 to-green-700 text-white rounded-2xl px-4 pb-6 pt-14 sm:px-6 md:px-10 md:pb-10 mb-6 text-center shadow-md">
-        {/* 💬 सहायता बटन: ऊपर दाएँ कोने में */}
         <Link
           href={SUPPORT_HREF}
           className="absolute right-3 top-3 inline-flex min-h-[40px] items-center gap-1.5 rounded-full bg-white/95 px-4 py-2 text-xs font-bold text-emerald-900 shadow transition hover:bg-white focus:outline-none focus:ring-2 focus:ring-white"
@@ -325,7 +327,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* 🔍 सर्च बार (Search Bar) */}
+      {/* 🔍 सर्च बार */}
       <div className="mb-6 bg-white p-3 sm:p-4 rounded-2xl border border-emerald-100 shadow-sm">
         <div className="flex gap-2">
           <input
@@ -335,7 +337,7 @@ export default function Home() {
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
-              setPage(1);
+              setPage(1); // खोज करते ही पहले पेज पर आ जाएं
             }}
             placeholder="ग्राम पंचायत, जिला या सवाल से पोल खोजें..."
             className="min-w-0 flex-1 px-4 py-3 border border-emerald-200 rounded-xl text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-emerald-50/20"
@@ -354,7 +356,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* 📢 राजस्थान पंचायती राज चुनाव 2026 सूचना बॉक्स */}
+      {/* 📢 चुनाव अपडेट */}
       <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 sm:p-5 md:p-6 mb-8 shadow-sm">
         <div className="flex items-start gap-3">
           <span className="text-2xl">📢</span>
@@ -375,7 +377,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* लाइव आँकड़े (Live Stats) */}
+      {/* लाइव आँकड़े */}
       <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-6">
         <div className="bg-white p-3 sm:p-4 rounded-xl border border-emerald-100 text-center shadow-sm">
           <div className="text-xl sm:text-2xl md:text-3xl font-black text-emerald-800">
@@ -395,7 +397,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* 📁 समाप्त हो चुके पोल्स का लिंक */}
+      {/* समाप्त हो चुके पोल्स */}
       <div className="mb-8 text-center">
         <Link
           href="/closed-polls"
@@ -405,7 +407,7 @@ export default function Home() {
         </Link>
       </div>
 
-      {/* श्रेणियाँ (Categories) */}
+      {/* श्रेणियाँ */}
       <div className="mb-8">
         <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">
           📂 पोल की श्रेणियाँ एवं स्तर
@@ -426,7 +428,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* सर्वाधिक लोकप्रिय पोल्स (15 प्रति पेज) और हर पेज के नीचे विज्ञापन */}
+      {/* सक्रिय पोल्स की सूची और पेिजिनेशन */}
       <div id="recent-polls" className="mb-10 scroll-mt-4">
         <h2 className="text-xl sm:text-2xl font-bold text-emerald-900 mb-2 flex flex-wrap items-center gap-2">
           🔥 सक्रिय पोल्स की सूची {searchQuery ? `(खोज परिणाम: "${searchQuery}")` : ''}
@@ -466,7 +468,6 @@ export default function Home() {
                   .filter(Boolean)
                   .join(' · ');
 
-                // बीच का विज्ञापन तभी, जब उसके बाद भी कोई पोल बचा हो (अंत वाला विज्ञापन अलग आता है)
                 const slot = number < pagePolls.length ? AD_AFTER_POLL[number] : undefined;
                 const midAdKind: AdKind | undefined =
                   slot && isDesktop !== null ? (isDesktop ? slot.desktop : slot.mobile) : undefined;
@@ -528,7 +529,7 @@ export default function Home() {
               })}
             </div>
 
-            {/* हर पेज के 15 पोल के नीचे विज्ञापन, उसके बाद अगला पेज बटन */}
+            {/* विज्ञापन और Pagination कॉम्पोनेंट */}
             <AdSlot kind={END_AD} slotKey={`end-${currentPage}`} />
 
             <Pagination current={currentPage} total={totalPages} onChange={goToPage} />
@@ -536,7 +537,7 @@ export default function Home() {
         )}
       </div>
 
-      {/* पेज के अंत में कॉल-टू-एक्शन */}
+      {/* कॉल-टू-एक्शन */}
       <div className="bg-gradient-to-r from-emerald-900 to-emerald-800 text-white rounded-3xl p-6 sm:p-8 text-center shadow-lg my-10">
         <h2 className="text-xl sm:text-2xl font-black mb-2">क्या आप अपनी पंचायत या वार्ड का पोल बनाना चाहते हैं?</h2>
         <p className="text-emerald-100 text-xs md:text-sm max-w-md mx-auto mb-6">
