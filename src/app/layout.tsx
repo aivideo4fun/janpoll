@@ -1,10 +1,11 @@
 import './globals.css';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import Providers from './providers'; // 👈 Providers import kiya gaya hai
+import Providers from './providers';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://janpoll.in'),
   title: 'JanPoll — राजस्थान की सबसे भरोसेमंद पब्लिक पोलिंग वेबसाइट',
   description: 'राजस्थान के मुद्दों और चुनावों पर अपनी राय दें। Rajasthan public opinion poll, political surveys, and secure voting platform.',
   keywords: [
@@ -13,10 +14,10 @@ export const metadata: Metadata = {
     'JanPoll Rajasthan',
     'राजस्थान चुनावी सर्वे',
     'राजस्थान की जनता की राय',
-    'online voting poll India'
+    'online voting poll India',
   ],
   icons: {
-    icon: '/favicon.ico', // 👈 यहाँ favicon.ico का पाथ जोड़ा गया है
+    icon: '/favicon.ico',
     shortcut: '/favicon.ico',
     apple: '/favicon.ico',
   },
@@ -29,11 +30,14 @@ export const metadata: Metadata = {
     type: 'website',
   },
 };
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: '#047857',
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="hi">
       <head>
