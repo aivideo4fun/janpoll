@@ -90,21 +90,21 @@ export default async function Home({ searchParams }: HomeProps) {
     pollsWithVotes.sort((a, b) => b.totalVotes - a.totalVotes);
 
     // सर्च लॉजिक
-    if (searchQuery) {
-      pollsWithVotes = pollsWithVotes.filter((p) => {
-        const qText = p.question.toLowerCase();
-        const dist = (p.districtName ?? '').toLowerCase();
-        const samiti = (p.samitiName ?? '').toLowerCase();
-        const gp = (p.gramPanchayatName ?? '').toLowerCase();
+   if (searchQuery) {
+  pollsWithVotes = pollsWithVotes.filter((p: any) => {
+    const qText = p.question.toLowerCase();
+    const dist = ((p.districtName as string) ?? '').toLowerCase();
+    const samiti = ((p.samitiName as string) ?? '').toLowerCase();
+    const gp = ((p.gramPanchayatName as string) ?? '').toLowerCase();
 
-        return (
-          qText.includes(searchQuery) ||
-          dist.includes(searchQuery) ||
-          samiti.includes(searchQuery) ||
-          gp.includes(searchQuery)
-        );
-      });
-    }
+    return (
+      qText.includes(searchQuery) ||
+      dist.includes(searchQuery) ||
+      samiti.includes(searchQuery) ||
+      gp.includes(searchQuery)
+    );
+  });
+}
 
     totalPages = Math.max(1, Math.ceil(pollsWithVotes.length / pollsPerPage));
     const validPage = Math.min(currentPage, totalPages);
