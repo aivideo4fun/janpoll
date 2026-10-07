@@ -25,7 +25,8 @@ const COLORS = [
   '#F97316', // नारंगी
 ];
 
-function PollBanner300x250() {
+// 📱 Optimized Mobile/Desktop Banner (320x50 or Responsive)
+function PollBanner320x50() {
   const bannerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -38,8 +39,8 @@ function PollBanner300x250() {
       atOptions = {
         'key' : '4801d526481e48f32daba116c6ca2a7c',
         'format' : 'iframe',
-        'height' : 250,
-        'width' : 300,
+        'height' : 50,
+        'width' : 320,
         'params' : {}
       };
     `;
@@ -410,9 +411,9 @@ export default function PollClientView({
                 </div>
               )}
 
-              {/* 📢 Vote Submit / Result ke baad Adsterra 300x250 Banner */}
+              {/* 📢 Optimized Mobile 320x50 Ad Placement after results */}
               <div className="my-4 p-3 bg-slate-50 rounded-2xl border border-slate-200 text-center flex justify-center overflow-hidden">
-                <PollBanner300x250 />
+                <PollBanner320x50 />
               </div>
 
               {/* 📢 Google AdSense Slot */}
