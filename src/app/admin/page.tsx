@@ -15,8 +15,71 @@ import {
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  robots: { index: false, follow: false },
+  title: 'Admin Dashboard',
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
+
+type SearchParams = {
+  error?: string;
+};
+
+type AdminPageProps = {
+  searchParams: Promise<SearchParams>;
+};
+
+type PollData = {
+  id: string;
+  question: string;
+  creatorName: string | null;
+  creatorEmail: string | null;
+  createdAt: Date;
+  active: boolean;
+  options: {
+    id: string;
+    text: string;
+    voteCount: number;
+    createdAt: Date;
+  }[];
+};
+
+type MessageData = {
+  id: string;
+  name: string;
+  email: string;
+  whatsapp: string | null;
+  message: string;
+  createdAt: Date;
+};
+
+/* -----------------------------
+   Date and text helpers
+------------------------------ */
+
+function formatIndiaDateTime(value: Date | string) {
+  return new Intl.DateTimeFormat('hi-IN', {
+    timeZone: 'Asia/Kolkata',
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(new Date(value));
+}
+
+function formatIndiaDate(value: Date | string) {
+  return new Intl.DateTimeFormat('hi-IN', {
+    timeZone: 'Asia/Kolkata',
+    dateStyle: 'medium',
+  }).format(new Date(value));
+}
+
+function whatsappDigits(value: string) {
+  return value.replace(/\D/g, '');
+}
+
+/* -----------------------------
+   Login action
+------------------------------ */
 
 async function handleLogin(formData: FormData) {
   'use server';
@@ -28,13 +91,17 @@ async function handleLogin(formData: FormData) {
     redirect('/admin?error=config');
   }
 
-  const adminUser = process.env.ADMIN_USER!.trim();
-  const adminPass = process.env.ADMIN_PASS!.trim();
+  const adminUser = process.env.ADMIN_USER?.trim() ?? '';
+  const adminPass = process.env.ADMIN_PASS ?? '';
 
-  if (safeEqual(username, adminUser) && safeEqual(password, adminPass)) {
+  if (
+    safeEqual(username, adminUser) &&
+    safeEqual(password, adminPass)
+  ) {
     await createAdminSession();
 
     const cookieStore = await cookies();
+
     cookieStore.set({
       name: 'admin_session',
       value: 'authenticated',
@@ -51,8 +118,13 @@ async function handleLogin(formData: FormData) {
   redirect('/admin?error=invalid');
 }
 
+/* -----------------------------
+   Logout action
+------------------------------ */
+
 async function handleLogout() {
   'use server';
+
   await destroyAdminSession();
 
   const cookieStore = await cookies();
@@ -61,143 +133,216 @@ async function handleLogout() {
   redirect('/admin');
 }
 
+/* -----------------------------
+   Delete poll action
+------------------------------ */
+
 async function deletePoll(formData: FormData) {
   'use server';
 
   if (!(await isAdmin())) return;
 
-  const pollId = String(formData.get('pollId') ?? '');
+  const pollId = String(formData.get('pollId') ?? '').trim();
+
   if (!pollId) return;
 
-  await db.poll.delete({ where: { id: pollId } });
-  revalidatePath('/admin');
-  revalidatePath('/');
+  try {
+    await db.poll.delete({
+      where: {
+        id: pollId,
+      },
+    });
+
+    revalidatePath('/admin');
+    revalidatePath('/');
+  } catch (error) {
+    console.error('Delete poll error:', error);
+  }
 }
 
-// 🛠️ Admin dwara naya option jodne ka action
+/* -----------------------------
+   Add poll option action
+------------------------------ */
+
 async function addPollOption(formData: FormData) {
   'use server';
 
   if (!(await isAdmin())) return;
 
-  const pollId = String(formData.get('pollId') ?? '');
+  const pollId = String(formData.get('pollId') ?? '').trim();
   const optionText = String(formData.get('optionText') ?? '').trim();
 
   if (!pollId || !optionText) return;
 
-  await db.pollOption.create({
-    data: {
-      pollId,
-      text: optionText,
-      voteCount: 0,
-    },
-  });
+  if (optionText.length > 255) return;
 
-  revalidatePath('/admin');
-  revalidatePath(`/poll/${pollId}`);
+  try {
+    const poll = await db.poll.findUnique({
+      where: {
+        id: pollId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!poll) return;
+
+    await db.pollOption.create({
+      data: {
+        pollId,
+        text: optionText,
+        voteCount: 0,
+      },
+    });
+
+    revalidatePath('/admin');
+    revalidatePath(`/poll/${pollId}`);
+  } catch (error) {
+    console.error('Add poll option error:', error);
+  }
 }
+
+/* -----------------------------
+   Delete contact message action
+------------------------------ */
 
 async function deleteMessage(formData: FormData) {
   'use server';
 
   if (!(await isAdmin())) return;
 
-  const msgId = String(formData.get('msgId') ?? '');
+  const msgId = String(formData.get('msgId') ?? '').trim();
+
   if (!msgId) return;
 
-  await db.contactMessage.delete({ where: { id: msgId } });
-  revalidatePath('/admin');
+  try {
+    await db.contactMessage.delete({
+      where: {
+        id: msgId,
+      },
+    });
+
+    revalidatePath('/admin');
+  } catch (error) {
+    console.error('Delete contact message error:', error);
+  }
 }
 
-type AdminPageProps = {
-  searchParams: Promise<{ error?: string }>;
-};
+/* -----------------------------
+   Login screen
+------------------------------ */
 
-export default async function AdminPage({ searchParams }: AdminPageProps) {
-  const { error } = await searchParams;
+function LoginScreen({ error }: { error?: string }) {
+  return (
+    <div className="mx-auto mt-16 max-w-md px-4 sm:mt-20">
+      <div className="overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-xl">
+        <div className="bg-gradient-to-br from-emerald-800 to-emerald-600 px-6 py-8 text-center text-white">
+          <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/15 text-3xl">
+            🔐
+          </div>
 
-  if (!(await isAdmin())) {
-    return (
-      <div className="max-w-md mx-auto mt-20 px-4">
-        <div className="bg-white p-8 rounded-2xl shadow-md border border-emerald-100">
-          <h1 className="text-2xl font-black text-emerald-900 mb-2 text-center">
-            🔐 एडमिन पोर्टल प्रमाणीकरण
+          <h1 className="text-2xl font-black">
+            एडमिन पोर्टल
           </h1>
-          <p className="text-xs text-gray-500 mb-6 text-center">
-            केवल अधिकृत प्रशासकों के लिए। कृपया अपने क्रेडेंशियल्स दर्ज करें।
-          </p>
 
+          <p className="mt-2 text-xs text-emerald-50">
+            केवल अधिकृत प्रशासकों के लिए
+          </p>
+        </div>
+
+        <div className="p-6 sm:p-8">
           {error === 'invalid' && (
-            <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center text-xs font-semibold text-red-700">
+            <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center text-xs font-semibold text-red-700">
               यूज़रनेम या पासवर्ड गलत है।
             </div>
           )}
 
           {error === 'config' && (
-            <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-xs font-semibold text-amber-800">
-              सर्वर पर एडमिन क्रेडेंशियल्स सेट नहीं हैं।
+            <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-xs font-semibold text-amber-800">
+              सर्वर पर एडमिन credentials सेट नहीं हैं।
             </div>
           )}
 
-          <form action={handleLogin} className="space-y-4">
+          <form action={handleLogin} className="space-y-5">
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">यूज़रनेम (Username)</label>
+              <label
+                htmlFor="username"
+                className="mb-1.5 block text-xs font-bold text-gray-700"
+              >
+                यूज़रनेम
+              </label>
+
               <input
-                type="text"
+                id="username"
                 name="username"
+                type="text"
                 required
                 autoComplete="username"
-                className="w-full px-3 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 placeholder="यूज़रनेम दर्ज करें"
+                className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
               />
             </div>
+
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">पासवर्ड (Password)</label>
+              <label
+                htmlFor="password"
+                className="mb-1.5 block text-xs font-bold text-gray-700"
+              >
+                पासवर्ड
+              </label>
+
               <input
-                type="password"
+                id="password"
                 name="password"
+                type="password"
                 required
                 autoComplete="current-password"
-                className="w-full px-3 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 placeholder="पासवर्ड दर्ज करें"
+                className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
               />
             </div>
+
             <button
               type="submit"
-              className="w-full py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl text-sm transition shadow"
+              className="w-full rounded-xl bg-emerald-700 py-3 text-sm font-bold text-white shadow transition hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-300"
             >
               लॉग इन करें
             </button>
           </form>
 
-          <div className="mt-6 text-center">
-            <Link href="/" className="text-xs text-emerald-700 font-semibold underline">
-              &larr; होम पेज पर वापस जाएं
+          <div className="mt-6 border-t border-gray-100 pt-5 text-center">
+            <Link
+              href="/"
+              className="text-xs font-semibold text-emerald-700 hover:underline"
+            >
+              ← होम पेज पर वापस जाएं
             </Link>
           </div>
         </div>
       </div>
-    );
+    </div>
+  );
+}
+
+/* -----------------------------
+   Main admin page
+------------------------------ */
+
+export default async function AdminPage({
+  searchParams,
+}: AdminPageProps) {
+  const { error } = await searchParams;
+
+  const authenticated = await isAdmin();
+
+  if (!authenticated) {
+    return <LoginScreen error={error} />;
   }
 
-  let polls: Array<{
-    id: string;
-    question: string;
-    creatorName: string | null;
-    creatorEmail: string | null;
-    createdAt: Date;
-    active: boolean;
-    options: { id: string; text: string; voteCount: number; createdAt: Date }[];
-  }> = [];
-
-  let messages: Array<{
-    id: string;
-    name: string;
-    email: string;
-    whatsapp?: string | null; // 👈 yahan ? lagane se type error khatam ho jayegi
-    message: string;
-    createdAt: Date;
-  }> = [];
+  let polls: PollData[] = [];
+  let messages: MessageData[] = [];
+  let loadError = '';
 
   try {
     polls = await db.poll.findMany({
@@ -208,182 +353,438 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         creatorEmail: true,
         createdAt: true,
         active: true,
-        options: { select: { id: true, text: true, voteCount: true, createdAt: true } },
+        options: {
+          select: {
+            id: true,
+            text: true,
+            voteCount: true,
+            createdAt: true,
+          },
+          orderBy: {
+            createdAt: 'asc',
+          },
+        },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
 
     messages = await db.contactMessage.findMany({
-      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        whatsapp: true,
+        message: true,
+        createdAt: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
-  } catch (err) {
-    console.error('एडमिन डेटा लोड करने में त्रुटि:', err);
+  } catch (error) {
+    console.error('Admin data loading error:', error);
+    loadError =
+      'डेटा लोड नहीं हो पाया। कृपया कुछ समय बाद दोबारा प्रयास करें।';
   }
 
+  const totalVotes = polls.reduce(
+    (pollTotal, poll) =>
+      pollTotal +
+      poll.options.reduce(
+        (optionTotal, option) => optionTotal + option.voteCount,
+        0
+      ),
+    0
+  );
+
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 text-gray-800">
-      <div className="flex justify-between items-center mb-8 bg-white p-6 rounded-2xl shadow-sm border border-emerald-100">
-        <div>
-          <h1 className="text-2xl font-black text-emerald-900">🛠 एडमिन प्रबंधन डैशबोर्ड</h1>
-          <p className="text-xs text-gray-500 mt-1">
-            सार्वजनिक पोल्स और यूजर संदेशों की निगरानी, समीक्षा और संचालन करें।
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/"
-            className="px-3 py-2 bg-emerald-50 text-emerald-800 text-xs font-bold rounded-xl border border-emerald-200"
-          >
-            होम &rarr;
-          </Link>
-          <form action={handleLogout}>
-            <button
-              type="submit"
-              className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold rounded-xl border border-red-200 transition"
-            >
-              लॉग आउट
-            </button>
-          </form>
-        </div>
-      </div>
-
-      {/* ✉️ Contact Messages Section */}
-      <div className="bg-white rounded-2xl shadow-sm border border-emerald-100 overflow-hidden mb-8">
-        <div className="p-4 bg-emerald-50 border-b border-emerald-100 font-bold text-sm text-emerald-900 flex justify-between">
-          <span>✉️ यूजर संपर्क संदेश (Contact Messages)</span>
-          <span>{messages.length}</span>
-        </div>
-
-        <div className="divide-y divide-emerald-100">
-          {messages.length === 0 ? (
-            <p className="p-8 text-center text-gray-500 text-sm">
-              अभी तक कोई संपर्क संदेश प्राप्त नहीं हुआ है।
-            </p>
-          ) : (
-            messages.map((msg) => (
-              <div
-                key={msg.id}
-                className="p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
-              >
-                <div className="space-y-1">
-                  <h3 className="font-bold text-base text-gray-900">{msg.name}</h3>
-                  <div className="text-xs text-emerald-700 font-semibold flex flex-wrap gap-4">
-                    <span>📧 {msg.email}</span>
-                    {msg.whatsapp && (
-                      <span className="text-green-700 font-bold">📱 WhatsApp: {msg.whatsapp}</span>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-700 mt-1 bg-emerald-50/40 p-3 rounded-xl border border-emerald-100">
-                    {msg.message}
-                  </p>
-                  <span className="text-[10px] text-gray-400">
-                    प्राप्त हुआ: {new Date(msg.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })}
-                  </span>
-                </div>
-
-                <form action={deleteMessage} className="self-end md:self-center">
-                  <input type="hidden" name="msgId" value={msg.id} />
-                  <button
-                    type="submit"
-                    className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold rounded-lg border border-red-200 transition"
-                  >
-                    संदेश डिलीट करें
-                  </button>
-                </form>
+    <main className="min-h-screen bg-slate-50">
+      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
+        {/* Header */}
+        <header className="mb-6 overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-900 via-emerald-800 to-emerald-700 text-white shadow-lg">
+          <div className="flex flex-col gap-6 p-6 sm:p-8 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-[11px] font-bold text-emerald-50">
+                <span className="h-2 w-2 rounded-full bg-emerald-300" />
+                सुरक्षित एडमिन एरिया
               </div>
-            ))
-          )}
-        </div>
-      </div>
 
-      {/* Polls Section */}
-      <div className="bg-white rounded-2xl shadow-sm border border-emerald-100 overflow-hidden mb-8">
-        <div className="p-4 bg-emerald-50 border-b border-emerald-100 font-bold text-sm text-emerald-900 flex justify-between">
-          <span>कुल पंजीकृत पोल्स</span>
-          <span>{polls.length}</span>
-        </div>
+              <h1 className="text-2xl font-black sm:text-3xl">
+                एडमिन प्रबंधन डैशबोर्ड
+              </h1>
 
-        <div className="divide-y divide-emerald-100">
-          {polls.length === 0 ? (
-            <p className="p-8 text-center text-gray-500 text-sm">
-              डेटाबेस में कोई पोल उपलब्ध नहीं है।
+              <p className="mt-2 max-w-2xl text-xs leading-5 text-emerald-100 sm:text-sm">
+                सार्वजनिक पोल्स, वोट्स और यूजर संपर्क संदेशों की निगरानी एवं संचालन करें।
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                href="/"
+                className="rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-white/20"
+              >
+                होम →
+              </Link>
+
+              <form action={handleLogout}>
+                <button
+                  type="submit"
+                  className="rounded-xl bg-red-500/90 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-red-600"
+                >
+                  लॉग आउट
+                </button>
+              </form>
+            </div>
+          </div>
+        </header>
+
+        {/* Error */}
+        {loadError && (
+          <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-sm font-semibold text-red-700">
+            {loadError}
+          </div>
+        )}
+
+        {/* Stats */}
+        <section className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
+            <p className="text-xs font-semibold text-gray-500">
+              कुल पोल्स
             </p>
-          ) : (
-            polls.map((poll) => {
-              const totalVotes = poll.options.reduce((sum, opt) => sum + opt.voteCount, 0);
+            <p className="mt-2 text-3xl font-black text-emerald-800">
+              {polls.length}
+            </p>
+          </div>
 
-              return (
-                <div key={poll.id} className="p-5 space-y-4">
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div className="space-y-1">
-                      <h3 className="font-bold text-base text-gray-900">{poll.question}</h3>
-                      <div className="text-xs text-gray-500 flex flex-wrap gap-3">
-                        <span>👤 निर्माता: {poll.creatorName || 'गुमनाम (Anonymous)'}</span>
-                        <span>📧 ईमेल: {poll.creatorEmail || 'उपलब्ध नहीं'}</span>
-                        <span>👥 कुल वोट: {totalVotes}</span>
-                        <span>📅 दिनांक: {new Date(poll.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}</span>
-                        <span>{poll.active ? '🟢 सक्रिय' : '⚪ निष्क्रिय'}</span>
+          <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
+            <p className="text-xs font-semibold text-gray-500">
+              सक्रिय पोल्स
+            </p>
+            <p className="mt-2 text-3xl font-black text-emerald-800">
+              {polls.filter((poll) => poll.active).length}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
+            <p className="text-xs font-semibold text-gray-500">
+              कुल वोट्स
+            </p>
+            <p className="mt-2 text-3xl font-black text-emerald-800">
+              {totalVotes}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
+            <p className="text-xs font-semibold text-gray-500">
+              संपर्क संदेश
+            </p>
+            <p className="mt-2 text-3xl font-black text-emerald-800">
+              {messages.length}
+            </p>
+          </div>
+        </section>
+
+        {/* Contact Messages */}
+        <section className="mb-8 overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-emerald-100 bg-emerald-50 px-5 py-4">
+            <div>
+              <h2 className="text-sm font-black text-emerald-900 sm:text-base">
+                ✉️ यूजर संपर्क संदेश
+              </h2>
+              <p className="mt-1 text-[11px] text-emerald-700">
+                Contact Us form से प्राप्त सभी messages
+              </p>
+            </div>
+
+            <span className="rounded-full bg-emerald-700 px-3 py-1 text-xs font-bold text-white">
+              {messages.length}
+            </span>
+          </div>
+
+          <div className="divide-y divide-emerald-100">
+            {messages.length === 0 ? (
+              <div className="px-5 py-12 text-center">
+                <div className="text-4xl">📭</div>
+                <p className="mt-3 text-sm font-semibold text-gray-500">
+                  अभी तक कोई संपर्क संदेश प्राप्त नहीं हुआ है।
+                </p>
+              </div>
+            ) : (
+              messages.map((msg) => {
+                const whatsappNumber = msg.whatsapp
+                  ? whatsappDigits(msg.whatsapp)
+                  : '';
+
+                return (
+                  <article
+                    key={msg.id}
+                    className="p-5 transition hover:bg-emerald-50/30 sm:p-6"
+                  >
+                    <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="min-w-0 flex-1 space-y-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="text-base font-black text-gray-900">
+                            {msg.name}
+                          </h3>
+
+                          <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-800">
+                            संपर्क संदेश
+                          </span>
+                        </div>
+
+                        <div className="flex flex-col gap-2 text-xs sm:flex-row sm:flex-wrap sm:gap-4">
+                          <a
+                            href={`mailto:${msg.email}`}
+                            className="font-semibold text-emerald-700 hover:underline"
+                          >
+                            📧 {msg.email}
+                          </a>
+
+                          {msg.whatsapp ? (
+                            <a
+                              href={
+                                whatsappNumber
+                                  ? `https://wa.me/${whatsappNumber}`
+                                  : '#'
+                              }
+                              target="_blank"
+                              rel="noreferrer"
+                              className="font-semibold text-green-700 hover:underline"
+                            >
+                              📱 WhatsApp: {msg.whatsapp}
+                            </a>
+                          ) : (
+                            <span className="text-gray-400">
+                              📱 WhatsApp नंबर नहीं दिया गया
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4">
+                          <p className="whitespace-pre-wrap text-sm leading-6 text-gray-700">
+                            {msg.message}
+                          </p>
+                        </div>
+
+                        <p className="text-[11px] text-gray-400">
+                          प्राप्त हुआ: {formatIndiaDateTime(msg.createdAt)}
+                        </p>
                       </div>
-                    </div>
 
-                    <div className="flex items-center gap-2 self-end md:self-center">
-                      <Link
-                        href={`/poll/${poll.id}`}
-                        target="_blank"
-                        className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-lg border border-emerald-200 transition"
+                      <form
+                        action={deleteMessage}
+                        className="lg:pt-1"
                       >
-                        देखें &rarr;
-                      </Link>
-                      <form action={deletePoll}>
-                        <input type="hidden" name="pollId" value={poll.id} />
+                        <input
+                          type="hidden"
+                          name="msgId"
+                          value={msg.id}
+                        />
+
                         <button
                           type="submit"
-                          className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold rounded-lg border border-red-200 transition"
+                          formAction={deleteMessage}
+                          className="w-full rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-xs font-bold text-red-700 transition hover:bg-red-100 lg:w-auto"
                         >
-                          पोल डिलीट करें
+                          संदेश डिलीट करें
                         </button>
                       </form>
                     </div>
-                  </div>
+                  </article>
+                );
+              })
+            )}
+          </div>
+        </section>
 
-                  {/* Existing Options List & Add New Option Form */}
-                  <div className="bg-emerald-50/40 p-4 rounded-xl border border-emerald-100 space-y-3">
-                    <p className="text-xs font-bold text-emerald-900">मौजूदा विकल्प:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {poll.options.map((opt) => (
-                        <span
-                          key={opt.id}
-                          className="bg-white px-3 py-1 rounded-lg text-xs border border-emerald-200 text-gray-700 font-medium"
+        {/* Polls */}
+        <section className="overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-emerald-100 bg-emerald-50 px-5 py-4">
+            <div>
+              <h2 className="text-sm font-black text-emerald-900 sm:text-base">
+                📊 पंजीकृत पोल्स
+              </h2>
+              <p className="mt-1 text-[11px] text-emerald-700">
+                सभी public polls और उनके options
+              </p>
+            </div>
+
+            <span className="rounded-full bg-emerald-700 px-3 py-1 text-xs font-bold text-white">
+              {polls.length}
+            </span>
+          </div>
+
+          <div className="divide-y divide-emerald-100">
+            {polls.length === 0 ? (
+              <div className="px-5 py-12 text-center">
+                <div className="text-4xl">📊</div>
+                <p className="mt-3 text-sm font-semibold text-gray-500">
+                  डेटाबेस में कोई पोल उपलब्ध नहीं है।
+                </p>
+              </div>
+            ) : (
+              polls.map((poll) => {
+                const pollTotalVotes = poll.options.reduce(
+                  (sum, option) => sum + option.voteCount,
+                  0
+                );
+
+                return (
+                  <article
+                    key={poll.id}
+                    className="p-5 transition hover:bg-emerald-50/20 sm:p-6"
+                  >
+                    <div className="flex flex-col gap-5">
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="min-w-0">
+                          <div className="mb-2 flex flex-wrap items-center gap-2">
+                            <span
+                              className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${
+                                poll.active
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : 'bg-gray-100 text-gray-600'
+                              }`}
+                            >
+                              {poll.active
+                                ? '● सक्रिय'
+                                : '○ निष्क्रिय'}
+                            </span>
+
+                            <span className="text-[11px] text-gray-400">
+                              {formatIndiaDate(poll.createdAt)}
+                            </span>
+                          </div>
+
+                          <h3 className="text-lg font-black leading-7 text-gray-900">
+                            {poll.question}
+                          </h3>
+
+                          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-gray-500">
+                            <span>
+                              👤{' '}
+                              <strong className="text-gray-700">
+                                {poll.creatorName || 'गुमनाम'}
+                              </strong>
+                            </span>
+
+                            <span>
+                              📧{' '}
+                              <strong className="text-gray-700">
+                                {poll.creatorEmail || 'ईमेल उपलब्ध नहीं'}
+                              </strong>
+                            </span>
+
+                            <span>
+                              👥{' '}
+                              <strong className="text-gray-700">
+                                {pollTotalVotes} वोट
+                              </strong>
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex shrink-0 flex-wrap gap-2">
+                          <Link
+                            href={`/poll/${poll.id}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800 transition hover:bg-emerald-100"
+                          >
+                            पोल देखें →
+                          </Link>
+
+                          <form action={deletePoll}>
+                            <input
+                              type="hidden"
+                              name="pollId"
+                              value={poll.id}
+                            />
+
+                            <button
+                              type="submit"
+                              className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700 transition hover:bg-red-100"
+                            >
+                              पोल डिलीट करें
+                            </button>
+                          </form>
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4">
+                        <div className="mb-3 flex items-center justify-between">
+                          <p className="text-xs font-black text-emerald-900">
+                            मौजूदा विकल्प
+                          </p>
+
+                          <span className="text-[10px] font-semibold text-gray-500">
+                            {poll.options.length} विकल्प
+                          </span>
+                        </div>
+
+                        {poll.options.length === 0 ? (
+                          <p className="mb-4 text-xs text-gray-500">
+                            इस पोल में अभी कोई option नहीं है।
+                          </p>
+                        ) : (
+                          <div className="mb-4 grid gap-2 sm:grid-cols-2">
+                            {poll.options.map((option) => (
+                              <div
+                                key={option.id}
+                                className="flex items-center justify-between gap-3 rounded-xl border border-emerald-100 bg-white px-3 py-2.5"
+                              >
+                                <span className="min-w-0 truncate text-xs font-semibold text-gray-700">
+                                  {option.text}
+                                </span>
+
+                                <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-black text-emerald-800">
+                                  {option.voteCount} वोट
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        <form
+                          action={addPollOption}
+                          className="flex flex-col gap-2 sm:flex-row"
                         >
-                          {opt.text} <span className="text-emerald-700 font-bold">({opt.voteCount} वोट)</span>
-                        </span>
-                      ))}
-                    </div>
+                          <input
+                            type="hidden"
+                            name="pollId"
+                            value={poll.id}
+                          />
 
-                    {/* Admin option adder form */}
-                    <form action={addPollOption} className="flex gap-2 pt-2">
-                      <input type="hidden" name="pollId" value={poll.id} />
-                      <input
-                        type="text"
-                        name="optionText"
-                        placeholder="नया विकल्प यहाँ जोड़ें..."
-                        required
-                        className="flex-1 px-3 py-1.5 bg-white border border-emerald-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      />
-                      <button
-                        type="submit"
-                        className="px-4 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-xl transition shadow-sm"
-                      >
-                        + विकल्प जोड़ें
-                      </button>
-                    </form>
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
+                          <input
+                            type="text"
+                            name="optionText"
+                            required
+                            maxLength={255}
+                            placeholder="नया विकल्प यहाँ जोड़ें..."
+                            className="min-w-0 flex-1 rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-xs outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                          />
+
+                          <button
+                            type="submit"
+                            className="rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-800"
+                          >
+                            + विकल्प जोड़ें
+                          </button>
+                        </form>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })
+            )}
+          </div>
+        </section>
+
+        <footer className="py-8 text-center text-[11px] text-gray-400">
+          Admin dashboard • सभी समय IST में दिखाए जा रहे हैं
+        </footer>
       </div>
-    </div>
+    </main>
   );
 }
