@@ -37,10 +37,10 @@ type PollData = {
   creatorEmail: string | null;
   createdAt: Date;
   active: boolean;
-  districtName: string | null;     // 👈 जोड़ें
-  samitiName: string | null;       // 👈 जोड़ें
-  gramPanchayatName: string | null; // 👈 जोड़ें
-  gramPanchayatId: number | null;  // 👈 जोड़ें
+  districtName: string | null;
+  samitiName: string | null;
+  gramPanchayatName: string | null;
+  gramPanchayatId: string | null; // 👈 इसे String | null कर दिया गया है
   options: {
     id: string;
     text: string;
@@ -379,30 +379,31 @@ export default async function AdminPage({
     });
 
     // 🛠️ Advanced Auto-linking for Hindi and English names
-for (const poll of polls) {
-  if (!poll.gramPanchayatId && poll.gramPanchayatName) {
-    const qName = poll.gramPanchayatName.trim();
-    
-    const matchedGp = await db.gramPanchayat.findFirst({
-      where: {
-        OR: [
-          { nameHi: { equals: qName } },
-          { nameEn: { equals: qName, mode: 'insensitive' } },
-          { nameHi: { contains: qName } },
-          { nameEn: { contains: qName, mode: 'insensitive' } }
-        ],
-      },
-      select: { id: true },
-    });
+    for (const poll of polls) {
+      if (!poll.gramPanchayatId && poll.gramPanchayatName) {
+        const qName = poll.gramPanchayatName.trim();
+        
+        const matchedGp = await db.gramPanchayat.findFirst({
+          where: {
+            OR: [
+              { nameHi: { equals: qName } },
+              { nameEn: { equals: qName, mode: 'insensitive' } },
+              { nameHi: { contains: qName } },
+              { nameEn: { contains: qName, mode: 'insensitive' } }
+            ],
+          },
+          select: { id: true },
+        });
 
-    if (matchedGp) {
-      await db.poll.update({
-        where: { id: poll.id },
-        data: { gramPanchayatId: matchedGp.id },
-      });
+        if (matchedGp) {
+          await db.poll.update({
+            where: { id: poll.id },
+            data: { gramPanchayatId: matchedGp.id },
+          });
+          poll.gramPanchayatId = matchedGp.id; // local update
+        }
+      }
     }
-  }
-}
 
     messages = await db.contactMessage.findMany({
       select: {
