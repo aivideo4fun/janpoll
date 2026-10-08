@@ -63,7 +63,7 @@ export async function POST(req: Request) {
         districtName: districtName || null,
         samitiName: samitiName || null,
         gramPanchayatName: gramPanchayatName || null,
-        gramPanchayatId: gramPanchayatId ? Number(gramPanchayatId) : null,
+        gramPanchayatId: gramPanchayatId || null,
         creatorName: creatorName || null,
         creatorEmail: creatorEmail || null,
         options: {
