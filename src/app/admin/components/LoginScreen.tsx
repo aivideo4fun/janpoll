@@ -22,7 +22,7 @@ export default function LoginScreen({ error }: { error?: string }) {
 
           {error === 'config' && (
             <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-xs font-semibold text-amber-800">
-              सरवर पर admin credentials सेट नहीं हैं।
+              सर्वर पर admin credentials सेट नहीं हैं।
             </div>
           )}
 
