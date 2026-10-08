@@ -169,10 +169,7 @@ async function editPoll(formData: FormData) {
   if (samitiName.length > 100) return;
   if (gramPanchayatName.length > 100) return;
 
-  const gramPanchayatId =
-    gramPanchayatIdValue && !Number.isNaN(Number(gramPanchayatIdValue))
-      ? Number(gramPanchayatIdValue)
-      : null;
+  const gramPanchayatId = gramPanchayatIdValue ? String(gramPanchayatIdValue) : null;
 
   const active = activeValue === 'true';
 
