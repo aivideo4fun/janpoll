@@ -40,7 +40,7 @@ type PollData = {
   districtName: string | null;
   samitiName: string | null;
   gramPanchayatName: string | null;
-  gramPanchayatId: number | null; // 👈 इसे number | null करें (क्योंकि prisma में Int है)
+  gramPanchayatId: string | null; // 👈 इसे number | null से बदलकर string | null करें
   options: {
     id: string;
     text: string;

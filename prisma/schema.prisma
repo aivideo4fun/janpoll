@@ -8,27 +8,27 @@ generator client {
 }
 
 model Poll {
-  id                String   @id @default(uuid())
-  slug              String?  @db.VarChar(500)
-  question          String   @db.VarChar(500)
-  creatorName       String?  @db.VarChar(100)
-  creatorEmail      String?  @db.VarChar(255)
-  isVerified        Boolean  @default(false)
-  creatorIp         String?  @db.VarChar(45)
-  deadlineDays      Int      @default(3)
-  active            Boolean  @default(true)
+  id                  String   @id @default(uuid())
+  slug                String?  @db.VarChar(500)
+  question            String   @db.VarChar(500)
+  creatorName         String?  @db.VarChar(100)
+  creatorEmail        String?  @db.VarChar(255)
+  isVerified          Boolean  @default(false)
+  creatorIp           String?  @db.VarChar(45)
+  deadlineDays        Int      @default(3)
+  active              Boolean  @default(true)
   
   // 📍 Location Fields
-  districtName      String?  @db.VarChar(100)
-  samitiName        String?  @db.VarChar(100)
-  gramPanchayatName String?  @db.VarChar(100)
-  gramPanchayatId   Int?     // 👈 अब यह टाइपस्किप्ट और प्रिज्म में सही पहचाना जाएगा
+  districtName        String?  @db.VarChar(100)
+  samitiName          String?  @db.VarChar(100)
+  gramPanchayatName   String?  @db.VarChar(100)
+  gramPanchayatId     String?  // 👈 यहाँ Int? की जगह String? कर लें
 
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+      createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
-  options           PollOption[] // 👈 PollOption सही नाम है
-  votes             Vote[]
+  options             PollOption[]
+  votes               Vote[]
 
   @@index([active])
   @@index([createdAt])
