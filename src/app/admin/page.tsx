@@ -40,7 +40,7 @@ type PollData = {
   districtName: string | null;
   samitiName: string | null;
   gramPanchayatName: string | null;
-  gramPanchayatId: string | null; // 👈 इसे number | null से बदलकर string | null करें
+  gramPanchayatId: number | null;
   options: {
     id: string;
     text: string;
@@ -59,7 +59,7 @@ type MessageData = {
 };
 
 /* -----------------------------
-   Date and text helpers
+   Helpers
 ------------------------------ */
 
 function formatIndiaDateTime(value: Date | string) {
@@ -81,14 +81,18 @@ function whatsappDigits(value: string) {
   return value.replace(/\D/g, '');
 }
 
+function formValue(formData: FormData, key: string) {
+  return String(formData.get(key) ?? '').trim();
+}
+
 /* -----------------------------
-   Login action
+   Login
 ------------------------------ */
 
 async function handleLogin(formData: FormData) {
   'use server';
 
-  const username = String(formData.get('username') ?? '').trim();
+  const username = formValue(formData, 'username');
   const password = String(formData.get('password') ?? '');
 
   if (!adminConfigured()) {
@@ -123,7 +127,7 @@ async function handleLogin(formData: FormData) {
 }
 
 /* -----------------------------
-   Logout action
+   Logout
 ------------------------------ */
 
 async function handleLogout() {
@@ -138,7 +142,93 @@ async function handleLogout() {
 }
 
 /* -----------------------------
-   Delete poll action
+   Edit poll
+------------------------------ */
+
+async function editPoll(formData: FormData) {
+  'use server';
+
+  if (!(await isAdmin())) return;
+
+  const pollId = formValue(formData, 'pollId');
+  const question = formValue(formData, 'question');
+  const creatorName = formValue(formData, 'creatorName');
+  const creatorEmail = formValue(formData, 'creatorEmail');
+  const districtName = formValue(formData, 'districtName');
+  const samitiName = formValue(formData, 'samitiName');
+  const gramPanchayatName = formValue(formData, 'gramPanchayatName');
+  const gramPanchayatIdValue = formValue(formData, 'gramPanchayatId');
+  const activeValue = formValue(formData, 'active');
+
+  if (!pollId || !question) return;
+
+  if (question.length > 500) return;
+  if (creatorName.length > 100) return;
+  if (creatorEmail.length > 255) return;
+  if (districtName.length > 100) return;
+  if (samitiName.length > 100) return;
+  if (gramPanchayatName.length > 100) return;
+
+  const gramPanchayatId =
+    gramPanchayatIdValue && !Number.isNaN(Number(gramPanchayatIdValue))
+      ? Number(gramPanchayatIdValue)
+      : null;
+
+  const active = activeValue === 'true';
+
+  const optionIds = formData.getAll('optionId').map(String);
+  const optionTexts = formData
+    .getAll('optionText')
+    .map((value) => String(value).trim());
+
+  try {
+    await db.$transaction(async (tx) => {
+      await tx.poll.update({
+        where: {
+          id: pollId,
+        },
+        data: {
+          question,
+          creatorName: creatorName || null,
+          creatorEmail: creatorEmail || null,
+          districtName: districtName || null,
+          samitiName: samitiName || null,
+          gramPanchayatName: gramPanchayatName || null,
+          gramPanchayatId,
+          active,
+        },
+      });
+
+      for (let index = 0; index < optionIds.length; index++) {
+        const optionId = optionIds[index];
+        const optionText = optionTexts[index];
+
+        if (!optionId || !optionText || optionText.length > 255) {
+          continue;
+        }
+
+        await tx.pollOption.updateMany({
+          where: {
+            id: optionId,
+            pollId,
+          },
+          data: {
+            text: optionText,
+          },
+        });
+      }
+    });
+
+    revalidatePath('/admin');
+    revalidatePath('/');
+    revalidatePath(`/poll/${pollId}`);
+  } catch (error) {
+    console.error('Edit poll error:', error);
+  }
+}
+
+/* -----------------------------
+   Delete poll
 ------------------------------ */
 
 async function deletePoll(formData: FormData) {
@@ -146,7 +236,7 @@ async function deletePoll(formData: FormData) {
 
   if (!(await isAdmin())) return;
 
-  const pollId = String(formData.get('pollId') ?? '').trim();
+  const pollId = formValue(formData, 'pollId');
 
   if (!pollId) return;
 
@@ -165,7 +255,7 @@ async function deletePoll(formData: FormData) {
 }
 
 /* -----------------------------
-   Add poll option action
+   Add poll option
 ------------------------------ */
 
 async function addPollOption(formData: FormData) {
@@ -173,11 +263,10 @@ async function addPollOption(formData: FormData) {
 
   if (!(await isAdmin())) return;
 
-  const pollId = String(formData.get('pollId') ?? '').trim();
-  const optionText = String(formData.get('optionText') ?? '').trim();
+  const pollId = formValue(formData, 'pollId');
+  const optionText = formValue(formData, 'optionText');
 
   if (!pollId || !optionText) return;
-
   if (optionText.length > 255) return;
 
   try {
@@ -208,7 +297,7 @@ async function addPollOption(formData: FormData) {
 }
 
 /* -----------------------------
-   Delete contact message action
+   Delete message
 ------------------------------ */
 
 async function deleteMessage(formData: FormData) {
@@ -216,7 +305,7 @@ async function deleteMessage(formData: FormData) {
 
   if (!(await isAdmin())) return;
 
-  const msgId = String(formData.get('msgId') ?? '').trim();
+  const msgId = formValue(formData, 'msgId');
 
   if (!msgId) return;
 
@@ -264,7 +353,7 @@ function LoginScreen({ error }: { error?: string }) {
 
           {error === 'config' && (
             <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-xs font-semibold text-amber-800">
-              सर्वर पर एडमिन credentials सेट नहीं हैं।
+              सर्वर पर admin credentials सेट नहीं हैं।
             </div>
           )}
 
@@ -338,9 +427,7 @@ export default async function AdminPage({
 }: AdminPageProps) {
   const { error } = await searchParams;
 
-  const authenticated = await isAdmin();
-
-  if (!authenticated) {
+  if (!(await isAdmin())) {
     return <LoginScreen error={error} />;
   }
 
@@ -378,32 +465,12 @@ export default async function AdminPage({
       },
     });
 
-    // 🛠️ Advanced Auto-linking for Hindi and English names
-    for (const poll of polls) {
-      if (!poll.gramPanchayatId && poll.gramPanchayatName) {
-        const qName = poll.gramPanchayatName.trim();
-        
-        const matchedGp = await db.gramPanchayat.findFirst({
-          where: {
-            OR: [
-              { nameHi: { equals: qName } },
-              { nameEn: { equals: qName, mode: 'insensitive' } },
-              { nameHi: { contains: qName } },
-              { nameEn: { contains: qName, mode: 'insensitive' } }
-            ],
-          },
-          select: { id: true },
-        });
-
-        if (matchedGp) {
-          await db.poll.update({
-            where: { id: poll.id },
-            data: { gramPanchayatId: matchedGp.id },
-          });
-          poll.gramPanchayatId = matchedGp.id; // local update
-        }
-      }
-    }
+    /*
+      Existing polls के gramPanchayatId को automatically match करना।
+      यह block तभी रखें जब gramPanchayatId का Prisma type String हो।
+      आपके दिए schema में gramPanchayatId Int? है, इसलिए नीचे वाला
+      auto-link block फिलहाल disable रखा गया है।
+    */
 
     messages = await db.contactMessage.findMany({
       select: {
@@ -420,6 +487,7 @@ export default async function AdminPage({
     });
   } catch (error) {
     console.error('Admin data loading error:', error);
+
     loadError =
       'डेटा लोड नहीं हो पाया। कृपया कुछ समय बाद दोबारा प्रयास करें।';
   }
@@ -528,6 +596,7 @@ export default async function AdminPage({
               <h2 className="text-sm font-black text-emerald-900 sm:text-base">
                 ✉️ यूजर संपर्क संदेश
               </h2>
+
               <p className="mt-1 text-[11px] text-emerald-700">
                 Contact Us form से प्राप्त सभी messages
               </p>
@@ -542,6 +611,7 @@ export default async function AdminPage({
             {messages.length === 0 ? (
               <div className="px-5 py-12 text-center">
                 <div className="text-4xl">📭</div>
+
                 <p className="mt-3 text-sm font-semibold text-gray-500">
                   अभी तक कोई संपर्क संदेश प्राप्त नहीं हुआ है।
                 </p>
@@ -620,7 +690,6 @@ export default async function AdminPage({
 
                         <button
                           type="submit"
-                          formAction={deleteMessage}
                           className="w-full rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-xs font-bold text-red-700 transition hover:bg-red-100 lg:w-auto"
                         >
                           संदेश डिलीट करें
@@ -641,6 +710,7 @@ export default async function AdminPage({
               <h2 className="text-sm font-black text-emerald-900 sm:text-base">
                 📊 पंजीकृत पोल्स
               </h2>
+
               <p className="mt-1 text-[11px] text-emerald-700">
                 सभी public polls और उनके options
               </p>
@@ -655,6 +725,7 @@ export default async function AdminPage({
             {polls.length === 0 ? (
               <div className="px-5 py-12 text-center">
                 <div className="text-4xl">📊</div>
+
                 <p className="mt-3 text-sm font-semibold text-gray-500">
                   डेटाबेस में कोई पोल उपलब्ध नहीं है।
                 </p>
@@ -717,6 +788,15 @@ export default async function AdminPage({
                                 {pollTotalVotes} वोट
                               </strong>
                             </span>
+
+                            {poll.districtName && (
+                              <span>
+                                📍{' '}
+                                <strong className="text-gray-700">
+                                  {poll.districtName}
+                                </strong>
+                              </span>
+                            )}
                           </div>
                         </div>
 
@@ -747,6 +827,240 @@ export default async function AdminPage({
                         </div>
                       </div>
 
+                      {/* Edit Poll Form */}
+                      <details className="group rounded-2xl border border-blue-200 bg-blue-50/40">
+                        <summary className="cursor-pointer list-none px-4 py-3 text-xs font-black text-blue-900">
+                          <span className="mr-2 inline-block transition group-open:rotate-90">
+                            ▶
+                          </span>
+                          इस पोल को एडिट करें
+                        </summary>
+
+                        <div className="border-t border-blue-200 p-4">
+                          <form action={editPoll} className="space-y-4">
+                            <input
+                              type="hidden"
+                              name="pollId"
+                              value={poll.id}
+                            />
+
+                            <div>
+                              <label
+                                htmlFor={`question-${poll.id}`}
+                                className="mb-1.5 block text-xs font-bold text-gray-700"
+                              >
+                                पोल की heading / question
+                              </label>
+
+                              <textarea
+                                id={`question-${poll.id}`}
+                                name="question"
+                                required
+                                maxLength={500}
+                                defaultValue={poll.question}
+                                rows={3}
+                                className="w-full rounded-xl border border-blue-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                              />
+                            </div>
+
+                            <div className="grid gap-4 md:grid-cols-2">
+                              <div>
+                                <label
+                                  htmlFor={`creatorName-${poll.id}`}
+                                  className="mb-1.5 block text-xs font-bold text-gray-700"
+                                >
+                                  Creator name
+                                </label>
+
+                                <input
+                                  id={`creatorName-${poll.id}`}
+                                  name="creatorName"
+                                  type="text"
+                                  maxLength={100}
+                                  defaultValue={poll.creatorName ?? ''}
+                                  className="w-full rounded-xl border border-blue-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                />
+                              </div>
+
+                              <div>
+                                <label
+                                  htmlFor={`creatorEmail-${poll.id}`}
+                                  className="mb-1.5 block text-xs font-bold text-gray-700"
+                                >
+                                  Creator email
+                                </label>
+
+                                <input
+                                  id={`creatorEmail-${poll.id}`}
+                                  name="creatorEmail"
+                                  type="email"
+                                  maxLength={255}
+                                  defaultValue={poll.creatorEmail ?? ''}
+                                  className="w-full rounded-xl border border-blue-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="grid gap-4 md:grid-cols-3">
+                              <div>
+                                <label
+                                  htmlFor={`districtName-${poll.id}`}
+                                  className="mb-1.5 block text-xs font-bold text-gray-700"
+                                >
+                                  जिला
+                                </label>
+
+                                <input
+                                  id={`districtName-${poll.id}`}
+                                  name="districtName"
+                                  type="text"
+                                  maxLength={100}
+                                  defaultValue={poll.districtName ?? ''}
+                                  className="w-full rounded-xl border border-blue-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                />
+                              </div>
+
+                              <div>
+                                <label
+                                  htmlFor={`samitiName-${poll.id}`}
+                                  className="mb-1.5 block text-xs font-bold text-gray-700"
+                                >
+                                  पंचायत समिति
+                                </label>
+
+                                <input
+                                  id={`samitiName-${poll.id}`}
+                                  name="samitiName"
+                                  type="text"
+                                  maxLength={100}
+                                  defaultValue={poll.samitiName ?? ''}
+                                  className="w-full rounded-xl border border-blue-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                />
+                              </div>
+
+                              <div>
+                                <label
+                                  htmlFor={`gramPanchayatName-${poll.id}`}
+                                  className="mb-1.5 block text-xs font-bold text-gray-700"
+                                >
+                                  ग्राम पंचायत
+                                </label>
+
+                                <input
+                                  id={`gramPanchayatName-${poll.id}`}
+                                  name="gramPanchayatName"
+                                  type="text"
+                                  maxLength={100}
+                                  defaultValue={poll.gramPanchayatName ?? ''}
+                                  className="w-full rounded-xl border border-blue-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="grid gap-4 md:grid-cols-2">
+                              <div>
+                                <label
+                                  htmlFor={`gramPanchayatId-${poll.id}`}
+                                  className="mb-1.5 block text-xs font-bold text-gray-700"
+                                >
+                                  Gram Panchayat ID
+                                </label>
+
+                                <input
+                                  id={`gramPanchayatId-${poll.id}`}
+                                  name="gramPanchayatId"
+                                  type="number"
+                                  min={1}
+                                  defaultValue={
+                                    poll.gramPanchayatId ?? ''
+                                  }
+                                  className="w-full rounded-xl border border-blue-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                />
+
+                                <p className="mt-1 text-[10px] text-gray-500">
+                                  यदि ID उपलब्ध नहीं है तो खाली छोड़ें।
+                                </p>
+                              </div>
+
+                              <div>
+                                <label
+                                  htmlFor={`active-${poll.id}`}
+                                  className="mb-1.5 block text-xs font-bold text-gray-700"
+                                >
+                                  Poll status
+                                </label>
+
+                                <select
+                                  id={`active-${poll.id}`}
+                                  name="active"
+                                  defaultValue={
+                                    poll.active ? 'true' : 'false'
+                                  }
+                                  className="w-full rounded-xl border border-blue-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                >
+                                  <option value="true">
+                                    सक्रिय
+                                  </option>
+                                  <option value="false">
+                                    निष्क्रिय
+                                  </option>
+                                </select>
+                              </div>
+                            </div>
+
+                            <div>
+                              <div className="mb-2 flex items-center justify-between">
+                                <p className="text-xs font-black text-gray-700">
+                                  Poll options edit करें
+                                </p>
+
+                                <span className="text-[10px] text-gray-500">
+                                  Votes सुरक्षित रहेंगे
+                                </span>
+                              </div>
+
+                              <div className="space-y-2">
+                                {poll.options.map((option) => (
+                                  <div
+                                    key={option.id}
+                                    className="flex flex-col gap-2 sm:flex-row sm:items-center"
+                                  >
+                                    <input
+                                      type="hidden"
+                                      name="optionId"
+                                      value={option.id}
+                                    />
+
+                                    <input
+                                      type="text"
+                                      name="optionText"
+                                      required
+                                      maxLength={255}
+                                      defaultValue={option.text}
+                                      className="min-w-0 flex-1 rounded-xl border border-blue-200 bg-white px-3 py-2.5 text-xs outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                    />
+
+                                    <span className="shrink-0 rounded-full bg-emerald-100 px-3 py-2 text-center text-[10px] font-black text-emerald-800">
+                                      {option.voteCount} वोट
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end">
+                              <button
+                                type="submit"
+                                className="rounded-xl bg-blue-700 px-5 py-2.5 text-xs font-bold text-white shadow transition hover:bg-blue-800"
+                              >
+                                ✓ बदलाव सुरक्षित करें
+                              </button>
+                            </div>
+                          </form>
+                        </div>
+                      </details>
+
+                      {/* Existing options and add option */}
                       <div className="rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4">
                         <div className="mb-3 flex items-center justify-between">
                           <p className="text-xs font-black text-emerald-900">
