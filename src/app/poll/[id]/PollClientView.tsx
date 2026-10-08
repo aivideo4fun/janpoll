@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link'; // 👈 Link import जोड़ दिया गया है
+import Link from 'next/link';
 import {
   Cell,
   Legend,
@@ -452,17 +452,6 @@ export default function PollClientView({
                 <div className="hidden md:block">
                   <DesktopAdBanner728x90 />
                 </div>
-              </div>
-
-              {/* 📢 Google AdSense Slot */}
-              <div className="my-4 p-2 bg-white rounded-xl border border-emerald-100 text-center">
-                <ins className="adsbygoogle"
-                     style={{ display: 'block' }}
-                     data-ad-client="ca-pub-4603205178906314"
-                     data-ad-slot="YOUR_VOTE_RESULT_AD_SLOT"
-                     data-ad-format="auto"
-                     data-full-width-responsive="true"></ins>
-                <script dangerouslySetInnerHTML={{ __html: '(adsbygoogle = window.adsbygoogle || []).push({});' }} />
               </div>
 
               <div className="space-y-3">
