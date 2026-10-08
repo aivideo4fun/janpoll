@@ -75,6 +75,7 @@ model ContactMessage {
   id        String   @id @default(uuid())
   name      String   @db.VarChar(100)
   email     String   @db.VarChar(255)
+  whatsapp  String?  @db.VarChar(20)   // 👈 नया WhatsApp फील्ड (ऑपशनल)
   message   String   @db.Text
   createdAt DateTime @default(now())
 

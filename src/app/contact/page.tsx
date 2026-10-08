@@ -6,6 +6,7 @@ import Link from 'next/link';
 export default function ContactPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [whatsapp, setWhatsapp] = useState(''); // 👈 WhatsApp state
   const [message, setMessage] = useState('');
   const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(false);
@@ -19,7 +20,7 @@ export default function ContactPage() {
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, message }),
+        body: JSON.stringify({ name, email, whatsapp, message }), // 👈 body में भेजा गया
       });
 
       const data = await res.json();
@@ -27,6 +28,7 @@ export default function ContactPage() {
         setStatus('संदेश सफलतापूर्वक भेज दिया गया है!');
         setName('');
         setEmail('');
+        setWhatsapp('');
         setMessage('');
       } else {
         setStatus(data.message || 'त्रुटि हुई।');
@@ -76,6 +78,16 @@ export default function ContactPage() {
             />
           </div>
           <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1">व्हाट्सएप नंबर (वैकल्पिक)</label>
+            <input
+              type="tel"
+              value={whatsapp}
+              onChange={(e) => setWhatsapp(e.target.value)}
+              className="w-full px-3 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              placeholder="जैसे: 9876543210"
+            />
+          </div>
+          <div>
             <label className="block text-xs font-bold text-gray-700 mb-1">संदेश या सुझाव (MESSAGE) *</label>
             <textarea
               required
@@ -95,7 +107,6 @@ export default function ContactPage() {
           </button>
         </form>
 
-        {/* Direct Email Support Section */}
         <div className="mt-6 pt-6 border-t border-gray-100 text-center">
           <p className="text-xs text-gray-500 mb-1">सीधे ईमेल द्वारा संपर्क करें:</p>
           <a href="mailto:support@catchbuddy.in" className="text-xs font-bold text-emerald-700 hover:underline">

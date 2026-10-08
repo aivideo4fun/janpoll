@@ -3,7 +3,6 @@ import type { Metadata, Viewport } from 'next';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import Providers from './providers';
-import SocialBarAd from '@/components/SocialBarAd';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://janpoll.in'),
@@ -53,7 +52,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Navbar />
           <main className="flex-grow">{children}</main>
           <Footer />
-          <SocialBarAd />
         </Providers>
       </body>
     </html>
