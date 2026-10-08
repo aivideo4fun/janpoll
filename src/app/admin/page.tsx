@@ -194,6 +194,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     id: string;
     name: string;
     email: string;
+    whatsapp?: string | null; // 👈 yahan ? lagane se type error khatam ho jayegi
     message: string;
     createdAt: Date;
   }> = [];
@@ -246,7 +247,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         </div>
       </div>
 
-      {/* ✉️ Contact Messages Section (Ab ise sabse upar rakh diya gaya hai) */}
+      {/* ✉️ Contact Messages Section */}
       <div className="bg-white rounded-2xl shadow-sm border border-emerald-100 overflow-hidden mb-8">
         <div className="p-4 bg-emerald-50 border-b border-emerald-100 font-bold text-sm text-emerald-900 flex justify-between">
           <span>✉️ यूजर संपर्क संदेश (Contact Messages)</span>
@@ -266,12 +267,17 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
               >
                 <div className="space-y-1">
                   <h3 className="font-bold text-base text-gray-900">{msg.name}</h3>
-                  <div className="text-xs text-emerald-700 font-semibold">📧 {msg.email}</div>
+                  <div className="text-xs text-emerald-700 font-semibold flex flex-wrap gap-4">
+                    <span>📧 {msg.email}</span>
+                    {msg.whatsapp && (
+                      <span className="text-green-700 font-bold">📱 WhatsApp: {msg.whatsapp}</span>
+                    )}
+                  </div>
                   <p className="text-sm text-gray-700 mt-1 bg-emerald-50/40 p-3 rounded-xl border border-emerald-100">
                     {msg.message}
                   </p>
                   <span className="text-[10px] text-gray-400">
-                    प्राप्त हुआ: {new Date(msg.createdAt).toLocaleString('hi-IN')}
+                    प्राप्त हुआ: {new Date(msg.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })}
                   </span>
                 </div>
 
@@ -315,7 +321,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                         <span>👤 निर्माता: {poll.creatorName || 'गुमनाम (Anonymous)'}</span>
                         <span>📧 ईमेल: {poll.creatorEmail || 'उपलब्ध नहीं'}</span>
                         <span>👥 कुल वोट: {totalVotes}</span>
-                        <span>📅 दिनांक: {new Date(poll.createdAt).toLocaleDateString('hi-IN')}</span>
+                        <span>📅 दिनांक: {new Date(poll.createdAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}</span>
                         <span>{poll.active ? '🟢 सक्रिय' : '⚪ निष्क्रिय'}</span>
                       </div>
                     </div>
