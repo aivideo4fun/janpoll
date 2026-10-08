@@ -18,7 +18,7 @@ function CreatePollContent() {
   const districtParam = searchParams.get('district');
 
   const [question, setQuestion] = useState(
-    gpParam ? `${gpParam} ग्राम पंचायत में सरपंच पद के लिए सबसे योग्य उम्मीदवार कौन है?` : ''
+    gpParam ? `${gpParam} ग्राम पंचायत में सरपंच पद के लिए सर्वाधिक उपयुक्त और योग्य उम्मीदवार कौन है?` : ''
   );
   const [deadlineDays, setDeadlineDays] = useState('3');
   const [options, setOptions] = useState(['', '']);
@@ -44,7 +44,7 @@ function CreatePollContent() {
           }
         }
       } catch (err) {
-        console.error('मौजूदा पोल की जांच करने में त्रुटि:', err);
+        console.error('मौजूदा जनमत संग्रह की जाँच करने में त्रुटि:', err);
       } finally {
         setCheckingExisting(false);
       }
@@ -54,7 +54,7 @@ function CreatePollContent() {
   }, [gpParam, gpIdParam, router]);
 
   const handleAddOption = () => {
-    if (options.length < 8) {
+    if (options.length < 15) {
       setOptions([...options, '']);
     }
   };
@@ -76,12 +76,12 @@ function CreatePollContent() {
     setError('');
 
     if (!session) {
-      setError('कृपया आगे बढ़ने से पहले अपने Google खाते से साइन इन करें।');
+      setError('कृपया आगे बढ़ने से पहले अपने गूगल खाते से प्रमाणीकरण (Sign In) पूर्ण करें।');
       return;
     }
 
     if (!question.trim()) {
-      setError('कृपया पोल का मुख्य प्रश्न दर्ज करें।');
+      setError('कृपया जनमत संग्रह का मुख्य प्रश्न दर्ज करें।');
       return;
     }
 
@@ -105,7 +105,6 @@ function CreatePollContent() {
           samitiName: samitiParam || null,
           gramPanchayatName: gpParam || null,
           gramPanchayatId: gpIdParam ? parseInt(gpIdParam, 10) : null,
-          // 🛠️ Creator details backend/API ko bhejna sunishchit karein
           creatorName: session.user?.name || null,
           creatorEmail: session.user?.email || null,
         }),
@@ -114,12 +113,12 @@ function CreatePollContent() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || 'पोल बनाते समय तकनीकी त्रुटि हुई।');
+        throw new Error(data.message || 'पोल प्रकाशित करते समय तकनीकी त्रुटि उत्पन्न हुई।');
       }
 
       router.push(`/poll/${data.pollId}`);
     } catch (err: any) {
-      setError(err.message || 'कुछ गलत हो गया, कृपया पुनः प्रयास करें।');
+      setError(err.message || 'अपेक्षित त्रुटि, कृपया कुछ समय पश्चात पुनः प्रयास करें।');
       setLoading(false);
     }
   };
@@ -127,7 +126,7 @@ function CreatePollContent() {
   if (status === 'loading' || checkingExisting) {
     return (
       <div className="min-h-screen flex items-center justify-center text-emerald-800 font-semibold bg-slate-50">
-        सत्यापन किया जा रहा है कि इस पंचायत में पहले से पोल मौजूद है या नहीं...
+        सत्यापन किया जा रहा है कि इस क्षेत्र में पूर्व में कोई जनमत संग्रह सक्रिय है या नहीं...
       </div>
     );
   }
@@ -139,19 +138,19 @@ function CreatePollContent() {
         <div className="mb-6 border-b border-emerald-100 pb-4 flex justify-between items-center">
           <div>
             <h1 className="text-2xl md:text-3xl font-black text-emerald-900">
-              नया सत्यापित पोल बनाएँ {gpParam ? `- ${gpParam}` : ''}
+              नया सत्यापित पोल सृजित करें {gpParam ? `- ${gpParam}` : ''}
             </h1>
             <p className="text-xs md:text-sm text-gray-500 mt-1">
-              {gpParam ? `${districtParam || 'राजस्थान'} / ${samitiParam || ''} / ${gpParam}` : 'Google द्वारा सुरक्षित और वेरिफाइड पोल प्रकाशित करें।'}
+              {gpParam ? `${districtParam || 'राजस्थान'} / ${samitiParam || ''} / ${gpParam}` : 'सुरक्षित और गूगल-सत्यापित लोक-मत मंच।'}
             </p>
           </div>
           <Link href="/" className="text-xs text-emerald-700 font-bold underline">
-            &larr; होम पेज
+            &larr; मुख्य पृष्ठ
           </Link>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm">
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm font-medium">
             {error}
           </div>
         )}
@@ -160,16 +159,16 @@ function CreatePollContent() {
           <div className="text-center py-10 space-y-5 bg-emerald-50/50 rounded-2xl border border-emerald-100 p-6">
             <span className="text-4xl">🔐</span>
             <div>
-              <h3 className="font-bold text-gray-900 text-base">Google पहचान सत्यापन आवश्यक है</h3>
+              <h3 className="font-bold text-gray-900 text-base">गूगल पहचान सत्यापन आवश्यक है</h3>
               <p className="text-xs text-gray-500 mt-1">
-                अप्रामाणिक या आपत्तिजनक पोस्ट रोकने के लिए पोल बनाने से पहले अपने Google खाते से लॉगिन करें।
+                अवांछित या अनधिकृत प्रविष्टियों को रोकने के लिए जनमत संग्रह सृजित करने से पूर्व अपने गूगल खाते से प्रवेश करें।
               </p>
             </div>
             <button
               onClick={() => signIn('google')}
               className="px-6 py-3 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl text-sm transition shadow flex items-center justify-center gap-2 mx-auto"
             >
-              <span>🌐</span> Google के साथ साइन इन करें
+              <span>🌐</span> गूगल के साथ साइन इन करें
             </button>
           </div>
         ) : (
@@ -180,19 +179,19 @@ function CreatePollContent() {
                 <p className="text-sm font-semibold text-gray-900">{session.user?.name} ({session.user?.email})</p>
               </div>
               <span className="px-2.5 py-1 bg-emerald-700 text-white text-xs font-bold rounded-lg">
-                ✓ Google सत्यापित
+                ✓ गूगल सत्यापित
               </span>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
                 <label className="block text-xs font-bold text-emerald-900 uppercase tracking-wider mb-1">
-                  पोल का प्रश्न (Question) *
+                  जनमत संग्रह प्रश्न (Question) *
                 </label>
                 <textarea
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}
-                  placeholder="यहाँ अपना प्रश्न लिखें..."
+                  placeholder="यहाँ अपना प्रश्न स्पष्ट शब्दों में लिखें..."
                   rows={3}
                   required
                   className="w-full px-4 py-2.5 rounded-xl border border-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm bg-emerald-50/20"
@@ -201,7 +200,7 @@ function CreatePollContent() {
 
               <div>
                 <label className="block text-xs font-bold text-emerald-900 uppercase tracking-wider mb-1">
-                  ⏳ पोल की समय-सीमा (Duration) *
+                  ⏳ सक्रिय समयावधि (Duration) *
                 </label>
                 <select
                   value={deadlineDays}
@@ -217,16 +216,16 @@ function CreatePollContent() {
 
               <div>
                 <label className="block text-xs font-bold text-emerald-900 uppercase tracking-wider mb-2">
-                  विकल्प (Options - अधिकतम 8) *
+                  विकल्प (Options - अधिकतम 15) *
                 </label>
-                <div className="space-y-3">
+                <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
                   {options.map((option, index) => (
                     <div key={index} className="flex gap-2">
                       <input
                         type="text"
                         value={option}
                         onChange={(e) => handleOptionChange(index, e.target.value)}
-                        placeholder={`विकल्प ${index + 1}`}
+                        placeholder={`उम्मीदवार / विकल्प ${index + 1}`}
                         required
                         className="flex-1 px-4 py-2 rounded-xl border border-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm bg-emerald-50/20"
                       />
@@ -243,13 +242,13 @@ function CreatePollContent() {
                   ))}
                 </div>
 
-                {options.length < 8 && (
+                {options.length < 15 && (
                   <button
                     type="button"
                     onClick={handleAddOption}
-                    className="mt-3 text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1"
+                    className="mt-3 text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 transition"
                   >
-                    + नया विकल्प जोड़ें
+                    + नया विकल्प जोड़ें (अधिकतम 15)
                   </button>
                 )}
               </div>

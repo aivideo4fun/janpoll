@@ -10,14 +10,12 @@ import { safeDecode } from '@/lib/location';
 import { googleAuthOptions } from '@/lib/google-auth';
 
 function readText(formData: FormData, keys: string[], fallbackUrl: URL | null) {
-  // 1. Pehle FormData me check karein
   for (const key of keys) {
     const fromForm = formData.get(key);
     if (typeof fromForm === 'string' && fromForm.trim()) {
       return safeDecode(fromForm.trim());
     }
   }
-  // 2. Agar FormData me na ho, toh fallbackUrl (URL parameters) me check karein
   if (fallbackUrl) {
     for (const key of keys) {
       const fromUrl = fallbackUrl.searchParams.get(key);
@@ -32,7 +30,7 @@ function readText(formData: FormData, keys: string[], fallbackUrl: URL | null) {
 export async function createPollAction(formData: FormData) {
   const session = await getServerSession(googleAuthOptions);
   if (!session || !session.user) {
-    throw new Error('कृपया पहले Google से साइन-इन करें।');
+    throw new Error('कृपया पहले गूगल से साइन-इन करें।');
   }
 
   const question = String(formData.get('question') ?? '').trim();
@@ -45,10 +43,10 @@ export async function createPollAction(formData: FormData) {
     .getAll('options')
     .map((opt) => (typeof opt === 'string' ? opt.trim() : ''))
     .filter((opt) => opt !== '')
-    .slice(0, 8);
+    .slice(0, 15); // 👈 अब अधिकतम 15 विकल्प स्वीकार किए जाएंगे
 
   if (!question || optionsText.length < 2) {
-    throw new Error('कृपया सवाल और कम से कम 2 विकल्प भरें।');
+    throw new Error('कृपया वैध प्रश्न एवं न्यूनतम 2 विकल्प दर्ज करें।');
   }
 
   const headersList = await headers();
@@ -60,19 +58,12 @@ export async function createPollAction(formData: FormData) {
     referrerUrl = null;
   }
 
-  // 🔍 लोकेशन और आईडी को फॉर्म या URL से पकड़ना
   const gramPanchayat = readText(formData, ['gramPanchayat', 'gp'], referrerUrl);
   const gpIdStr = readText(formData, ['gramPanchayatId', 'gpId'], referrerUrl);
   const gramPanchayatId = gpIdStr ? parseInt(gpIdStr, 10) : null;
 
   const samiti = readText(formData, ['samiti'], referrerUrl);
   const district = readText(formData, ['district'], referrerUrl);
-
-  console.log('--- CREATING POLL WITH LOCATION & ID ---');
-  console.log('District:', district);
-  console.log('Samiti:', samiti);
-  console.log('Gram Panchayat:', gramPanchayat);
-  console.log('Gram Panchayat ID:', gramPanchayatId);
 
   const forwardedFor = headersList.get('x-forwarded-for');
   const creatorIp = (forwardedFor ? forwardedFor.split(',')[0].trim() : '127.0.0.1').slice(0, 45);
@@ -89,7 +80,7 @@ export async function createPollAction(formData: FormData) {
       districtName: district,
       samitiName: samiti,
       gramPanchayatName: gramPanchayat,
-      gramPanchayatId: gramPanchayatId && !isNaN(gramPanchayatId) ? gramPanchayatId : null, // 👈 ID सुरक्षित सेव होगी
+      gramPanchayatId: gramPanchayatId && !isNaN(gramPanchayatId) ? gramPanchayatId : null,
       options: {
         create: optionsText.map((text, index) => ({ text, order: index })),
       },

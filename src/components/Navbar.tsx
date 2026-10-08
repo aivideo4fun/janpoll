@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import Image from 'next/image'; // 👈 Next.js ka Image component import karein
+import Image from 'next/image';
 
 export default function Navbar() {
   return (
@@ -9,7 +9,7 @@ export default function Navbar() {
         {/* Logo aur Brand Name */}
         <Link href="/" className="flex items-center gap-2.5">
           <Image 
-            src="/logo.png"         // 👈 public folder me rakhi hui file ka naam
+            src="/logo.png" 
             alt="JanPoll Logo" 
             width={36} 
             height={36} 
@@ -20,7 +20,18 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* Baaki navigation links yahan hongi */}
+        {/* Instagram Profile Link */}
+        <div className="flex items-center gap-3">
+          <a
+            href="https://instagram.com/janpoll.in"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-pink-50 hover:bg-pink-100 text-pink-700 text-xs font-bold rounded-xl border border-pink-200 transition shadow-sm"
+          >
+            <span>📸</span> Instagram
+          </a>
+        </div>
+
       </div>
     </header>
   );

@@ -60,28 +60,35 @@ export default async function PanchayatPollingPage({ params }: Props) {
 
       const panchayats = samitiRecord.gramPanchayats;
 
+      // सभी सक्रिय पोल्स को एक साथ फेच करना
       const polls = (await db.poll.findMany({
         where: { active: true },
         include: { options: true },
         orderBy: { createdAt: 'desc' },
       })) as any[];
 
+      // 🛠️ उन्नत और लचीली मैचिंग लॉजिक (Smart Matching)
       panchayatsWithPolls = panchayats.map((gp) => {
         const matchedPolls = polls.filter((p) => {
+          // 1. यदि gramPanchayatId सीधे मैच हो जाए
           if (p.gramPanchayatId && Number(p.gramPanchayatId) === Number(gp.id)) {
             return true;
           }
 
           if (!p.gramPanchayatName) return false;
+
           const dbName = normalizeName(p.gramPanchayatName);
           const hiName = normalizeName(gp.nameHi);
           const enName = normalizeName(gp.nameEn);
 
+          // 2. यदि जिला या समिति नाम से भी संबंधित हो या नाम आपस में मेल खाते हों
           return (
             dbName === hiName ||
             dbName === enName ||
             dbName.includes(hiName) ||
-            hiName.includes(dbName)
+            hiName.includes(dbName) ||
+            dbName.includes(enName) ||
+            enName.includes(dbName)
           );
         });
 
@@ -89,7 +96,7 @@ export default async function PanchayatPollingPage({ params }: Props) {
       });
     }
   } catch (error) {
-    console.error('Error fetching panchayats and polls:', error);
+    console.error('ग्राम पंचायत और पोल्स लोड करने में त्रुटि:', error);
   }
 
   return (
@@ -111,7 +118,7 @@ export default async function PanchayatPollingPage({ params }: Props) {
           ग्राम पंचायत वार लाइव पोल्स और नए विकल्प
         </h1>
         <p className="text-emerald-100 text-xs md:text-sm">
-          अपनी ग्राम पंचायत चुनें, सक्रिय पोल्स पर वोट करें या नया पोल बनाएँ। (अधिकतम 5 पोल प्रति पंचायत)
+          अपनी ग्राम पंचायत चुनें, सक्रिय पोल्स पर वोट करें या नया पोल बनाएँ।
         </p>
       </div>
 
@@ -178,7 +185,7 @@ export default async function PanchayatPollingPage({ params }: Props) {
                     {hasReachedLimit
                       ? '⚠️ इस ग्राम पंचायत में अधिकतम 5 पोल की सीमा पूरी हो चुकी है।'
                       : pollCount > 0
-                      ? 'गलत पोल है? आप सुधार या नया विकल्प जोड़ने के लिए एक और पोल बना सकते हैं।'
+                      ? 'नया विकल्प जोड़ने के लिए एक और पोल बना सकते हैं।'
                       : 'इस ग्राम पंचायत में अभी कोई पोल नहीं है।'}
                   </span>
 

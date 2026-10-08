@@ -37,6 +37,10 @@ type PollData = {
   creatorEmail: string | null;
   createdAt: Date;
   active: boolean;
+  districtName: string | null;     // 👈 जोड़ें
+  samitiName: string | null;       // 👈 जोड़ें
+  gramPanchayatName: string | null; // 👈 जोड़ें
+  gramPanchayatId: number | null;  // 👈 जोड़ें
   options: {
     id: string;
     text: string;
@@ -353,6 +357,10 @@ export default async function AdminPage({
         creatorEmail: true,
         createdAt: true,
         active: true,
+        districtName: true,
+        samitiName: true,
+        gramPanchayatName: true,
+        gramPanchayatId: true,
         options: {
           select: {
             id: true,
@@ -369,6 +377,32 @@ export default async function AdminPage({
         createdAt: 'desc',
       },
     });
+
+    // 🛠️ Advanced Auto-linking for Hindi and English names
+for (const poll of polls) {
+  if (!poll.gramPanchayatId && poll.gramPanchayatName) {
+    const qName = poll.gramPanchayatName.trim();
+    
+    const matchedGp = await db.gramPanchayat.findFirst({
+      where: {
+        OR: [
+          { nameHi: { equals: qName } },
+          { nameEn: { equals: qName, mode: 'insensitive' } },
+          { nameHi: { contains: qName } },
+          { nameEn: { contains: qName, mode: 'insensitive' } }
+        ],
+      },
+      select: { id: true },
+    });
+
+    if (matchedGp) {
+      await db.poll.update({
+        where: { id: poll.id },
+        data: { gramPanchayatId: matchedGp.id },
+      });
+    }
+  }
+}
 
     messages = await db.contactMessage.findMany({
       select: {

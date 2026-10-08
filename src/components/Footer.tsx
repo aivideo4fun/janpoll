@@ -41,13 +41,21 @@ export default function Footer() {
             <h3 className="text-xl font-black tracking-wider text-emerald-400">JANPOLL <span className="text-xs font-normal text-emerald-200">राजस्थान</span></h3>
             <p className="text-xs text-emerald-200/80 mt-1">राजस्थान की जनता की राय, एक जगह।</p>
           </div>
-          <div className="flex flex-wrap gap-5 text-xs font-medium text-emerald-100">
+          <div className="flex flex-wrap gap-5 text-xs font-medium text-emerald-100 items-center">
             <Link href="/" className="hover:text-white transition">होम (Home)</Link>
             <Link href="/create" className="hover:text-white transition">पोल बनाएँ</Link>
             <Link href="/privacy-policy" className="hover:text-white transition">गोपनीयता नीति</Link>
             <Link href="/terms" className="hover:text-white transition">नियम और शर्तें</Link>
             <Link href="/disclaimer" className="hover:text-white transition">अस्वीकरण</Link>
             <Link href="/contact" className="hover:text-white transition">संपर्क करें</Link>
+            <a 
+              href="https://instagram.com/janpoll.in" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-pink-400 hover:text-pink-300 font-bold transition flex items-center gap-1"
+            >
+              📸 Instagram
+            </a>
           </div>
         </div>
 
