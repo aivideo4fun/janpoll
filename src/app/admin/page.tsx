@@ -40,7 +40,7 @@ type PollData = {
   districtName: string | null;
   samitiName: string | null;
   gramPanchayatName: string | null;
-  gramPanchayatId: number | null;
+  gramPanchayatId: string | null; // 🛠️ Fixed to string | null
   options: {
     id: string;
     text: string;
