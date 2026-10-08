@@ -37,6 +37,7 @@ type SearchParams = {
   error?: string;
   search?: string;
   page?: string;
+  tab?: string;
 };
 
 export default async function AdminPage({
@@ -48,7 +49,8 @@ export default async function AdminPage({
   const error = params.error;
   const searchQuery = params.search?.trim() || '';
   const currentPage = Math.max(1, Number(params.page) || 1);
-  const pageSize = 10; // सर्वर को हैंग होने से बचाने के लिए प्रति पेज 10 पोल्स
+  const currentTab = params.tab || 'polls'; // Default tab polls rahega
+  const pageSize = 10;
 
   if (!(await isAdmin())) {
     return <LoginScreen error={error} />;
@@ -113,7 +115,7 @@ export default async function AdminPage({
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10 space-y-8">
         
-        {/* प्रशासक हेडर घटक */}
+        {/* प्रशासक हेडर */}
         <AdminHeader handleLogout={handleLogout} />
 
         {loadError && (
@@ -121,27 +123,6 @@ export default async function AdminPage({
             {loadError}
           </div>
         )}
-
-        {/* खोज बार (Search Bar) */}
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-emerald-100">
-          <form method="GET" className="flex gap-2">
-            <input
-              type="text"
-              name="search"
-              defaultValue={searchQuery}
-              placeholder="पोल प्रश्न, निर्माता या जिला द्वारा खोजें..."
-              className="flex-1 rounded-xl border border-gray-200 px-4 py-2.5 text-xs outline-none focus:border-emerald-500"
-            />
-            <button type="submit" className="bg-emerald-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition hover:bg-emerald-800">
-              खोजें
-            </button>
-            {searchQuery && (
-              <Link href="/admin" className="bg-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-xs font-bold flex items-center transition hover:bg-gray-300">
-                साफ करें
-              </Link>
-            )}
-          </form>
-        </div>
 
         {/* सांख्यिकी (Stats) */}
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -163,26 +144,78 @@ export default async function AdminPage({
           </div>
         </section>
 
-        {/* संपर्क संदेश घटक */}
-        <ContactMsgs
-          messages={messages}
-          deleteMessage={deleteMessage}
-          formatIndiaDateTime={formatIndiaDateTime}
-          whatsappDigits={whatsappDigits}
-        />
+        {/* टैब नेविगेशन बटन (Tab Switching) */}
+        <div className="flex border-b border-emerald-200 gap-4">
+          <Link
+            href="/admin?tab=polls"
+            className={`pb-3 px-4 text-sm font-black transition border-b-2 ${
+              currentTab === 'polls'
+                ? 'border-emerald-700 text-emerald-800'
+                : 'border-transparent text-gray-500 hover:text-emerald-700'
+            }`}
+          >
+            📊 पंजीकृत पोल्स मैनेजमेंट ({totalPolls})
+          </Link>
+          <Link
+            href="/admin?tab=messages"
+            className={`pb-3 px-4 text-sm font-black transition border-b-2 flex items-center gap-2 ${
+              currentTab === 'messages'
+                ? 'border-emerald-700 text-emerald-800'
+                : 'border-transparent text-gray-500 hover:text-emerald-700'
+            }`}
+          >
+            ✉️ उपयोगकर्ता संपर्क संदेश
+            <span className="rounded-full bg-emerald-700 px-2 py-0.5 text-[10px] text-white">
+              {messages.length}
+            </span>
+          </Link>
+        </div>
 
-        {/* पोल्स सूची और पेिजिनेशन घटक */}
-        <PollsList
-          polls={polls}
-          totalPolls={totalPolls}
-          searchQuery={searchQuery}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          deletePoll={deletePoll}
-          editPoll={editPoll}
-          addPollOption={addPollOption}
-          formatIndiaDate={formatIndiaDate}
-        />
+        {/* टैब के आधार पर कंटेंट दिखाना */}
+        {currentTab === 'messages' ? (
+          <ContactMsgs
+            messages={messages}
+            deleteMessage={deleteMessage}
+            formatIndiaDateTime={formatIndiaDateTime}
+            whatsappDigits={whatsappDigits}
+          />
+        ) : (
+          <div className="space-y-6">
+            {/* खोज बार (Search Bar सिर्फ पोल्स टैब में दिखेगा) */}
+            <div className="bg-white p-4 rounded-2xl shadow-sm border border-emerald-100">
+              <form method="GET" className="flex gap-2">
+                <input type="hidden" name="tab" value="polls" />
+                <input
+                  type="text"
+                  name="search"
+                  defaultValue={searchQuery}
+                  placeholder="पोल प्रश्न, निर्माता या जिला द्वारा खोजें..."
+                  className="flex-1 rounded-xl border border-gray-200 px-4 py-2.5 text-xs outline-none focus:border-emerald-500"
+                />
+                <button type="submit" className="bg-emerald-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition hover:bg-emerald-800">
+                  खोजें
+                </button>
+                {searchQuery && (
+                  <Link href="/admin?tab=polls" className="bg-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-xs font-bold flex items-center transition">
+                    साफ करें
+                  </Link>
+                )}
+              </form>
+            </div>
+
+            <PollsList
+              polls={polls}
+              totalPolls={totalPolls}
+              searchQuery={searchQuery}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              deletePoll={deletePoll}
+              editPoll={editPoll}
+              addPollOption={addPollOption}
+              formatIndiaDate={formatIndiaDate}
+            />
+          </div>
+        )}
 
       </div>
     </main>

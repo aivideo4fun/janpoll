@@ -25,13 +25,13 @@ export default function ContactMsgs({
       <div className="flex items-center justify-between border-b border-emerald-100 bg-emerald-50 px-5 py-4">
         <div>
           <h2 className="text-sm font-black text-emerald-900 sm:text-base">
-            ✉️ उपयोगकर्ता संपर्क संदेश
+            ✉️ उपयोगकर्ता संपर्क संदेश (इनबॉक्स)
           </h2>
-          <p className="mt-1 text-[11px] text-emerald-700">संपर्क करें फॉर्म से प्राप्त सभी संदेश</p>
+          <p className="mt-1 text-[11px] text-emerald-700">संपर्क करें फॉर्म से प्राप्त सभी संदेश यहाँ सुरक्षित हैं</p>
         </div>
 
         <span className="rounded-full bg-emerald-700 px-3 py-1 text-xs font-bold text-white">
-          {messages.length}
+          कुल: {messages.length}
         </span>
       </div>
 
@@ -54,7 +54,7 @@ export default function ContactMsgs({
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="text-base font-black text-gray-900">{msg.name}</h3>
                       <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-800">
-                        संपर्क संदेश
+                        नया संदेश
                       </span>
                     </div>
 
@@ -73,7 +73,7 @@ export default function ContactMsgs({
                           📱 व्हाट्सएप: {msg.whatsapp}
                         </a>
                       ) : (
-                        <span className="text-gray-400">📱 व्हाट्सएप नंबर नहीं दिया गया</span>
+                        <span className="text-gray-400">📱 व्हाट्सएप नंबर उपलब्ध नहीं</span>
                       )}
                     </div>
 
