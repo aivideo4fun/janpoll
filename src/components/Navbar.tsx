@@ -16,7 +16,7 @@ export default function Navbar() {
             className="object-contain"
           />
           <span className="text-xl font-black tracking-tight text-emerald-900">
-            JANPOLL <span className="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">राजस्थान</span>
+            JANPOLL
           </span>
         </Link>
 
