@@ -27,8 +27,8 @@ export default function PollsList({
     <section className="overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm">
       <div className="flex items-center justify-between border-b border-emerald-100 bg-emerald-50 px-5 py-4">
         <div>
-          <h2 className="text-sm font-black text-emerald-900 sm:text-base">📊 Panjiyanikrit Polls</h2>
-          <p className="mt-1 text-[11px] text-emerald-700">Sabhi public polls aur unke options</p>
+          <h2 className="text-sm font-black text-emerald-900 sm:text-base">📊 पंजीकृत पोल्स</h2>
+          <p className="mt-1 text-[11px] text-emerald-700">सभी सार्वजनिक पोल्स और उनके विकल्प</p>
         </div>
 
         <span className="rounded-full bg-emerald-700 px-3 py-1 text-xs font-bold text-white">
@@ -41,7 +41,7 @@ export default function PollsList({
           <div className="px-5 py-12 text-center">
             <div className="text-4xl">📊</div>
             <p className="mt-3 text-sm font-semibold text-gray-500">
-              Database mein koi poll uplabdh nahi hai.
+              डेटाबेस में कोई पोल उपलब्ध नहीं है।
             </p>
           </div>
         ) : (
@@ -62,7 +62,7 @@ export default function PollsList({
                             poll.active ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-600'
                           }`}
                         >
-                          {poll.active ? '● Sakriya' : '○ Nishkriya'}
+                          {poll.active ? '● सक्रिय' : '○ निष्क्रिय'}
                         </span>
                         <span className="text-[11px] text-gray-400">
                           {formatIndiaDate(poll.createdAt)}
@@ -73,13 +73,13 @@ export default function PollsList({
 
                       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-gray-500">
                         <span>
-                          👤 <strong className="text-gray-700">{poll.creatorName || 'Gumnaam'}</strong>
+                          👤 <strong className="text-gray-700">{poll.creatorName || 'गुमनाम'}</strong>
                         </span>
                         <span>
-                          📧 <strong className="text-gray-700">{poll.creatorEmail || 'Email nahi hai'}</strong>
+                          📧 <strong className="text-gray-700">{poll.creatorEmail || 'ईमेल उपलब्ध नहीं'}</strong>
                         </span>
                         <span>
-                          👥 <strong className="text-gray-700">{pollTotalVotes} Votes</strong>
+                          👥 <strong className="text-gray-700">{pollTotalVotes} मत</strong>
                         </span>
                         {poll.districtName && (
                           <span>
@@ -96,7 +96,7 @@ export default function PollsList({
                         rel="noreferrer"
                         className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800 transition hover:bg-emerald-100"
                       >
-                        Poll Dekhein →
+                        पोल देखें →
                       </Link>
 
                       <form action={deletePoll}>
@@ -105,17 +105,17 @@ export default function PollsList({
                           type="submit"
                           className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700 transition hover:bg-red-100"
                         >
-                          Poll Delete Karein
+                          पोल डिलीट करें
                         </button>
                       </form>
                     </div>
                   </div>
 
-                  {/* Edit Form Accordion */}
+                  {/* एडिट फॉर्म */}
                   <details className="group rounded-2xl border border-blue-200 bg-blue-50/40">
                     <summary className="cursor-pointer list-none px-4 py-3 text-xs font-black text-blue-900">
                       <span className="mr-2 inline-block transition group-open:rotate-90">▶</span>
-                      Is poll ko edit karein
+                      इस पोल को एडिट करें
                     </summary>
 
                     <div className="border-t border-blue-200 p-4">
@@ -124,7 +124,7 @@ export default function PollsList({
 
                         <div>
                           <label className="mb-1.5 block text-xs font-bold text-gray-700">
-                            Poll Heading / Question
+                            पोल प्रश्न (Heading / Question)
                           </label>
                           <textarea
                             name="question"
@@ -138,7 +138,7 @@ export default function PollsList({
 
                         <div className="grid gap-4 md:grid-cols-2">
                           <div>
-                            <label className="mb-1.5 block text-xs font-bold text-gray-700">Creator Name</label>
+                            <label className="mb-1.5 block text-xs font-bold text-gray-700">निर्माता का नाम</label>
                             <input
                               name="creatorName"
                               type="text"
@@ -147,7 +147,7 @@ export default function PollsList({
                             />
                           </div>
                           <div>
-                            <label className="mb-1.5 block text-xs font-bold text-gray-700">Creator Email</label>
+                            <label className="mb-1.5 block text-xs font-bold text-gray-700">निर्माता का ईमेल</label>
                             <input
                               name="creatorEmail"
                               type="email"
@@ -159,7 +159,7 @@ export default function PollsList({
 
                         <div className="grid gap-4 md:grid-cols-3">
                           <div>
-                            <label className="mb-1.5 block text-xs font-bold text-gray-700">Zila</label>
+                            <label className="mb-1.5 block text-xs font-bold text-gray-700">जिला</label>
                             <input
                               name="districtName"
                               type="text"
@@ -168,7 +168,7 @@ export default function PollsList({
                             />
                           </div>
                           <div>
-                            <label className="mb-1.5 block text-xs font-bold text-gray-700">Panchayat Samiti</label>
+                            <label className="mb-1.5 block text-xs font-bold text-gray-700">पंचायत समिति</label>
                             <input
                               name="samitiName"
                               type="text"
@@ -177,7 +177,7 @@ export default function PollsList({
                             />
                           </div>
                           <div>
-                            <label className="mb-1.5 block text-xs font-bold text-gray-700">Gram Panchayat</label>
+                            <label className="mb-1.5 block text-xs font-bold text-gray-700">ग्राम पंचायत</label>
                             <input
                               name="gramPanchayatName"
                               type="text"
@@ -189,7 +189,7 @@ export default function PollsList({
 
                         <div className="grid gap-4 md:grid-cols-2">
                           <div>
-                            <label className="mb-1.5 block text-xs font-bold text-gray-700">Gram Panchayat ID</label>
+                            <label className="mb-1.5 block text-xs font-bold text-gray-700">ग्राम पंचायत आईडी</label>
                             <input
                               name="gramPanchayatId"
                               type="text"
@@ -198,22 +198,22 @@ export default function PollsList({
                             />
                           </div>
                           <div>
-                            <label className="mb-1.5 block text-xs font-bold text-gray-700">Poll Status</label>
+                            <label className="mb-1.5 block text-xs font-bold text-gray-700">पोल स्थिति (Status)</label>
                             <select
                               name="active"
                               defaultValue={poll.active ? 'true' : 'false'}
                               className="w-full rounded-xl border border-blue-200 bg-white px-3 py-2.5 text-sm outline-none"
                             >
-                              <option value="true">Sakriya</option>
-                              <option value="false">Nishkriya</option>
+                              <option value="true">सक्रिय</option>
+                              <option value="false">निष्क्रिय</option>
                             </select>
                           </div>
                         </div>
 
                         <div>
                           <div className="mb-2 flex items-center justify-between">
-                            <p className="text-xs font-black text-gray-700">Poll Options Edit Karein</p>
-                            <span className="text-[10px] text-gray-500">Votes surakshit rahenge</span>
+                            <p className="text-xs font-black text-gray-700">विकल्प संपादित करें</p>
+                            <span className="text-[10px] text-gray-500">मत सुरक्षित रहेंगे</span>
                           </div>
 
                           <div className="space-y-2">
@@ -228,7 +228,7 @@ export default function PollsList({
                                   className="min-w-0 flex-1 rounded-xl border border-blue-200 bg-white px-3 py-2.5 text-xs outline-none"
                                 />
                                 <span className="shrink-0 rounded-full bg-emerald-100 px-3 py-2 text-center text-[10px] font-black text-emerald-800">
-                                  {option.voteCount} Votes
+                                  {option.voteCount} मत
                                 </span>
                               </div>
                             ))}
@@ -240,18 +240,18 @@ export default function PollsList({
                             type="submit"
                             className="rounded-xl bg-blue-700 px-5 py-2.5 text-xs font-bold text-white shadow transition hover:bg-blue-800"
                           >
-                            ✓ Badlaav Surakshit Karein
+                            ✓ बदलाव सुरक्षित करें
                           </button>
                         </div>
                       </form>
                     </div>
                   </details>
 
-                  {/* Add Option Section */}
+                  {/* विकल्प जोड़ें */}
                   <div className="rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4">
                     <div className="mb-3 flex items-center justify-between">
-                      <p className="text-xs font-black text-emerald-900">Mojo Vikalp</p>
-                      <span className="text-[10px] font-semibold text-gray-500">{poll.options.length} options</span>
+                      <p className="text-xs font-black text-emerald-900">मौजूदा विकल्प</p>
+                      <span className="text-[10px] font-semibold text-gray-500">{poll.options.length} विकल्प</span>
                     </div>
 
                     <form action={addPollOption} className="flex flex-col gap-2 sm:flex-row">
@@ -261,14 +261,14 @@ export default function PollsList({
                         name="optionText"
                         required
                         maxLength={255}
-                        placeholder="Naya vikalp yahan jodein..."
+                        placeholder="नया विकल्प यहाँ जोड़ें..."
                         className="min-w-0 flex-1 rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-xs outline-none"
                       />
                       <button
                         type="submit"
                         className="rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-800"
                       >
-                        + Vikalp Jodein
+                        + विकल्प जोड़ें
                       </button>
                     </form>
                   </div>
@@ -279,22 +279,25 @@ export default function PollsList({
         )}
       </div>
 
-      {/* Pagination UI */}
+      {/* पेिजिनेशन नियंत्रण (Pagination Controls) */}
       {totalPages > 1 && (
-        <div className="flex justify-center gap-2 p-6 bg-emerald-50/30 border-t border-emerald-100">
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-            <Link
-              key={p}
-              href={`/admin?search=${searchQuery}&page=${p}`}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold ${
-                currentPage === p
-                  ? 'bg-emerald-700 text-white'
-                  : 'bg-white text-gray-700 border hover:bg-gray-100'
-              }`}
-            >
-              {p}
-            </Link>
-          ))}
+        <div className="flex flex-wrap justify-center items-center gap-2 p-6 bg-emerald-50/30 border-t border-emerald-100">
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => {
+            const queryParam = searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : '';
+            return (
+              <Link
+                key={p}
+                href={`/admin?page=${p}${queryParam}`}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition shadow-sm ${
+                  currentPage === p
+                    ? 'bg-emerald-700 text-white shadow'
+                    : 'bg-white text-gray-700 border border-emerald-200 hover:bg-emerald-50'
+                }`}
+              >
+                पृष्ठ {p}
+              </Link>
+            );
+          })}
         </div>
       )}
     </section>

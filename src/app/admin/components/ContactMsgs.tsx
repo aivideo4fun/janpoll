@@ -25,9 +25,9 @@ export default function ContactMsgs({
       <div className="flex items-center justify-between border-b border-emerald-100 bg-emerald-50 px-5 py-4">
         <div>
           <h2 className="text-sm font-black text-emerald-900 sm:text-base">
-            ✉️ User Sampark Sandesh
+            ✉️ उपयोगकर्ता संपर्क संदेश
           </h2>
-          <p className="mt-1 text-[11px] text-emerald-700">Contact Us form se prapt sabhi messages</p>
+          <p className="mt-1 text-[11px] text-emerald-700">संपर्क करें फॉर्म से प्राप्त सभी संदेश</p>
         </div>
 
         <span className="rounded-full bg-emerald-700 px-3 py-1 text-xs font-bold text-white">
@@ -40,7 +40,7 @@ export default function ContactMsgs({
           <div className="px-5 py-12 text-center">
             <div className="text-4xl">📭</div>
             <p className="mt-3 text-sm font-semibold text-gray-500">
-              Abhi tak koi sampark sandesh prapt nahi hua hai.
+              अभी तक कोई संपर्क संदेश प्राप्त नहीं हुआ है।
             </p>
           </div>
         ) : (
@@ -54,7 +54,7 @@ export default function ContactMsgs({
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="text-base font-black text-gray-900">{msg.name}</h3>
                       <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold text-emerald-800">
-                        Sampark Sandesh
+                        संपर्क संदेश
                       </span>
                     </div>
 
@@ -70,10 +70,10 @@ export default function ContactMsgs({
                           rel="noreferrer"
                           className="font-semibold text-green-700 hover:underline"
                         >
-                          📱 WhatsApp: {msg.whatsapp}
+                          📱 व्हाट्सएप: {msg.whatsapp}
                         </a>
                       ) : (
-                        <span className="text-gray-400">📱 WhatsApp number nahi diya gaya</span>
+                        <span className="text-gray-400">📱 व्हाट्सएप नंबर नहीं दिया गया</span>
                       )}
                     </div>
 
@@ -82,7 +82,7 @@ export default function ContactMsgs({
                     </div>
 
                     <p className="text-[11px] text-gray-400">
-                      Prapt hua: {formatIndiaDateTime(msg.createdAt)}
+                      प्राप्त हुआ: {formatIndiaDateTime(msg.createdAt)}
                     </p>
                   </div>
 
@@ -92,7 +92,7 @@ export default function ContactMsgs({
                       type="submit"
                       className="w-full rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-xs font-bold text-red-700 transition hover:bg-red-100 lg:w-auto"
                     >
-                      Sandesh Delete Karein
+                      संदेश डिलीट करें
                     </button>
                   </form>
                 </div>

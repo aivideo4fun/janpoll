@@ -10,7 +10,7 @@ import Link from 'next/link';
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: 'Admin Dashboard',
+  title: 'प्रशासक डैशबोर्ड',
   robots: { index: false, follow: false },
 };
 
@@ -47,8 +47,8 @@ export default async function AdminPage({
   const params = await searchParams;
   const error = params.error;
   const searchQuery = params.search?.trim() || '';
-  const currentPage = Number(params.page) || 1;
-  const pageSize = 10; // Page hang hone se bachane ke liye limit 10
+  const currentPage = Math.max(1, Number(params.page) || 1);
+  const pageSize = 10; // सर्वर को हैंग होने से बचाने के लिए प्रति पेज 10 पोल्स
 
   if (!(await isAdmin())) {
     return <LoginScreen error={error} />;
@@ -99,11 +99,11 @@ export default async function AdminPage({
       orderBy: { createdAt: 'desc' },
     });
   } catch (err) {
-    console.error('Admin load error:', err);
-    loadError = 'Data load karne mein samasya aayi. Kripya punah prayas karein.';
+    console.error('डेटा लोड त्रुटि:', err);
+    loadError = 'डेटा लोड करने में समस्या आई। कृपया कुछ समय पश्चात पुनः प्रयास करें।';
   }
 
-  const totalPages = Math.ceil(totalPolls / pageSize);
+  const totalPages = Math.max(1, Math.ceil(totalPolls / pageSize));
   const totalVotes = polls.reduce(
     (sum, poll) => sum + poll.options.reduce((optSum: number, opt: any) => optSum + opt.voteCount, 0),
     0
@@ -113,7 +113,7 @@ export default async function AdminPage({
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10 space-y-8">
         
-        {/* Admin Header Component */}
+        {/* प्रशासक हेडर घटक */}
         <AdminHeader handleLogout={handleLogout} />
 
         {loadError && (
@@ -122,48 +122,48 @@ export default async function AdminPage({
           </div>
         )}
 
-        {/* Search Bar */}
+        {/* खोज बार (Search Bar) */}
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-emerald-100">
           <form method="GET" className="flex gap-2">
             <input
               type="text"
               name="search"
               defaultValue={searchQuery}
-              placeholder="Poll question, creator ya district se search karein..."
+              placeholder="पोल प्रश्न, निर्माता या जिला द्वारा खोजें..."
               className="flex-1 rounded-xl border border-gray-200 px-4 py-2.5 text-xs outline-none focus:border-emerald-500"
             />
-            <button type="submit" className="bg-emerald-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold">
-              Search
+            <button type="submit" className="bg-emerald-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition hover:bg-emerald-800">
+              खोजें
             </button>
             {searchQuery && (
-              <Link href="/admin" className="bg-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-xs font-bold flex items-center">
-                Clear
+              <Link href="/admin" className="bg-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-xs font-bold flex items-center transition hover:bg-gray-300">
+                साफ करें
               </Link>
             )}
           </form>
         </div>
 
-        {/* Stats Section */}
+        {/* सांख्यिकी (Stats) */}
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold text-gray-500">Filtered Polls</p>
+            <p className="text-xs font-semibold text-gray-500">कुल पोल्स (परिणाम)</p>
             <p className="mt-2 text-3xl font-black text-emerald-800">{totalPolls}</p>
           </div>
           <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold text-gray-500">Sakriya Polls</p>
+            <p className="text-xs font-semibold text-gray-500">सक्रिय पोल्स</p>
             <p className="mt-2 text-3xl font-black text-emerald-800">{polls.filter(p => p.active).length}</p>
           </div>
           <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold text-gray-500">Total Votes</p>
+            <p className="text-xs font-semibold text-gray-500">कुल मत (Votes)</p>
             <p className="mt-2 text-3xl font-black text-emerald-800">{totalVotes}</p>
           </div>
           <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold text-gray-500">Sampark Sandesh</p>
+            <p className="text-xs font-semibold text-gray-500">संपर्क संदेश</p>
             <p className="mt-2 text-3xl font-black text-emerald-800">{messages.length}</p>
           </div>
         </section>
 
-        {/* Contact Messages Component */}
+        {/* संपर्क संदेश घटक */}
         <ContactMsgs
           messages={messages}
           deleteMessage={deleteMessage}
@@ -171,7 +171,7 @@ export default async function AdminPage({
           whatsappDigits={whatsappDigits}
         />
 
-        {/* Polls List Component with Pagination */}
+        {/* पोल्स सूची और पेिजिनेशन घटक */}
         <PollsList
           polls={polls}
           totalPolls={totalPolls}

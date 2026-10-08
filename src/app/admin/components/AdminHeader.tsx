@@ -10,11 +10,11 @@ export default function AdminHeader({ handleLogout }: AdminHeaderProps) {
       <div>
         <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-[11px] font-bold text-emerald-50">
           <span className="h-2 w-2 rounded-full bg-emerald-300" />
-          सुरक्षित एडमिन एरिया
+          सुरक्षित प्रशासक क्षेत्र
         </div>
-        <h1 className="text-2xl font-black sm:text-3xl">एडमिन प्रबंधन डैशबोर्ड</h1>
+        <h1 className="text-2xl font-black sm:text-3xl">प्रशासक प्रबंधन डैशबोर्ड</h1>
         <p className="mt-2 text-xs text-emerald-100 sm:text-sm">
-          सार्वजनिक पोल्स, वोट्स और यूजर संपर्क संदेशों की निगरानी एवं संचालन करें।
+          सार्वजनिक पोल्स, मतों और उपयोगकर्ता संपर्क संदेशों की निगरानी एवं संचालन करें।
         </p>
       </div>
 
@@ -23,7 +23,7 @@ export default function AdminHeader({ handleLogout }: AdminHeaderProps) {
           href="/"
           className="rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-white/20"
         >
-          होम →
+          होम पेज →
         </Link>
         <form action={handleLogout}>
           <button
