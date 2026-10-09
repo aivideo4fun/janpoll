@@ -1,20 +1,27 @@
-import { db } from '@/lib/db';
+import { cookies } from 'next/headers';
+import LoginScreen from './components/LoginScreen';
 import AdminHeader from './components/AdminHeader';
 import PollsList from './components/PollsList';
 import ContactMsgs from './components/ContactMsgs';
-import LoginScreen from './components/LoginScreen';
-import { cookies } from 'next/headers';
+import { db } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminDashboard() {
+export default async function AdminDashboard({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; pass?: string }>;
+}) {
+  const resolvedSearchParams = await searchParams;
   const cookieStore = cookies();
-  const adminAuth = cookieStore.get('janpoll_admin_auth');
+  const adminAuth = cookieStore.get('admin_session');
 
-  if (!adminAuth || adminAuth.value !== 'true') {
-    return <LoginScreen />;
+  // यदि एडमिन लॉग इन नहीं है, तो लॉगिन स्क्रीन दिखाएं और URL का error पास करें
+  if (!adminAuth || adminAuth.value !== 'authenticated') {
+    return <LoginScreen error={resolvedSearchParams.error} />;
   }
 
+  // (बाकी का आपका एडमिन डैशबोर्ड कोड...)
   let polls: any[] = [];
   let contactMessages: any[] = [];
   let subscribers: any[] = [];
@@ -52,52 +59,11 @@ export default async function AdminDashboard() {
       <AdminHeader totalPolls={polls.length} totalVotes={totalVotes} totalSubscribers={subscribers.length} />
       
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-8 space-y-10">
-        
-       {/* पोल्स प्रबंधन सेक्शन */}
         <section className="bg-white rounded-3xl p-6 shadow-sm border border-emerald-100">
           <h2 className="text-xl font-black text-emerald-950 mb-4">📊 सभी पोल्स का प्रबंधन</h2>
           {/* @ts-ignore */}
-          <PollsList 
-            polls={polls} 
-          />
+          <PollsList polls={polls} />
         </section>
-
-        {/* न्यूज़लेटर सब्सक्राइबर सेक्शन */}
-        <section className="bg-white rounded-3xl p-6 shadow-sm border border-emerald-100 space-y-4">
-          <h2 className="text-xl font-black text-emerald-950">📧 न्यूज़लेटर सब्सक्राइबर लिस्ट ({subscribers.length})</h2>
-          {subscribers.length === 0 ? (
-            <p className="text-xs text-gray-500">अभी तक कोई सब्सक्राइबर नहीं है।</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-emerald-50 text-emerald-900 border-b border-emerald-100">
-                  <tr>
-                    <th className="p-3">क्रम संख्या</th>
-                    <th className="p-3">ईमेल एड्रेस</th>
-                    <th className="p-3">सब्सक्राइब तिथि</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {subscribers.map((sub, index) => (
-                    <tr key={sub.id} className="hover:bg-slate-50">
-                      <td className="p-3 font-bold text-gray-600">{index + 1}</td>
-                      <td className="p-3 font-semibold text-gray-800">{sub.email}</td>
-                      <td className="p-3 text-gray-500">{new Date(sub.createdAt).toLocaleString('hi-IN')}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-
-        {/* संपर्क संदेश सेक्शन */}
-        <section className="bg-white rounded-3xl p-6 shadow-sm border border-emerald-100">
-          <h2 className="text-xl font-black text-emerald-950 mb-4">💬 संपर्क संदेश</h2>
-          {/* @ts-ignore */}
-          <ContactMsgs messages={contactMessages} />
-        </section>
-
       </div>
     </main>
   );

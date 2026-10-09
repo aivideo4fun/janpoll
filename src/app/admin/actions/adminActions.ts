@@ -41,10 +41,11 @@ export async function handleLogin(formData: FormData) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 60 * 60 * 24, // 24 घंटे
+      maxAge: 60 * 60 * 24,
       path: '/',
     });
 
+    // यहाँ redirect कॉल करने पर Next.js अपने आप पेज पर भेज देगा
     redirect('/admin');
   }
 

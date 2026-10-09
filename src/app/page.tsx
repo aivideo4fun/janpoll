@@ -166,12 +166,6 @@ export default async function Home({ searchParams }: HomeProps) {
         </div>
       </div>
 
-      {/* 📢 Adsterra Banner (728x90 या 300x250) */}
-      <div className="my-4 flex justify-center">
-        <AdsterraBanner adKey="284cee4d0f75c889cb2c8420f6c1834f" width={728} height={90} src="https://bicea.org/22/284cee4d0f75c889cb2c8420f6c1834f" className="hidden sm:block" />
-        <AdsterraBanner adKey="4801d526481e48f32daba116c6ca2a7c" width={300} height={250} src="https://bicea.org/22/4801d526481e48f32daba116c6ca2a7c" className="block sm:hidden" />
-      </div>
-
       {/* सर्च बार */}
       <div className="mb-6 bg-white p-3 sm:p-4 rounded-2xl border border-emerald-100 shadow-sm">
         <form method="GET" action="/" className="flex flex-col sm:flex-row gap-2">
@@ -271,6 +265,12 @@ export default async function Home({ searchParams }: HomeProps) {
             🟠 जिला परिषद
           </Link>
         </div>
+      </div>
+
+      {/* सक्रिय पोल्स की सूची के ठीक ऊपर विज्ञापन (Ad Placement) */}
+      <div className="my-6 flex justify-center bg-white p-3 rounded-2xl border border-emerald-100 shadow-sm">
+        <AdsterraBanner adKey="284cee4d0f75c889cb2c8420f6c1834f" width={728} height={90} src="https://bicea.org/22/284cee4d0f75c889cb2c8420f6c1834f" className="hidden sm:block" />
+        <AdsterraBanner adKey="4801d526481e48f32daba116c6ca2a7c" width={300} height={250} src="https://bicea.org/22/4801d526481e48f32daba116c6ca2a7c" className="block sm:hidden" />
       </div>
 
       {/* सक्रिय पोल्स की सूची */}
