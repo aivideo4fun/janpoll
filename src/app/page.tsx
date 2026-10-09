@@ -3,7 +3,7 @@ import React from 'react';
 import type { Metadata } from 'next';
 import { db } from '@/lib/db';
 import { getDeadline, isPollOpen } from '@/lib/poll-utils';
-import NativeBanner from '@/components/NativeBanner';
+import AdsterraBanner from '@/components/AdBanner';
 
 export const dynamic = 'force-dynamic';
 
@@ -164,6 +164,12 @@ export default async function Home({ searchParams }: HomeProps) {
             ＋ नया पोल बनाएँ
           </Link>
         </div>
+      </div>
+
+      {/* 📢 Adsterra Banner (728x90 या 300x250) */}
+      <div className="my-4 flex justify-center">
+        <AdsterraBanner adKey="284cee4d0f75c889cb2c8420f6c1834f" width={728} height={90} src="https://bicea.org/22/284cee4d0f75c889cb2c8420f6c1834f" className="hidden sm:block" />
+        <AdsterraBanner adKey="4801d526481e48f32daba116c6ca2a7c" width={300} height={250} src="https://bicea.org/22/4801d526481e48f32daba116c6ca2a7c" className="block sm:hidden" />
       </div>
 
       {/* सर्च बार */}
@@ -346,7 +352,7 @@ export default async function Home({ searchParams }: HomeProps) {
 
                   {showAdAfterThis && (
                     <div className="my-6 p-3 bg-emerald-50/50 rounded-2xl border border-emerald-200 text-center overflow-hidden">
-                      <NativeBanner />
+                      <AdsterraBanner adKey="088d090f5a0ddc02fefc698afbfd2ece" width={320} height={50} src="https://bicea.org/21/088d090f5a0ddc02fefc698afbfd2ece" />
                     </div>
                   )}
                 </React.Fragment>

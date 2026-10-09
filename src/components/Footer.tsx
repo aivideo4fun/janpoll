@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { db } from '@/lib/db';
 import { subscribeNewsletter } from '@/app/actions/newsletterAction';
+import AdsterraBanner from '@/components/AdBanner';
 
 export default function Footer() {
   return <FooterContent />;
@@ -37,6 +38,19 @@ async function FooterContent() {
           <p className="text-xs sm:text-sm text-emerald-100/90 leading-relaxed font-medium">
             <strong className="text-white font-bold">महत्वपूर्ण सूचना:</strong> JanPoll पर दिखाए गए पोल्स केवल जनता की राय/जनमत जानने के लिए हैं। ये किसी सरकारी संस्था, निर्वाचन आयोग या आधिकारिक चुनावी मतदान प्रणाली का हिस्सा नहीं हैं।
           </p>
+        </div>
+
+        {/* 📢 विज्ञापन / प्रायोजक बैनर स्लॉट (Ad Slots) */}
+        <div className="rounded-2xl border border-dashed border-emerald-500/40 bg-emerald-950/30 p-6 text-center space-y-3 relative overflow-hidden shadow-sm">
+          <span className="absolute top-2 right-3 text-[10px] uppercase tracking-widest text-emerald-400/60 font-bold bg-emerald-900/50 px-2 py-0.5 rounded">
+            विज्ञापनों की जगह (Ad Space)
+          </span>
+          <p className="text-xs font-bold text-emerald-300">📢 प्रायोजक एवं विज्ञापन (Sponsored / Ads)</p>
+          
+          <div className="flex flex-wrap justify-center items-center gap-4 py-2">
+            <AdsterraBanner adKey="284cee4d0f75c889cb2c8420f6c1834f" width={728} height={90} src="https://bicea.org/22/284cee4d0f75c889cb2c8420f6c1834f" />
+            <AdsterraBanner adKey="4801d526481e48f32daba116c6ca2a7c" width={300} height={250} src="https://bicea.org/22/4801d526481e48f32daba116c6ca2a7c" />
+          </div>
         </div>
 
         {/* मुख्य फूटर ग्रिड कॉलम */}
@@ -80,7 +94,7 @@ async function FooterContent() {
             </ul>
           </div>
 
-          {/* 3. सहायता एवं जानकारी (अब पूरी तरह से काम करने वाले पेजों से जुड़े हैं) */}
+          {/* 3. सहायता एवं जानकारी */}
           <div className="space-y-4">
             <h3 className="text-sm font-black text-emerald-300 uppercase tracking-wider flex items-center gap-2 border-b border-emerald-900 pb-2">
               <span>❓</span> सहायता एवं जानकारी
