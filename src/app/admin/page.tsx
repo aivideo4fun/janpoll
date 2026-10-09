@@ -53,17 +53,13 @@ export default async function AdminDashboard() {
       
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-8 space-y-10">
         
-        {/* पोल्स प्रबंधन सेक्शन */}
+       {/* पोल्स प्रबंधन सेक्शन */}
         <section className="bg-white rounded-3xl p-6 shadow-sm border border-emerald-100">
           <h2 className="text-xl font-black text-emerald-950 mb-4">📊 सभी पोल्स का प्रबंधन</h2>
           {/* @ts-ignore */}
-<PollsList 
-  polls={polls} 
-  totalPolls={polls.length} 
-  searchQuery="" 
-  selectedDistrict="" 
-  districts={[]} 
-/>
+          <PollsList 
+            polls={polls} 
+          />
         </section>
 
         {/* न्यूज़लेटर सब्सक्राइबर सेक्शन */}
