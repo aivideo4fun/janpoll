@@ -4,6 +4,7 @@ import { isAdmin } from '@/lib/admin-auth';
 import { formatIndiaDate, formatIndiaDateTime, whatsappDigits } from '@/lib/format-india';
 import LoginScreen from './components/LoginScreen';
 import AdminHeader from './components/AdminHeader';
+import AdminAccordion from './components/AdminAccordion';
 import ContactMsgs from './components/ContactMsgs';
 import Subscribers from './components/Subscribers';
 import PollsList from './components/PollsList';
@@ -20,7 +21,7 @@ export const dynamic = 'force-dynamic';
 const PAGE_SIZE = 20;
 const SUBSCRIBER_PREVIEW = 100;
 
-type AdminSearchParams = { error?: string; page?: string; search?: string };
+type AdminSearchParams = { error?: string; page?: string; search?: string; subs?: string };
 
 export default async function AdminDashboard(props: {
   searchParams?: Promise<AdminSearchParams>;
@@ -33,6 +34,10 @@ export default async function AdminDashboard(props: {
 
   const currentPage = Math.max(1, parseInt(params.page ?? '1', 10) || 1);
   const searchQuery = (params.search ?? '').trim().slice(0, 100);
+  const showAllSubscribers = params.subs === 'all';
+
+  // पेज बदलने या खोज करने पर पोल वाला कार्ड खुला रहे
+  const pollsOpen = Boolean(searchQuery) || currentPage > 1;
 
   // कोई एक क्वेरी फेल हो तो पूरा पेज न टूटे, पर त्रुटि साफ़ दिखे
   const failed: string[] = [];
@@ -68,7 +73,7 @@ export default async function AdminDashboard(props: {
       () =>
         (db as any).newsletterSubscriber.findMany({
           orderBy: { createdAt: 'desc' },
-          take: SUBSCRIBER_PREVIEW,
+          ...(showAllSubscribers ? {} : { take: SUBSCRIBER_PREVIEW }),
         }),
       [] as any[]
     ),
@@ -89,66 +94,98 @@ export default async function AdminDashboard(props: {
         logoutAction={handleLogout}
       />
 
-      <div className="mx-auto mt-8 max-w-7xl space-y-8 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto mt-8 max-w-7xl space-y-4 px-4 sm:px-6 lg:px-8">
         {failed.length > 0 && (
           <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold text-red-700">
             ⚠️ इन अनुभागों का डेटा लोड नहीं हो सका: {failed.join(', ')}। कृपया पेज रीफ़्रेश करें या सर्वर लॉग देखें।
           </div>
         )}
 
-        <ContactMsgs
-          messages={messages as any}
-          deleteMessage={deleteMessage}
-          formatIndiaDateTime={formatIndiaDateTime}
-          whatsappDigits={whatsappDigits}
-        />
-
-        <Subscribers
-          subscribers={subscribers as any}
-          total={totalSubscribers}
-          formatIndiaDateTime={formatIndiaDateTime}
-        />
-
-        {/* पोल खोज */}
-        <form
-          action="/admin"
-          method="get"
-          className="flex flex-col gap-2 rounded-3xl border border-emerald-100 bg-white p-4 shadow-sm sm:flex-row"
+        {/* 1. संपर्क संदेश */}
+        <AdminAccordion
+          icon="✉️"
+          title="उपयोगकर्ता संपर्क संदेश"
+          subtitle="संपर्क फॉर्म से प्राप्त सभी संदेश देखें और प्रबंधित करें"
+          count={messages.length}
+          countLabel="कुल संदेश"
+          tone="blue"
         >
-          <input
-            type="search"
-            name="search"
-            defaultValue={searchQuery}
-            placeholder="पोल के प्रश्न से खोजें..."
-            className="min-w-0 flex-1 rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+          <ContactMsgs
+            messages={messages as any}
+            deleteMessage={deleteMessage}
+            formatIndiaDateTime={formatIndiaDateTime}
+            whatsappDigits={whatsappDigits}
           />
-          <button
-            type="submit"
-            className="rounded-xl bg-emerald-700 px-5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-800"
-          >
-            🔍 खोजें
-          </button>
-          {searchQuery && (
-            <Link
-              href="/admin"
-              className="rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-center text-xs font-bold text-gray-700 transition hover:bg-gray-50"
-            >
-              खोज हटाएं
-            </Link>
-          )}
-        </form>
+        </AdminAccordion>
 
-        <PollsList
-          polls={polls}
-          totalPolls={totalPolls}
-          searchQuery={searchQuery}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          deletePoll={deletePoll}
-          editPoll={editPoll}
-          addPollOption={addPollOption}
-          formatIndiaDate={formatIndiaDate}
-        />
+        {/* 2. न्यूज़लेटर सदस्य */}
+        <AdminAccordion
+          icon="📧"
+          title="न्यूज़लेटर सदस्य सूची"
+          subtitle="सदस्यों के ईमेल देखें और एक्सेल में डाउनलोड करें"
+          count={totalSubscribers}
+          countLabel="कुल सदस्य"
+          tone="amber"
+          defaultOpen={showAllSubscribers}
+        >
+          <Subscribers
+            subscribers={subscribers as any}
+            total={totalSubscribers}
+            showAll={showAllSubscribers}
+            formatIndiaDateTime={formatIndiaDateTime}
+          />
+        </AdminAccordion>
+
+        {/* 3. पोल प्रबंधन */}
+        <AdminAccordion
+          icon="📊"
+          title="पोल प्रबंधन"
+          subtitle="पोल खोजें, संपादित करें, विकल्प जोड़ें या हटाएं"
+          count={totalPolls}
+          countLabel="कुल पोल"
+          tone="emerald"
+          defaultOpen={pollsOpen}
+        >
+          <form
+            action="/admin"
+            method="get"
+            className="mb-3 flex flex-col gap-2 rounded-2xl border border-gray-200 bg-white p-3 sm:flex-row"
+          >
+            <input
+              type="search"
+              name="search"
+              defaultValue={searchQuery}
+              placeholder="पोल के प्रश्न से खोजें..."
+              className="min-w-0 flex-1 rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+            />
+            <button
+              type="submit"
+              className="rounded-xl bg-emerald-700 px-5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-800"
+            >
+              🔍 खोजें
+            </button>
+            {searchQuery && (
+              <Link
+                href="/admin"
+                className="rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-center text-xs font-bold text-gray-700 transition hover:bg-gray-50"
+              >
+                खोज हटाएं
+              </Link>
+            )}
+          </form>
+
+          <PollsList
+            polls={polls}
+            totalPolls={totalPolls}
+            searchQuery={searchQuery}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            deletePoll={deletePoll}
+            editPoll={editPoll}
+            addPollOption={addPollOption}
+            formatIndiaDate={formatIndiaDate}
+          />
+        </AdminAccordion>
       </div>
     </main>
   );
