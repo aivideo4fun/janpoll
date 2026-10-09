@@ -8,21 +8,20 @@ import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminDashboard({
-  searchParams,
-}: {
-  searchParams: Promise<{ error?: string; page?: string }>;
+export default async function AdminDashboard(props: {
+  searchParams?: Promise<{ error?: string; page?: string }>;
 }) {
   try {
-    const resolvedSearchParams = await searchParams;
+    const searchParams = props.searchParams ? await props.searchParams : {};
     const cookieStore = await cookies();
     const adminAuth = cookieStore.get('admin_session');
 
+    // यदि प्रशासक लॉग इन नहीं है, तो लॉगिन स्क्रीन दिखाएं
     if (!adminAuth || adminAuth.value !== 'authenticated') {
-      return <LoginScreen error={resolvedSearchParams?.error} />;
+      return <LoginScreen error={searchParams?.error} />;
     }
 
-    const pageParam = resolvedSearchParams?.page ?? '1';
+    const pageParam = searchParams?.page ?? '1';
     const currentPage = Math.max(1, parseInt(pageParam, 10));
     const pageSize = 20;
 
@@ -33,14 +32,16 @@ export default async function AdminDashboard({
     let totalVotes = 0;
 
     try {
-      polls = await db.poll.findMany({
+      const rawPolls = await db.poll.findMany({
         orderBy: { createdAt: 'desc' },
         include: { options: true },
         skip: (currentPage - 1) * pageSize,
         take: pageSize,
       });
+      polls = Array.isArray(rawPolls) ? rawPolls : [];
     } catch (e) {
       console.error('पोल डेटा लोड करने में त्रुटि:', e);
+      polls = [];
     }
 
     try {
@@ -50,17 +51,19 @@ export default async function AdminDashboard({
     }
 
     try {
-      contactMessages = await db.contactMessage.findMany({
+      const rawMsgs = await db.contactMessage.findMany({
         orderBy: { createdAt: 'desc' },
       });
+      contactMessages = Array.isArray(rawMsgs) ? rawMsgs : [];
     } catch (e) {
       contactMessages = [];
     }
 
     try {
-      subscribers = await (db as any).newsletterSubscriber.findMany({
+      const rawSubs = await (db as any).newsletterSubscriber.findMany({
         orderBy: { createdAt: 'desc' },
       });
+      subscribers = Array.isArray(rawSubs) ? rawSubs : [];
     } catch (e) {
       subscribers = [];
     }
@@ -69,7 +72,7 @@ export default async function AdminDashboard({
       const voteSum = await db.pollOption.aggregate({
         _sum: { voteCount: true },
       });
-      totalVotes = voteSum._sum.voteCount ?? 0;
+      totalVotes = voteSum?._sum?.voteCount ?? 0;
     } catch (e) {
       totalVotes = 0;
     }
@@ -117,10 +120,10 @@ export default async function AdminDashboard({
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {subscribers.map((sub, index) => (
-                      <tr key={sub.id} className="hover:bg-slate-50">
+                      <tr key={sub.id || index} className="hover:bg-slate-50">
                         <td className="p-3 font-bold text-gray-600">{index + 1}</td>
                         <td className="p-3 font-semibold text-gray-800">{sub.email}</td>
-                        <td className="p-3 text-gray-500">{new Date(sub.createdAt).toLocaleString('hi-IN')}</td>
+                        <td className="p-3 text-gray-500">{sub.createdAt ? new Date(sub.createdAt).toLocaleString('hi-IN') : ''}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -148,7 +151,7 @@ export default async function AdminDashboard({
                     href={`/admin?page=${currentPage - 1}`}
                     className="px-4 py-2 bg-white border border-emerald-200 rounded-xl text-emerald-900 hover:bg-emerald-50 transition shadow-sm"
                   >
-                    &larr; पिछلا पृष्ठ
+                    &larr; पिछला पृष्ठ
                   </Link>
                 ) : (
                   <span className="px-4 py-2 bg-gray-100 border border-gray-200 rounded-xl text-gray-400 cursor-not-allowed">
@@ -185,7 +188,7 @@ export default async function AdminDashboard({
       <div className="min-h-screen bg-red-50 flex items-center justify-center p-6 text-center">
         <div className="bg-white p-6 rounded-2xl shadow-lg border border-red-200 max-w-md w-full space-y-3">
           <h2 className="text-lg font-bold text-red-700">प्रशासन पोर्टल त्रुटि</h2>
-          <p className="text-xs text-gray-600">सर्वर पर कोई तकनीकी समस्या उत्पन्न हुई है। कृपया टर्मिनल में `pm2 logs` की जाँच करें।</p>
+          <p className="text-xs text-gray-600">सर्वर पर कोई तकनीकी समस्या उत्पन्न हुई है। कृपया पुनः प्रयास करें।</p>
           <a href="/admin" className="inline-block bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs">
             पुनः प्रयास करें
           </a>
