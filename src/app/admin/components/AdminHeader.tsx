@@ -1,80 +1,74 @@
-'use client';
-
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
 type AdminHeaderProps = {
   totalPolls: number;
   totalVotes: number;
   totalSubscribers: number;
+  totalMessages: number;
+  logoutAction: () => Promise<void>;
 };
 
-export default function AdminHeader({ totalPolls, totalVotes, totalSubscribers }: AdminHeaderProps) {
-  const router = useRouter();
+const nf = (n: number) => n.toLocaleString('en-IN');
 
-  const handleClientLogout = async () => {
-    try {
-      // Cookie delete karne ke liye fetch call ya direct redirect
-      document.cookie = 'admin_session=; Max-Age=0; path=/;';
-      router.push('/admin');
-      router.refresh();
-    } catch (e) {
-      window.location.href = '/admin';
-    }
-  };
+export default function AdminHeader({
+  totalPolls,
+  totalVotes,
+  totalSubscribers,
+  totalMessages,
+  logoutAction,
+}: AdminHeaderProps) {
+  const stats = [
+    { icon: '📊', label: 'कुल पंजीकृत पोल', value: totalPolls },
+    { icon: '🗳️', label: 'कुल प्राप्त मत', value: totalVotes },
+    { icon: '✉️', label: 'संपर्क संदेश', value: totalMessages },
+    { icon: '📧', label: 'न्यूज़लेटर सदस्य', value: totalSubscribers },
+  ];
 
   return (
-    <header className="bg-gradient-to-r from-emerald-900 to-emerald-800 text-white shadow-md">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          
-          <div className="space-y-1 text-center md:text-left">
-            <span className="bg-emerald-700 text-emerald-100 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider border border-emerald-600">
+    <header className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 text-white shadow-lg">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+          <div className="space-y-1.5 text-center md:text-left">
+            <span className="inline-block rounded-full border border-emerald-600 bg-emerald-700/70 px-2.5 py-1 text-[10px] font-bold tracking-wider text-emerald-100">
               सुरक्षित प्रशासक क्षेत्र
             </span>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
-              प्रशासक प्रबंधन डैशबोर्ड
-            </h1>
+            <h1 className="text-2xl font-black tracking-tight sm:text-3xl">प्रशासन नियंत्रण कक्ष</h1>
             <p className="text-xs text-emerald-200/80">
-              सार्वजनिक पोल्स, मतों और उपयोगकर्ता संपर्क संदेशों की निगरानी एवं संचालन करें।
+              पोल, मत, संपर्क संदेश और न्यूज़लेटर सदस्यों का प्रबंधन एक ही स्थान से करें।
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
             <Link
               href="/"
-              className="bg-white/10 hover:bg-white/20 text-white font-bold px-4 py-2 rounded-xl text-xs transition border border-white/20 shadow-sm"
+              className="rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold transition hover:bg-white/20"
             >
-              होम पेज →
+              वेबसाइट देखें →
             </Link>
+            <form action={logoutAction}>
+              <button
+                type="submit"
+                className="cursor-pointer rounded-xl bg-red-600 px-4 py-2 text-xs font-bold shadow-sm transition hover:bg-red-700"
+              >
+                लॉग आउट
+              </button>
+            </form>
+          </div>
+        </div>
 
-            <button
-              onClick={handleClientLogout}
-              type="button"
-              className="bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition shadow-sm cursor-pointer"
+        <div className="mt-7 grid grid-cols-2 gap-3 border-t border-emerald-700/60 pt-6 lg:grid-cols-4">
+          {stats.map((s) => (
+            <div
+              key={s.label}
+              className="rounded-2xl border border-emerald-700/50 bg-emerald-950/40 p-4 text-center"
             >
-              लॉग आउट
-            </button>
-          </div>
-
+              <p className="text-2xl font-black">{nf(s.value)}</p>
+              <p className="mt-1 text-xs font-semibold text-emerald-300">
+                {s.icon} {s.label}
+              </p>
+            </div>
+          ))}
         </div>
-
-        {/* Live Statistics Counters */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8 pt-6 border-t border-emerald-700/60">
-          <div className="bg-emerald-950/40 border border-emerald-700/50 rounded-2xl p-4 text-center">
-            <p className="text-2xl font-black text-white">{totalPolls.toLocaleString('en-IN')}</p>
-            <p className="text-xs text-emerald-300 font-semibold mt-1">📊 कुल पंजीकृत पोल्स</p>
-          </div>
-          <div className="bg-emerald-950/40 border border-emerald-700/50 rounded-2xl p-4 text-center">
-            <p className="text-2xl font-black text-white">{totalVotes.toLocaleString('en-IN')}</p>
-            <p className="text-xs text-emerald-300 font-semibold mt-1">🗳️ कुल प्राप्त मत</p>
-          </div>
-          <div className="bg-emerald-950/40 border border-emerald-700/50 rounded-2xl p-4 text-center">
-            <p className="text-2xl font-black text-white">{totalSubscribers.toLocaleString('en-IN')}</p>
-            <p className="text-xs text-emerald-300 font-semibold mt-1">📧 कुल न्यूज़लेटर सब्सक्राइबर</p>
-          </div>
-        </div>
-
       </div>
     </header>
   );
