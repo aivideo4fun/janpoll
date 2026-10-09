@@ -16,7 +16,6 @@ export default async function AdminDashboard(props: {
     const cookieStore = await cookies();
     const adminAuth = cookieStore.get('admin_session');
 
-    // यदि प्रशासक लॉग इन नहीं है, तो लॉगिन स्क्रीन दिखाएं
     if (!adminAuth || adminAuth.value !== 'authenticated') {
       return <LoginScreen error={searchParams?.error} />;
     }
@@ -38,7 +37,14 @@ export default async function AdminDashboard(props: {
         skip: (currentPage - 1) * pageSize,
         take: pageSize,
       });
-      polls = Array.isArray(rawPolls) ? rawPolls : [];
+
+      // सुनिश्चित करें कि हर पोल के पास valid options array हो
+      polls = Array.isArray(rawPolls)
+        ? rawPolls.map((p) => ({
+            ...p,
+            options: Array.isArray(p.options) ? p.options : [],
+          }))
+        : [];
     } catch (e) {
       console.error('पोल डेटा लोड करने में त्रुटि:', e);
       polls = [];
