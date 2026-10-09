@@ -24,7 +24,7 @@ export default async function AdminDashboard({
 
     const pageParam = resolvedSearchParams?.page ?? '1';
     const currentPage = Math.max(1, parseInt(pageParam, 10));
-    const pageSize = 20; // 👈 उपयोगकर्ता की मांग के अनुसार प्रति पेज 20 पोल्स
+    const pageSize = 20;
 
     let polls: any[] = [];
     let totalPollsCount = 0;
@@ -33,34 +33,45 @@ export default async function AdminDashboard({
     let totalVotes = 0;
 
     try {
-      [polls, totalPollsCount, contactMessages, subscribers] = await Promise.all([
-        db.poll.findMany({
-          orderBy: { createdAt: 'desc' },
-          include: { options: true },
-          skip: (currentPage - 1) * pageSize,
-          take: pageSize,
-        }),
-        db.poll.count(),
-        db.contactMessage.findMany({
-          orderBy: { createdAt: 'desc' },
-        }),
-        (async () => {
-          try {
-            return await (db as any).newsletterSubscriber.findMany({
-              orderBy: { createdAt: 'desc' },
-            });
-          } catch {
-            return [];
-          }
-        })(),
-      ]);
+      polls = await db.poll.findMany({
+        orderBy: { createdAt: 'desc' },
+        include: { options: true },
+        skip: (currentPage - 1) * pageSize,
+        take: pageSize,
+      });
+    } catch (e) {
+      console.error('पोल डेटा लोड करने में त्रुटि:', e);
+    }
 
+    try {
+      totalPollsCount = await db.poll.count();
+    } catch (e) {
+      totalPollsCount = 0;
+    }
+
+    try {
+      contactMessages = await db.contactMessage.findMany({
+        orderBy: { createdAt: 'desc' },
+      });
+    } catch (e) {
+      contactMessages = [];
+    }
+
+    try {
+      subscribers = await (db as any).newsletterSubscriber.findMany({
+        orderBy: { createdAt: 'desc' },
+      });
+    } catch (e) {
+      subscribers = [];
+    }
+
+    try {
       const voteSum = await db.pollOption.aggregate({
         _sum: { voteCount: true },
       });
       totalVotes = voteSum._sum.voteCount ?? 0;
-    } catch (dbErr) {
-      console.error('डेटाबेस लोड करने में त्रुटि:', dbErr);
+    } catch (e) {
+      totalVotes = 0;
     }
 
     const totalPages = Math.max(1, Math.ceil(totalPollsCount / pageSize));
@@ -72,7 +83,7 @@ export default async function AdminDashboard({
         
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-8 space-y-8">
           
-          {/* 1. उपयोगकर्ता संपर्क संदेश अनुभाग (सबसे ऊपर) */}
+          {/* 1. उपयोगकर्ता संपर्क संदेश अनुभाग */}
           <section className="bg-white rounded-3xl p-6 shadow-sm border border-emerald-100 space-y-4">
             <div className="flex flex-wrap justify-between items-center border-b border-emerald-100 pb-4">
               <h2 className="text-xl font-black text-emerald-950">💬 उपयोगकर्ता संपर्क संदेश</h2>
@@ -84,7 +95,7 @@ export default async function AdminDashboard({
             <ContactMsgs messages={contactMessages} />
           </section>
 
-          {/* 2. न्यूज़लेटर सब्सक्राइबर सूची अनुभाग (मध्य में) */}
+          {/* 2. न्यूज़लेटर सब्सक्राइबर सूची अनुभाग */}
           <section className="bg-white rounded-3xl p-6 shadow-sm border border-emerald-100 space-y-4">
             <div className="flex flex-wrap justify-between items-center border-b border-emerald-100 pb-4">
               <h2 className="text-xl font-black text-emerald-950">📧 न्यूज़लेटर सब्सक्राइबर सूची</h2>
@@ -118,7 +129,7 @@ export default async function AdminDashboard({
             )}
           </section>
 
-          {/* 3. पोल्स प्रबंधन अनुभाग (सबसे नीचे, पेजिनेशन के साथ प्रति पेज 20 पोल्स) */}
+          {/* 3. पोल्स प्रबंधन अनुभाग */}
           <section className="bg-white rounded-3xl p-6 shadow-sm border border-emerald-100 space-y-6">
             <div className="flex flex-wrap justify-between items-center border-b border-emerald-100 pb-4">
               <h2 className="text-xl font-black text-emerald-950">📊 सभी पोल्स का प्रबंधन</h2>
@@ -130,7 +141,6 @@ export default async function AdminDashboard({
             {/* @ts-ignore */}
             <PollsList polls={polls} />
 
-            {/* पेजिनेशन नियंत्रण */}
             {totalPages > 1 && (
               <div className="flex flex-wrap items-center justify-center gap-3 pt-6 border-t border-gray-100 text-xs font-bold">
                 {currentPage > 1 ? (
@@ -138,7 +148,7 @@ export default async function AdminDashboard({
                     href={`/admin?page=${currentPage - 1}`}
                     className="px-4 py-2 bg-white border border-emerald-200 rounded-xl text-emerald-900 hover:bg-emerald-50 transition shadow-sm"
                   >
-                    &larr; पिछला पृष्ठ
+                    &larr; पिछلا पृष्ठ
                   </Link>
                 ) : (
                   <span className="px-4 py-2 bg-gray-100 border border-gray-200 rounded-xl text-gray-400 cursor-not-allowed">
@@ -147,7 +157,7 @@ export default async function AdminDashboard({
                 )}
 
                 <span className="text-gray-700 bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-200">
-                  पृष्ठ {currentPage} / {totalPages} (प्रति पेज 20 पोल्स)
+                  पृष्ठ {currentPage} / {totalPages} (प्रति पृष्ठ 20 पोल्स)
                 </span>
 
                 {currentPage < totalPages ? (
@@ -170,12 +180,12 @@ export default async function AdminDashboard({
       </main>
     );
   } catch (error) {
-    console.error('एडमिन डैशबोर्ड त्रुटि:', error);
+    console.error('एडमिन डैशबोर्ड गंभीर त्रुटि:', error);
     return (
       <div className="min-h-screen bg-red-50 flex items-center justify-center p-6 text-center">
         <div className="bg-white p-6 rounded-2xl shadow-lg border border-red-200 max-w-md w-full space-y-3">
           <h2 className="text-lg font-bold text-red-700">प्रशासन पोर्टल त्रुटि</h2>
-          <p className="text-xs text-gray-600">सर्वर में कोई तकनीकी समस्या आई है। कृपया पुनः प्रयास करें।</p>
+          <p className="text-xs text-gray-600">सर्वर पर कोई तकनीकी समस्या उत्पन्न हुई है। कृपया टर्मिनल में `pm2 logs` की जाँच करें।</p>
           <a href="/admin" className="inline-block bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs">
             पुनः प्रयास करें
           </a>
