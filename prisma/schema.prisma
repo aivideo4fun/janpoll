@@ -145,3 +145,11 @@ model GramPanchayat {
   @@unique([samitiId, nameEn])
   @@index([districtId])
 }
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique @db.VarChar(255)
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}

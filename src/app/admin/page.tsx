@@ -1,223 +1,209 @@
-import { db } from '@/lib/db';
-import { isAdmin } from '@/lib/admin-auth';
-import { handleLogout, deletePoll, editPoll, addPollOption, deleteMessage } from './actions/adminActions';
-import LoginScreen from './components/LoginScreen';
-import AdminHeader from './components/AdminHeader';
-import ContactMsgs from './components/ContactMsgs';
-import PollsList from './components/PollsList';
 import Link from 'next/link';
+import Image from 'next/image';
+import { db } from '@/lib/db';
+import { subscribeNewsletter } from '@/app/actions/newsletterAction';
 
-export const dynamic = 'force-dynamic';
-
-export const metadata = {
-  title: 'प्रशासक डैशबोर्ड',
-  robots: { index: false, follow: false },
-};
-
-function formatIndiaDate(value: Date | string) {
-  return new Intl.DateTimeFormat('hi-IN', {
-    timeZone: 'Asia/Kolkata',
-    dateStyle: 'medium',
-  }).format(new Date(value));
+export default function Footer() {
+  return <FooterContent />;
 }
 
-function formatIndiaDateTime(value: Date | string) {
-  return new Intl.DateTimeFormat('hi-IN', {
-    timeZone: 'Asia/Kolkata',
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(value));
-}
-
-function whatsappDigits(value: string) {
-  return value.replace(/\D/g, '');
-}
-
-type SearchParams = {
-  error?: string;
-  search?: string;
-  page?: string;
-  tab?: string;
-};
-
-export default async function AdminPage({
-  searchParams,
-}: {
-  searchParams: Promise<SearchParams>;
-}) {
-  const params = await searchParams;
-  const error = params.error;
-  const searchQuery = params.search?.trim() || '';
-  const currentPage = Math.max(1, Number(params.page) || 1);
-  const currentTab = params.tab || 'polls'; // Default tab polls rahega
-  const pageSize = 10;
-
-  if (!(await isAdmin())) {
-    return <LoginScreen error={error} />;
-  }
-
-  let polls: any[] = [];
+async function FooterContent() {
+  let totalVotes = 0;
   let totalPolls = 0;
-  let messages: any[] = [];
-  let loadError = '';
+  const totalDistricts = 41;
 
   try {
-    const whereCondition = searchQuery
-      ? {
-          OR: [
-            { question: { contains: searchQuery, mode: 'insensitive' as any } },
-            { creatorName: { contains: searchQuery, mode: 'insensitive' as any } },
-            { districtName: { contains: searchQuery, mode: 'insensitive' as any } },
-          ],
-        }
-      : {};
+    totalPolls = await db.poll.count();
 
-    totalPolls = await db.poll.count({ where: whereCondition });
-
-    polls = await db.poll.findMany({
-      where: whereCondition,
-      select: {
-        id: true,
-        question: true,
-        creatorName: true,
-        creatorEmail: true,
-        createdAt: true,
-        active: true,
-        districtName: true,
-        samitiName: true,
-        gramPanchayatName: true,
-        gramPanchayatId: true,
-        options: {
-          select: { id: true, text: true, voteCount: true, createdAt: true },
-          orderBy: { createdAt: 'asc' },
-        },
+    const voteSum = await db.pollOption.aggregate({
+      _sum: {
+        voteCount: true,
       },
-      orderBy: { createdAt: 'desc' },
-      skip: (currentPage - 1) * pageSize,
-      take: pageSize,
     });
-
-    messages = await db.contactMessage.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
-  } catch (err) {
-    console.error('डेटा लोड त्रुटि:', err);
-    loadError = 'डेटा लोड करने में समस्या आई। कृपया कुछ समय पश्चात पुनः प्रयास करें।';
+    totalVotes = voteSum._sum.voteCount ?? 0;
+  } catch (error) {
+    console.error('फूटर डेटा लोड करने में त्रुटि:', error);
   }
 
-  const totalPages = Math.max(1, Math.ceil(totalPolls / pageSize));
-  const totalVotes = polls.reduce(
-    (sum, poll) => sum + poll.options.reduce((optSum: number, opt: any) => optSum + opt.voteCount, 0),
-    0
-  );
-
   return (
-    <main className="min-h-screen bg-slate-50">
-      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10 space-y-8">
+    <footer className="bg-[#031d15] text-white pt-12 pb-8 border-t border-emerald-900/50 overflow-x-hidden">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-12">
         
-        {/* प्रशासक हेडर */}
-        <AdminHeader handleLogout={handleLogout} />
-
-        {loadError && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-sm font-semibold text-red-700">
-            {loadError}
-          </div>
-        )}
-
-        {/* सांख्यिकी (Stats) */}
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold text-gray-500">कुल पोल्स (परिणाम)</p>
-            <p className="mt-2 text-3xl font-black text-emerald-800">{totalPolls}</p>
-          </div>
-          <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold text-gray-500">सक्रिय पोल्स</p>
-            <p className="mt-2 text-3xl font-black text-emerald-800">{polls.filter(p => p.active).length}</p>
-          </div>
-          <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold text-gray-500">कुल मत (Votes)</p>
-            <p className="mt-2 text-3xl font-black text-emerald-800">{totalVotes}</p>
-          </div>
-          <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold text-gray-500">संपर्क संदेश</p>
-            <p className="mt-2 text-3xl font-black text-emerald-800">{messages.length}</p>
-          </div>
-        </section>
-
-        {/* टैब नेविगेशन बटन (Tab Switching) */}
-        <div className="flex border-b border-emerald-200 gap-4">
-          <Link
-            href="/admin?tab=polls"
-            className={`pb-3 px-4 text-sm font-black transition border-b-2 ${
-              currentTab === 'polls'
-                ? 'border-emerald-700 text-emerald-800'
-                : 'border-transparent text-gray-500 hover:text-emerald-700'
-            }`}
-          >
-            📊 पंजीकृत पोल्स मैनेजमेंट ({totalPolls})
-          </Link>
-          <Link
-            href="/admin?tab=messages"
-            className={`pb-3 px-4 text-sm font-black transition border-b-2 flex items-center gap-2 ${
-              currentTab === 'messages'
-                ? 'border-emerald-700 text-emerald-800'
-                : 'border-transparent text-gray-500 hover:text-emerald-700'
-            }`}
-          >
-            ✉️ उपयोगकर्ता संपर्क संदेश
-            <span className="rounded-full bg-emerald-700 px-2 py-0.5 text-[10px] text-white">
-              {messages.length}
-            </span>
-          </Link>
+        {/* महत्वपूर्ण सूचना बॉक्स */}
+        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/40 p-4 sm:p-5 flex items-start gap-3 shadow-inner">
+          <span className="text-emerald-400 text-xl">ℹ️</span>
+          <p className="text-xs sm:text-sm text-emerald-100/90 leading-relaxed font-medium">
+            <strong className="text-white font-bold">महत्वपूर्ण सूचना:</strong> JanPoll पर दिखाए गए पोल्स केवल जनता की राय/जनमत जानने के लिए हैं। ये किसी सरकारी संस्था, निर्वाचन आयोग या आधिकारिक चुनावी मतदान प्रणाली का हिस्सा नहीं हैं।
+          </p>
         </div>
 
-        {/* टैब के आधार पर कंटेंट दिखाना */}
-        {currentTab === 'messages' ? (
-          <ContactMsgs
-            messages={messages}
-            deleteMessage={deleteMessage}
-            formatIndiaDateTime={formatIndiaDateTime}
-            whatsappDigits={whatsappDigits}
-          />
-        ) : (
-          <div className="space-y-6">
-            {/* खोज बार (Search Bar सिर्फ पोल्स टैब में दिखेगा) */}
-            <div className="bg-white p-4 rounded-2xl shadow-sm border border-emerald-100">
-              <form method="GET" className="flex gap-2">
-                <input type="hidden" name="tab" value="polls" />
-                <input
-                  type="text"
-                  name="search"
-                  defaultValue={searchQuery}
-                  placeholder="पोल प्रश्न, निर्माता या जिला द्वारा खोजें..."
-                  className="flex-1 rounded-xl border border-gray-200 px-4 py-2.5 text-xs outline-none focus:border-emerald-500"
-                />
-                <button type="submit" className="bg-emerald-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition hover:bg-emerald-800">
-                  खोजें
-                </button>
-                {searchQuery && (
-                  <Link href="/admin?tab=polls" className="bg-gray-200 text-gray-700 px-4 py-2.5 rounded-xl text-xs font-bold flex items-center transition">
-                    साफ करें
-                  </Link>
-                )}
-              </form>
+        {/* मुख्य फूटर ग्रिड कॉलम */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-6">
+          
+          <div className="lg:col-span-2 space-y-4">
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl sm:text-3xl font-black tracking-tight text-white">JANPOLL</span>
+              <span className="text-xs sm:text-sm font-bold text-emerald-400 bg-emerald-900/60 px-2 py-0.5 rounded-md">राजस्थान</span>
+            </div>
+            
+            <p className="text-xs sm:text-sm text-emerald-100/80 font-medium">
+              राजस्थान की जनता की राय, एक जगह।
+            </p>
+
+            <p className="text-xs text-gray-300 leading-relaxed max-w-md">
+              JanPoll.in एक स्वतंत्र जनमत मंच है जहाँ आप राजस्थान के स्थानीय मुद्दों, ग्राम पंचायत, पंचायत समिति और जिला परिषद पर अपनी राय साझा कर सकते हैं।
+            </p>
+
+            <div className="pt-2 flex flex-wrap gap-2">
+              <div className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-950/60 px-3 py-1.5 text-xs text-emerald-200">
+                <span>🟢</span>
+                <span>राजस्थान: लाइव (सक्रिय)</span>
+              </div>
+            </div>
+          </div>
+
+          {/* मुख्य लिंक */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-black text-emerald-300 uppercase tracking-wider flex items-center gap-2 border-b border-emerald-900 pb-2">
+              <span>🔗</span> मुख्य लिंक
+            </h3>
+            <ul className="space-y-2.5 text-xs text-gray-300 font-medium">
+              <li><Link href="/" className="hover:text-emerald-400 transition flex items-center gap-1.5">› होम पेज</Link></li>
+              <li><Link href="/create" className="hover:text-emerald-400 transition flex items-center gap-1.5">› पोल बनाएं</Link></li>
+              <li><Link href="/rajasthan" className="hover:text-emerald-400 transition flex items-center gap-1.5">› लोकप्रिय पोल</Link></li>
+              <li><Link href="/privacy-policy" className="hover:text-emerald-400 transition flex items-center gap-1.5">› गोपनीयता नीति</Link></li>
+              <li><Link href="/terms" className="hover:text-emerald-400 transition flex items-center gap-1.5">› नियम और शर्तें</Link></li>
+              <li><Link href="/contact" className="hover:text-emerald-400 transition flex items-center gap-1.5">› संपर्क करें</Link></li>
+            </ul>
+          </div>
+
+          {/* सहायता एवं जानकारी */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-black text-emerald-300 uppercase tracking-wider flex items-center gap-2 border-b border-emerald-900 pb-2">
+              <span>❓</span> सहायता एवं जानकारी
+            </h3>
+            <ul className="space-y-2.5 text-xs text-gray-300 font-medium">
+              <li><Link href="/contact" className="hover:text-emerald-400 transition flex items-center gap-1.5">› JanPoll क्या है?</Link></li>
+              <li><Link href="/contact" className="hover:text-emerald-400 transition flex items-center gap-1.5">› यह कैसे काम करता है?</Link></li>
+              <li><Link href="/privacy-policy" className="hover:text-emerald-400 transition flex items-center gap-1.5">› सुरक्षा और गोपनीयता</Link></li>
+              <li><Link href="/contact" className="hover:text-emerald-400 transition flex items-center gap-1.5">› अक्सर पूछे जाने वाले प्रश्न</Link></li>
+              <li><Link href="/contact" className="hover:text-emerald-400 transition flex items-center gap-1.5">› सुझाव या शिकायत</Link></li>
+            </ul>
+          </div>
+
+          {/* सोशल मीडिया और न्यूज़लेटर */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-black text-emerald-300 uppercase tracking-wider flex items-center gap-2 border-b border-emerald-900 pb-2">
+              <span>👥</span> हमसे जुड़ें
+            </h3>
+            
+            <div className="flex items-center gap-3 pt-1">
+              <a href="https://www.facebook.com/profile.php?id=61595121995283" target="_blank" rel="noreferrer" title="Facebook" className="h-10 w-10 rounded-full bg-white/10 p-2 flex items-center justify-center hover:bg-white/20 transition shadow">
+                <Image src="/images/facebook.png" alt="Facebook" width={24} height={24} className="object-contain" />
+              </a>
+              <a href="https://www.instagram.com/janpoll.in" target="_blank" rel="noreferrer" title="Instagram" className="h-10 w-10 rounded-full bg-white/10 p-2 flex items-center justify-center hover:bg-white/20 transition shadow">
+                <Image src="/images/instagram.png" alt="Instagram" width={24} height={24} className="object-contain" />
+              </a>
+              <a href="https://twitter.com/janpollindia" target="_blank" rel="noreferrer" title="X (Twitter)" className="h-10 w-10 rounded-full bg-white/10 p-2 flex items-center justify-center hover:bg-white/20 transition shadow">
+                <Image src="/images/x.png" alt="X (Twitter)" width={24} height={24} className="object-contain" />
+              </a>
+              <a href="https://youtube.com" target="_blank" rel="noreferrer" title="YouTube" className="h-10 w-10 rounded-full bg-white/10 p-2 flex items-center justify-center hover:bg-white/20 transition shadow">
+                <Image src="/images/youtube.png" alt="YouTube" width={24} height={24} className="object-contain" />
+              </a>
             </div>
 
-            <PollsList
-              polls={polls}
-              totalPolls={totalPolls}
-              searchQuery={searchQuery}
-              currentPage={currentPage}
-              totalPages={totalPages}
-              deletePoll={deletePoll}
-              editPoll={editPoll}
-              addPollOption={addPollOption}
-              formatIndiaDate={formatIndiaDate}
-            />
+            {/* न्यूज़लेटर फॉर्म */}
+            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/50 p-3 space-y-2">
+              <p className="text-xs font-bold text-white flex items-center gap-1.5">
+                <span>✉️</span> जानकारी पाएं
+              </p>
+              <form action={async (formData) => { 'use server'; await subscribeNewsletter(formData); }} className="flex flex-col gap-2">
+                <input
+                  type="email"
+                  name="email"
+                  required
+                  placeholder="अपना ईमेल दर्ज करें"
+                  className="w-full rounded-xl border border-emerald-800 bg-[#01140e] px-3 py-2 text-xs text-white outline-none focus:border-emerald-500"
+                />
+                <button
+                  type="submit"
+                  className="w-full rounded-xl bg-emerald-500 py-2 text-xs font-bold text-emerald-950 hover:bg-emerald-400 transition shadow"
+                >
+                  सब्सक्राइब करें
+                </button>
+              </form>
+            </div>
           </div>
-        )}
+
+        </div>
+
+        {/* 🏛️ म्हारो राजस्थान • म्हारी राय (हवा महल और राजस्थान मैप बैकग्राउंड इमेज के साथ) */}
+        <div className="rounded-3xl border border-emerald-500/25 bg-gradient-to-r from-emerald-950/95 via-[#022c20] to-emerald-950/95 p-6 sm:p-8 flex flex-col lg:flex-row items-center justify-between gap-6 shadow-xl relative overflow-hidden">
+          
+          {/* टेक्स्ट और स्लोगन */}
+          <div className="space-y-2 text-center lg:text-left z-10 max-w-xl">
+            <h4 className="text-2xl sm:text-3xl font-black text-amber-400 tracking-wide">
+              म्हारो राजस्थान • म्हारी राय
+            </h4>
+            <p className="text-xs sm:text-sm text-emerald-100">
+              राजस्थान के हर कोने की आवाज़ को डिजिटल मंच देना हमारा संकल्प है। आपकी भागीदारी से लोकतंत्र मजबूत होता है।
+            </p>
+          </div>
+
+          {/* हवा महल और राजस्थान मैप ग्राफिकल इमेज */}
+          <div className="z-15 relative flex items-center justify-center p-2">
+            <div className="relative w-[280px] sm:w-[320px] h-[120px] sm:h-[140px] flex items-center justify-center">
+              <Image 
+                src="/images/rajasthan-hawa-mahal.png" 
+                alt="Rajasthan Map and Hawa Mahal" 
+                fill 
+                className="object-contain drop-shadow-lg"
+              />
+            </div>
+          </div>
+
+        </div>
+
+        {/* वास्तविक डेटाबेस आंकड़े (41 जिलों के साथ) */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-900/30 p-4 text-center">
+            <p className="text-xl sm:text-2xl font-black text-white">{totalVotes.toLocaleString('en-IN')}+</p>
+            <p className="text-xs text-emerald-300 font-medium">कुल वोटर्स</p>
+          </div>
+          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-900/30 p-4 text-center">
+            <p className="text-xl sm:text-2xl font-black text-white">{totalPolls.toLocaleString('en-IN')}+</p>
+            <p className="text-xs text-emerald-300 font-medium">कुल पोल</p>
+          </div>
+          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-900/30 p-4 text-center">
+            <p className="text-xl sm:text-2xl font-black text-white">{totalDistricts}+</p>
+            <p className="text-xs text-emerald-300 font-medium">जिलों से सहभागिता</p>
+          </div>
+          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-900/30 p-4 text-center">
+            <p className="text-xl sm:text-2xl font-black text-white">100%</p>
+            <p className="text-xs text-emerald-300 font-medium">सुरक्षित राय</p>
+          </div>
+        </div>
+
+        {/* कॉपीराइट */}
+        <div className="border-t border-emerald-900/80 pt-6 flex flex-col lg:flex-row items-center justify-between gap-4 text-xs text-gray-400 text-center lg:text-left">
+          <p>© 2026 JanPoll.in — सभी अधिकार सुरक्षित। Designed for Rajasthan Public Opinion Platform</p>
+
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 font-medium">
+            <Link href="/privacy-policy" className="hover:text-emerald-400 transition">गोपनीयता नीति</Link>
+            <span>•</span>
+            <Link href="/terms" className="hover:text-emerald-400 transition">नियम और शर्तें</Link>
+            <span>•</span>
+            <Link href="/disclaimer" className="hover:text-emerald-400 transition">अस्वीकरण</Link>
+            <span>•</span>
+            <Link href="/contact" className="hover:text-emerald-400 transition">संपर्क करें</Link>
+          </div>
+
+          <div className="flex items-center gap-1.5 text-emerald-300 font-medium">
+            <span>❤️ राजस्थान के लोगों के लिए, जनता द्वारा 🇮🇳</span>
+          </div>
+        </div>
 
       </div>
-    </main>
+    </footer>
   );
 }
