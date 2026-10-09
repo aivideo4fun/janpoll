@@ -3,7 +3,6 @@ import Image from 'next/image';
 import { db } from '@/lib/db';
 import { subscribeNewsletter } from '@/app/actions/newsletterAction';
 import AdsterraBanner from '@/components/AdBanner';
-
 export default function Footer() {
   return <FooterContent />;
 }
@@ -40,7 +39,7 @@ async function FooterContent() {
           </p>
         </div>
 
-        {/* 📢 विज्ञापन / प्रायोजक बैनर स्लॉट (Ad Slots) */}
+        {/* 📢 विज्ञापन / प्रायोजक बैनर स्लॉट */}
         <div className="rounded-2xl border border-dashed border-emerald-500/40 bg-emerald-950/30 p-6 text-center space-y-3 relative overflow-hidden shadow-sm">
           <span className="absolute top-2 right-3 text-[10px] uppercase tracking-widest text-emerald-400/60 font-bold bg-emerald-900/50 px-2 py-0.5 rounded">
             विज्ञापनों की जगह (Ad Space)
@@ -56,7 +55,6 @@ async function FooterContent() {
         {/* मुख्य फूटर ग्रिड कॉलम */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-6">
           
-          {/* 1. लोगो और परिचय */}
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-baseline gap-2">
               <span className="text-2xl sm:text-3xl font-black tracking-tight text-white">JANPOLL</span>
@@ -79,7 +77,7 @@ async function FooterContent() {
             </div>
           </div>
 
-          {/* 2. मुख्य लिंक */}
+          {/* मुख्य लिंक */}
           <div className="space-y-4">
             <h3 className="text-sm font-black text-emerald-300 uppercase tracking-wider flex items-center gap-2 border-b border-emerald-900 pb-2">
               <span>🔗</span> मुख्य लिंक
@@ -94,7 +92,7 @@ async function FooterContent() {
             </ul>
           </div>
 
-          {/* 3. सहायता एवं जानकारी */}
+          {/* सहायता एवं जानकारी */}
           <div className="space-y-4">
             <h3 className="text-sm font-black text-emerald-300 uppercase tracking-wider flex items-center gap-2 border-b border-emerald-900 pb-2">
               <span>❓</span> सहायता एवं जानकारी
@@ -108,7 +106,7 @@ async function FooterContent() {
             </ul>
           </div>
 
-          {/* 4. सोशल मीडिया और न्यूज़लेटर */}
+          {/* सोशल मीडिया और न्यूज़लेटर */}
           <div className="space-y-4">
             <h3 className="text-sm font-black text-emerald-300 uppercase tracking-wider flex items-center gap-2 border-b border-emerald-900 pb-2">
               <span>👥</span> हमसे जुड़ें
