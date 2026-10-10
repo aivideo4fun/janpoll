@@ -1,13 +1,11 @@
 import 'server-only';
 import { createHash } from 'crypto';
 import { cookies, headers } from 'next/headers';
-
 import { db } from '@/lib/db';
 
 export const DEVICE_COOKIE = 'jp_device';
 
 // एक पोल में एक ही नेटवर्क (IP) से अधिकतम इतने वोट मान्य होंगे।
-// 1 रखने पर एक ही वाई-फाई/नेटवर्क के बाकी असली लोग भी रुक जाएंगे।
 export const MAX_VOTES_PER_IP = 3;
 
 async function getClientIp(): Promise<string | null> {
@@ -20,7 +18,6 @@ async function getClientIp(): Promise<string | null> {
 
   if (!raw) return null;
 
-  // IPv6: पूरा /64 block एक ही user माना जाए, वरना IP बदलकर bypass हो सकता है
   if (raw.includes(':')) {
     return raw.split(':').slice(0, 4).join(':');
   }
@@ -29,10 +26,6 @@ async function getClientIp(): Promise<string | null> {
 
 function hashIp(ip: string) {
   const salt = process.env.VOTE_SALT;
-  if (!salt) {
-    console.warn('VOTE_SALT सेट नहीं है, कृपया .env में जोड़ें।');
-  }
-  // 32 hex chars = ipAddress VarChar(45) में fit
   return createHash('sha256')
     .update(`${salt ?? 'janpoll-default-salt'}:${ip}`)
     .digest('hex')
@@ -49,7 +42,7 @@ export async function getVoterIdentity() {
   };
 }
 
-/** क्या इस पोल में इस नेटवर्क (IP) की वोट-सीमा पूरी हो चुकी है? */
+/** क्या इस विशेष पोल में इस नेटवर्क (IP) की वोट-सीमा पूरी हो चुकी है? */
 export async function isIpLimitReached(pollId: string, ipHash: string | null) {
   if (!ipHash) return false;
 
@@ -60,17 +53,24 @@ export async function isIpLimitReached(pollId: string, ipHash: string | null) {
   return votesFromIp >= MAX_VOTES_PER_IP;
 }
 
-/** पोल पेज पर: इस आगंतुक को वोट फॉर्म दिखाना है या परिणाम? */
+/** केवल उसी विशिष्ट पोल के लिए जाँच करें कि इस उपयोगकर्ता/डिवाइस ने वोट दिया है या नहीं */
 export async function hasAlreadyVoted(pollId: string) {
   const { ipHash, deviceId } = await getVoterIdentity();
 
+  // 1. यदि इस डिवाइस आईडी से इस विशेष पोल पर पहले वोट हुआ है
   if (deviceId) {
     const vote = await db.vote.findUnique({
-      where: { pollId_anonymousUserId: { pollId, anonymousUserId: deviceId } },
+      where: {
+        pollId_anonymousUserId: {
+          pollId,
+          anonymousUserId: deviceId,
+        },
+      },
       select: { id: true },
     });
     if (vote) return true;
   }
 
+  // 2. IP लिमिट चेक (केवल उसी पोल के लिए)
   return isIpLimitReached(pollId, ipHash);
 }

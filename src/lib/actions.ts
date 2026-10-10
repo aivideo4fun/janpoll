@@ -40,7 +40,6 @@ export async function castVote(
       return { success: false, code: 'CLOSED', message: 'यह पोल बंद हो चुका है।' };
     }
 
-    // 1. पहचान: कुकी (डिवाइस) और हैश किया हुआ IP
     const { ipHash, deviceId: existingDeviceId } = await getVoterIdentity();
 
     const cookieStore = await cookies();
@@ -57,7 +56,7 @@ export async function castVote(
       });
     }
 
-    // 2. इसी डिवाइस/ब्राउज़र ने पहले वोट दिया है?
+    // 1. जांचें कि क्या इस विशिष्ट (Current) पोल पर इस डिवाइस ने पहले वोट दिया है
     const existingVote = await db.vote.findUnique({
       where: {
         pollId_anonymousUserId: {
@@ -75,7 +74,7 @@ export async function castVote(
       };
     }
 
-    // 3. इसी नेटवर्क (IP) से सीमा से ज़्यादा वोट? (इनकॉग्निटो / हिस्ट्री डिलीट रोकने के लिए)
+    // 2. इसी नेटवर्क (IP) से इस विशिष्ट पोल पर सीमा चेक
     if (await isIpLimitReached(pollId, ipHash)) {
       return {
         success: false,
@@ -84,7 +83,7 @@ export async function castVote(
       };
     }
 
-    // 4. वोट सुरक्षित रूप से सहेजना
+    // 3. सुरक्षित रूप से वोट दर्ज करें
     await db.$transaction([
       db.vote.create({
         data: {
