@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { db } from '@/lib/db';
+import SmartBackLink from '@/components/SmartBackLink';
 
 export const metadata: Metadata = {
   title: 'राजस्थान जिला चयन - JanPoll',
@@ -21,9 +22,9 @@ export default async function RajasthanStatePage() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 text-gray-800">
       <div className="mb-6">
-        <Link href="/" className="inline-flex items-center gap-2 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-4 py-2 rounded-xl text-sm font-bold transition">
-          ← होमपेज पर वापस जाएं
-        </Link>
+        <SmartBackLink fallbackHref="/" className="inline-flex items-center gap-2 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-4 py-2 rounded-xl text-sm font-bold transition">
+          ← पिछले पेज पर वापस जाएं
+        </SmartBackLink>
       </div>
 
       <div className="bg-gradient-to-r from-emerald-800 to-green-700 text-white rounded-3xl p-6 md:p-8 mb-8 text-center shadow-md">

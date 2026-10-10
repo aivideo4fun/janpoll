@@ -16,6 +16,9 @@ export const metadata: Metadata = {
     'राजस्थान की जनता की राय',
     'online voting poll India',
   ],
+  alternates: {
+    canonical: 'https://janpoll.in',
+  },
   icons: {
     icon: '/favicon.ico',
     shortcut: '/favicon.ico',

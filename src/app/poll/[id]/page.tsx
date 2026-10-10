@@ -2,14 +2,16 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { hasAlreadyVoted } from '@/lib/voter';
 import type { Metadata } from 'next';
-
+import SmartBackLink from '@/components/SmartBackLink';
 import { db } from '@/lib/db';
 import { isPollOpen } from '@/lib/poll-utils';
-import PollClientView from './PollClientView';
+
+import PollClientView from '@/app/poll/[id]/PollClientView';
+
 export const dynamic = 'force-dynamic';
 
 type PollPageProps = {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string; slug?: string[] }>;
 };
 
 export async function generateMetadata({ params }: PollPageProps): Promise<Metadata> {
@@ -17,7 +19,7 @@ export async function generateMetadata({ params }: PollPageProps): Promise<Metad
   
   const poll = await db.poll.findUnique({
     where: { id },
-    select: { question: true },
+    select: { question: true, districtName: true, gramPanchayatName: true },
   });
 
   if (!poll) {
@@ -27,12 +29,29 @@ export async function generateMetadata({ params }: PollPageProps): Promise<Metad
     };
   }
 
+  const pageTitle = `${poll.question} | JanPoll Rajasthan`;
+  const pageDesc = `${poll.districtName || 'राजस्थान'} ${poll.gramPanchayatName ? `- ${poll.gramPanchayatName}` : ''} के इस विषय पर अपनी राय दें और जनता का मत जानें।`;
+  const canonicalUrl = `https://janpoll.in/poll/${id}`;
+
   return {
-    title: `${poll.question} - JanPoll Rajasthan`,
-    description: `इस विषय पर अपना वोट दें और राजस्थान की जनता का मत जानें।`,
+    title: pageTitle,
+    description: pageDesc,
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    keywords: [
+      poll.question,
+      `${poll.districtName || 'Rajasthan'} public poll`,
+      'JanPoll Rajasthan',
+      'राजस्थान जनता की राय',
+      'ऑनलाइन वोटिंग पोल',
+    ],
     openGraph: {
-      title: poll.question,
-      description: 'JanPoll पर अपना वोट दर्ज करें और परिणाम देखें।',
+      title: pageTitle,
+      description: pageDesc,
+      url: canonicalUrl,
+      siteName: 'JanPoll',
+      locale: 'hi_IN',
       type: 'article',
     },
   };
@@ -60,7 +79,7 @@ export default async function PollPage({ params }: PollPageProps) {
   });
 
   if (!poll) {
-    notFound();
+    notFound(); // 👈 यहाँ सही function (notFound) उपयोग किया गया है
   }
 
   const sortedOptions = poll.options.sort((a, b) => {
@@ -71,22 +90,28 @@ export default async function PollPage({ params }: PollPageProps) {
   });
 
   const alreadyVoted = await hasAlreadyVoted(poll.id);
-
   const isOpen = isPollOpen(poll);
 
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
+        
+        {/* H2 Sub-heading added for SEO structure */}
+        <div className="mb-4">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-emerald-700">
+            {poll.districtName ? `जिला: ${poll.districtName}` : 'राजस्थान'} {poll.gramPanchayatName ? `| ग्राम पंचायत: ${poll.gramPanchayatName}` : ''}
+          </h2>
+        </div>
+
         <nav aria-label="Breadcrumb" className="mb-6 flex justify-between items-center">
-          <Link
-            href="/"
+          <SmartBackLink
+            fallbackHref="/"
             className="inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-50 hover:text-emerald-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
           >
             <span aria-hidden="true">←</span>
-            होम पेज पर वापस जाएं
-          </Link>
+            पिछले पेज पर वापस जाएं
+          </SmartBackLink>
 
-          {/* 🛠️ Safe optional chaining applied here */}
           {poll?.gramPanchayatName && (
             <Link
               href={`/create?gpId=${poll.gramPanchayatId || ''}&gp=${encodeURIComponent(poll.gramPanchayatName)}&samiti=${encodeURIComponent(poll.samitiName || '')}&district=${encodeURIComponent(poll.districtName || '')}`}
@@ -99,10 +124,10 @@ export default async function PollPage({ params }: PollPageProps) {
 
         <PollClientView
           poll={{
-            id: poll!.id,
-            question: poll!.question,
-            deadlineDays: poll!.deadlineDays,
-            createdAt: poll!.createdAt.toISOString(),
+            id: poll.id,
+            question: poll.question,
+            deadlineDays: poll.deadlineDays,
+            createdAt: poll.createdAt.toISOString(),
             options: sortedOptions,
           }}
           alreadyVoted={alreadyVoted}

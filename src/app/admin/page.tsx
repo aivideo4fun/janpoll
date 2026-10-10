@@ -2,12 +2,16 @@ import Link from 'next/link';
 import { db } from '@/lib/db';
 import { isAdmin } from '@/lib/admin-auth';
 import { formatIndiaDate, formatIndiaDateTime, whatsappDigits } from '@/lib/format-india';
+import { getCoverage, getUnmappedPolls, type CoverageData } from '@/lib/coverage';
 import LoginScreen from './components/LoginScreen';
 import AdminHeader from './components/AdminHeader';
 import AdminAccordion from './components/AdminAccordion';
 import ContactMsgs from './components/ContactMsgs';
 import Subscribers from './components/Subscribers';
 import PollsList from './components/PollsList';
+import CoverageAnalytics from './components/CoverageAnalytics';
+import UnmappedPolls from './components/UnmappedPolls';
+import LocationManager from './components/LocationManager';
 import {
   handleLogout,
   editPoll,
@@ -15,13 +19,30 @@ import {
   addPollOption,
   deleteMessage,
 } from './actions/adminActions';
+import {
+  assignPollLocation,
+  addSamitis,
+  addGramPanchayats,
+  addZilaWards,
+} from './actions/locationActions';
 
 export const dynamic = 'force-dynamic';
 
 const PAGE_SIZE = 20;
 const SUBSCRIBER_PREVIEW = 100;
 
-type AdminSearchParams = { error?: string; page?: string; search?: string; subs?: string };
+type AdminSearchParams = {
+  error?: string;
+  page?: string;
+  search?: string;
+  subs?: string;
+  cov?: string;
+  map?: string;
+  loc?: string;
+  msg?: string;
+};
+
+type DistrictItem = { id: string; nameHi: string; nameEn: string };
 
 export default async function AdminDashboard(props: {
   searchParams?: Promise<AdminSearchParams>;
@@ -35,6 +56,7 @@ export default async function AdminDashboard(props: {
   const currentPage = Math.max(1, parseInt(params.page ?? '1', 10) || 1);
   const searchQuery = (params.search ?? '').trim().slice(0, 100);
   const showAllSubscribers = params.subs === 'all';
+  const flashMessage = (params.msg ?? '').slice(0, 250);
 
   // पेज बदलने या खोज करने पर पोल वाला कार्ड खुला रहे
   const pollsOpen = Boolean(searchQuery) || currentPage > 1;
@@ -53,36 +75,56 @@ export default async function AdminDashboard(props: {
 
   const pollWhere = searchQuery ? { question: { contains: searchQuery } } : {};
 
-  const [polls, totalPolls, messages, subscribers, totalSubscribers, voteSum] = await Promise.all([
-    safe(
-      'पोल',
-      () =>
-        db.poll.findMany({
-          where: pollWhere,
-          orderBy: { createdAt: 'desc' },
-          include: { options: true },
-          skip: (currentPage - 1) * PAGE_SIZE,
-          take: PAGE_SIZE,
-        }),
-      [] as any[]
-    ),
-    safe('पोल गणना', () => db.poll.count({ where: pollWhere }), 0),
-    safe('संपर्क संदेश', () => db.contactMessage.findMany({ orderBy: { createdAt: 'desc' } }), [] as any[]),
-    safe(
-      'सदस्य सूची',
-      () =>
-        (db as any).newsletterSubscriber.findMany({
-          orderBy: { createdAt: 'desc' },
-          ...(showAllSubscribers ? {} : { take: SUBSCRIBER_PREVIEW }),
-        }),
-      [] as any[]
-    ),
-    safe('सदस्य गणना', () => (db as any).newsletterSubscriber.count(), 0),
-    safe('कुल मत', () => db.pollOption.aggregate({ _sum: { voteCount: true } }), null as any),
-  ]);
+  const [polls, totalPolls, messages, subscribers, totalSubscribers, voteSum, districts, coverage] =
+    await Promise.all([
+      safe(
+        'पोल',
+        () =>
+          db.poll.findMany({
+            where: pollWhere,
+            orderBy: { createdAt: 'desc' },
+            include: { options: true },
+            skip: (currentPage - 1) * PAGE_SIZE,
+            take: PAGE_SIZE,
+          }),
+        [] as any[]
+      ),
+      safe('पोल गणना', () => db.poll.count({ where: pollWhere }), 0),
+      safe('संपर्क संदेश', () => db.contactMessage.findMany({ orderBy: { createdAt: 'desc' } }), [] as any[]),
+      safe(
+        'सदस्य सूची',
+        () =>
+          (db as any).newsletterSubscriber.findMany({
+            orderBy: { createdAt: 'desc' },
+            ...(showAllSubscribers ? {} : { take: SUBSCRIBER_PREVIEW }),
+          }),
+        [] as any[]
+      ),
+      safe('सदस्य गणना', () => (db as any).newsletterSubscriber.count(), 0),
+      safe('कुल मत', () => db.pollOption.aggregate({ _sum: { voteCount: true } }), null as any),
+      safe(
+        'जिले',
+        () =>
+          db.district.findMany({
+            select: { id: true, nameHi: true, nameEn: true },
+            orderBy: { nameEn: 'asc' },
+          }),
+        [] as DistrictItem[]
+      ),
+      safe('पंचायत कवरेज', () => getCoverage(), null as CoverageData | null),
+    ]);
+
+  const unmappedPolls = coverage
+    ? await safe(
+        'बिना पंचायत वाले पोल',
+        () => getUnmappedPolls(coverage.unmappedIds),
+        [] as Awaited<ReturnType<typeof getUnmappedPolls>>
+      )
+    : [];
 
   const totalVotes = voteSum?._sum?.voteCount ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalPolls / PAGE_SIZE));
+  const unmappedCount = coverage?.unmappedIds.length ?? 0;
 
   return (
     <main className="min-h-screen bg-slate-100 pb-14">
@@ -95,11 +137,69 @@ export default async function AdminDashboard(props: {
       />
 
       <div className="mx-auto mt-8 max-w-7xl space-y-4 px-4 sm:px-6 lg:px-8">
+        {flashMessage && (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-semibold text-emerald-800">
+            ✅ {flashMessage}
+          </div>
+        )}
+
         {failed.length > 0 && (
           <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold text-red-700">
             ⚠️ इन अनुभागों का डेटा लोड नहीं हो सका: {failed.join(', ')}। कृपया पेज रीफ़्रेश करें या सर्वर लॉग देखें।
           </div>
         )}
+
+        {/* नया 1. पंचायत कवरेज विश्लेषण */}
+        {coverage && (
+          <AdminAccordion
+            icon="📈"
+            title="पंचायत कवरेज विश्लेषण"
+            subtitle="कितनी पंचायतों में पोल चल रहे हैं और कहाँ अभी तक पोल नहीं बना"
+            count={coverage.totals.gpWithRunning}
+            countLabel="चालू पोल वाली पंचायतें"
+            tone="emerald"
+            defaultOpen={Boolean(params.cov)}
+          >
+            <CoverageAnalytics data={coverage} />
+          </AdminAccordion>
+        )}
+
+        {/* नया 2. बिना पंचायत वाले पोल (मैपिंग) */}
+        <AdminAccordion
+          icon="📍"
+          title="बिना पंचायत वाले पोल"
+          subtitle="जिले में सीधे बने पोल को उनकी पंचायत, समिति और जिले से जोड़ें"
+          count={unmappedCount}
+          countLabel="जोड़ना बाकी"
+          tone="amber"
+          defaultOpen={Boolean(params.map)}
+        >
+          <UnmappedPolls
+            polls={unmappedPolls}
+            total={unmappedCount}
+            districts={districts}
+            assignPollLocation={assignPollLocation}
+            formatIndiaDateTime={formatIndiaDateTime}
+          />
+        </AdminAccordion>
+
+        {/* नया 3. स्थान डेटा प्रबंधन */}
+        <AdminAccordion
+          icon="🗺️"
+          title="स्थान डेटा प्रबंधन"
+          subtitle="पंचायत समितियाँ, ग्राम पंचायतें और जिला परिषद वार्ड भरें"
+          count={coverage?.totals.samitis ?? 0}
+          countLabel="कुल समितियाँ"
+          tone="blue"
+          defaultOpen={Boolean(params.loc)}
+        >
+          <LocationManager
+            districts={districts}
+            addSamitis={addSamitis}
+            addGramPanchayats={addGramPanchayats}
+            addZilaWards={addZilaWards}
+          />
+        </AdminAccordion>
 
         {/* 1. संपर्क संदेश */}
         <AdminAccordion

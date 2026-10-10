@@ -1,0 +1,427 @@
+npm notice run janpoll@0.1.0 build
+npm notice run next build
+  ▲ Next.js 14.2.0
+  - Environments: .env
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/22) ...
+   Generating static pages (5/22) 
+
+Error occurred prerendering page "/sitemap.xml". Read more: https://nextjs.org/docs/messages/prerender-error
+
+PrismaClientInitializationError: 
+Invalid `prisma.poll.findMany()` invocation:
+
+
+Can't reach database server at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`
+
+Please make sure your database server is running at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`.
+    at $n.handleRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\janpoll\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async f (C:\janpoll\.next\server\app\sitemap.xml\route.js:1:676)
+    at async g (C:\janpoll\.next\server\app\sitemap.xml\route.js:1:1435)
+    at async C:\janpoll\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:6:34801
+    at async eS.execute (C:\janpoll\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:6:25910)
+    at async eS.handle (C:\janpoll\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:6:36055)
+    at async exportAppRoute (C:\janpoll\node_modules\next\dist\export\routes\app-route.js:77:26)
+   Generating static pages (10/22) 
+फूटर डेटा लोड करने में त्रुटि: PrismaClientInitializationError: 
+Invalid `prisma.poll.count()` invocation:
+
+
+Can't reach database server at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`
+
+Please make sure your database server is running at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`.
+    at $n.handleRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\janpoll\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async h (C:\janpoll\.next\server\chunks\644.js:4:701) {
+  clientVersion: '5.22.0',
+  errorCode: undefined
+}
+फूटर डेटा लोड करने में त्रुटि: PrismaClientInitializationError: 
+Invalid `prisma.poll.count()` invocation:
+
+
+Can't reach database server at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`
+
+Please make sure your database server is running at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`.
+    at $n.handleRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\janpoll\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async h (C:\janpoll\.next\server\chunks\644.js:4:701) {
+  clientVersion: '5.22.0',
+  errorCode: undefined
+}
+फूटर डेटा लोड करने में त्रुटि: PrismaClientInitializationError: 
+Invalid `prisma.poll.count()` invocation:
+
+
+Can't reach database server at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`
+
+Please make sure your database server is running at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`.
+    at $n.handleRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\janpoll\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async h (C:\janpoll\.next\server\chunks\644.js:4:701) {
+  clientVersion: '5.22.0',
+  errorCode: undefined
+}
+फूटर डेटा लोड करने में त्रुटि: PrismaClientInitializationError: 
+Invalid `prisma.poll.count()` invocation:
+
+
+Can't reach database server at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`
+
+Please make sure your database server is running at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`.
+    at $n.handleRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\janpoll\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async h (C:\janpoll\.next\server\chunks\644.js:4:701) {
+  clientVersion: '5.22.0',
+  errorCode: undefined
+}
+Error fetching districts: PrismaClientInitializationError: 
+Invalid `prisma.district.findMany()` invocation:
+
+
+Can't reach database server at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`
+
+Please make sure your database server is running at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`.
+    at $n.handleRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\janpoll\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async d (C:\janpoll\.next\server\app\rajasthan\page.js:1:3759) {
+  clientVersion: '5.22.0',
+  errorCode: undefined
+}
+फूटर डेटा लोड करने में त्रुटि: PrismaClientInitializationError: 
+Invalid `prisma.poll.count()` invocation:
+
+
+Can't reach database server at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`
+
+Please make sure your database server is running at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`.
+    at $n.handleRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\janpoll\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async h (C:\janpoll\.next\server\chunks\644.js:4:701) {
+  clientVersion: '5.22.0',
+  errorCode: undefined
+}
+Error fetching districts: PrismaClientInitializationError: 
+Invalid `prisma.district.findMany()` invocation:
+
+
+Can't reach database server at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`
+
+Please make sure your database server is running at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`.
+    at $n.handleRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\janpoll\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async d (C:\janpoll\.next\server\app\rajasthan\page.js:1:3759) {
+  clientVersion: '5.22.0',
+  errorCode: undefined
+}
+फूटर डेटा लोड करने में त्रुटि: PrismaClientInitializationError: 
+Invalid `prisma.poll.count()` invocation:
+
+
+Can't reach database server at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`
+
+Please make sure your database server is running at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`.
+    at $n.handleRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\janpoll\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async h (C:\janpoll\.next\server\chunks\644.js:4:701) {
+  clientVersion: '5.22.0',
+  errorCode: undefined
+}
+फूटर डेटा लोड करने में त्रुटि: PrismaClientInitializationError: 
+Invalid `prisma.poll.count()` invocation:
+
+
+Can't reach database server at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`
+
+Please make sure your database server is running at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`.
+    at $n.handleRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\janpoll\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async h (C:\janpoll\.next\server\chunks\644.js:4:701) {
+  clientVersion: '5.22.0',
+  errorCode: undefined
+}
+फूटर डेटा लोड करने में त्रुटि: PrismaClientInitializationError: 
+Invalid `prisma.poll.count()` invocation:
+
+
+Can't reach database server at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`
+
+Please make sure your database server is running at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`.
+    at $n.handleRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\janpoll\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async h (C:\janpoll\.next\server\chunks\644.js:4:701) {
+  clientVersion: '5.22.0',
+  errorCode: undefined
+}
+फूटर डेटा लोड करने में त्रुटि: PrismaClientInitializationError: 
+Invalid `prisma.poll.count()` invocation:
+
+
+Can't reach database server at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`
+
+Please make sure your database server is running at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`.
+    at $n.handleRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\janpoll\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async h (C:\janpoll\.next\server\chunks\644.js:4:701) {
+  clientVersion: '5.22.0',
+  errorCode: undefined
+}
+फूटर डेटा लोड करने में त्रुटि: PrismaClientInitializationError: 
+Invalid `prisma.poll.count()` invocation:
+
+
+Can't reach database server at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`
+
+Please make sure your database server is running at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`.
+    at $n.handleRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\janpoll\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async h (C:\janpoll\.next\server\chunks\644.js:4:701) {
+  clientVersion: '5.22.0',
+  errorCode: undefined
+}
+फूटर डेटा लोड करने में त्रुटि: PrismaClientInitializationError: 
+Invalid `prisma.poll.count()` invocation:
+
+
+Can't reach database server at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`
+
+Please make sure your database server is running at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`.
+    at $n.handleRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\janpoll\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async h (C:\janpoll\.next\server\chunks\644.js:4:701) {
+  clientVersion: '5.22.0',
+  errorCode: undefined
+}
+फूटर डेटा लोड करने में त्रुटि: PrismaClientInitializationError: 
+Invalid `prisma.poll.count()` invocation:
+
+
+Can't reach database server at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`
+
+Please make sure your database server is running at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`.
+    at $n.handleRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\janpoll\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async h (C:\janpoll\.next\server\chunks\644.js:4:701) {
+  clientVersion: '5.22.0',
+  errorCode: undefined
+}
+फूटर डेटा लोड करने में त्रुटि: PrismaClientInitializationError: 
+Invalid `prisma.poll.count()` invocation:
+
+
+Can't reach database server at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`
+
+Please make sure your database server is running at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`.
+    at $n.handleRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\janpoll\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async h (C:\janpoll\.next\server\chunks\644.js:4:701) {
+  clientVersion: '5.22.0',
+  errorCode: undefined
+}
+फूटर डेटा लोड करने में त्रुटि: PrismaClientInitializationError: 
+Invalid `prisma.poll.count()` invocation:
+
+
+Can't reach database server at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`
+
+Please make sure your database server is running at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`.
+    at $n.handleRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\janpoll\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async h (C:\janpoll\.next\server\chunks\644.js:4:701) {
+  clientVersion: '5.22.0',
+  errorCode: undefined
+}
+फूटर डेटा लोड करने में त्रुटि: PrismaClientInitializationError: 
+Invalid `prisma.poll.count()` invocation:
+
+
+Can't reach database server at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`
+
+Please make sure your database server is running at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`.
+    at $n.handleRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\janpoll\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async h (C:\janpoll\.next\server\chunks\644.js:4:701) {
+  clientVersion: '5.22.0',
+  errorCode: undefined
+}
+फूटर डेटा लोड करने में त्रुटि: PrismaClientInitializationError: 
+Invalid `prisma.poll.count()` invocation:
+
+
+Can't reach database server at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`
+
+Please make sure your database server is running at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`.
+    at $n.handleRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\janpoll\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async h (C:\janpoll\.next\server\chunks\644.js:4:701) {
+  clientVersion: '5.22.0',
+  errorCode: undefined
+}
+फूटर डेटा लोड करने में त्रुटि: PrismaClientInitializationError: 
+Invalid `prisma.poll.count()` invocation:
+
+
+Can't reach database server at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`
+
+Please make sure your database server is running at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`.
+    at $n.handleRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\janpoll\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async h (C:\janpoll\.next\server\chunks\644.js:4:701) {
+  clientVersion: '5.22.0',
+  errorCode: undefined
+}
+फूटर डेटा लोड करने में त्रुटि: PrismaClientInitializationError: 
+Invalid `prisma.poll.count()` invocation:
+
+
+Can't reach database server at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`
+
+Please make sure your database server is running at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`.
+    at $n.handleRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\janpoll\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async h (C:\janpoll\.next\server\chunks\644.js:4:701) {
+  clientVersion: '5.22.0',
+  errorCode: undefined
+}
+फूटर डेटा लोड करने में त्रुटि: PrismaClientInitializationError: 
+Invalid `prisma.poll.count()` invocation:
+
+
+Can't reach database server at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`
+
+Please make sure your database server is running at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`.
+    at $n.handleRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\janpoll\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async h (C:\janpoll\.next\server\chunks\644.js:4:701) {
+  clientVersion: '5.22.0',
+  errorCode: undefined
+}
+फूटर डेटा लोड करने में त्रुटि: PrismaClientInitializationError: 
+Invalid `prisma.poll.count()` invocation:
+
+
+Can't reach database server at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`
+
+Please make sure your database server is running at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`.
+    at $n.handleRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\janpoll\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async h (C:\janpoll\.next\server\chunks\644.js:4:701) {
+  clientVersion: '5.22.0',
+  errorCode: undefined
+}
+फूटर डेटा लोड करने में त्रुटि: PrismaClientInitializationError: 
+Invalid `prisma.poll.count()` invocation:
+
+
+Can't reach database server at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`
+
+Please make sure your database server is running at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`.
+    at $n.handleRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\janpoll\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async h (C:\janpoll\.next\server\chunks\644.js:4:701) {
+  clientVersion: '5.22.0',
+  errorCode: undefined
+}
+फूटर डेटा लोड करने में त्रुटि: PrismaClientInitializationError: 
+Invalid `prisma.poll.count()` invocation:
+
+
+Can't reach database server at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`
+
+Please make sure your database server is running at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`.
+    at $n.handleRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\janpoll\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async h (C:\janpoll\.next\server\chunks\644.js:4:701) {
+  clientVersion: '5.22.0',
+  errorCode: undefined
+}
+फूटर डेटा लोड करने में त्रुटि: PrismaClientInitializationError: 
+Invalid `prisma.poll.count()` invocation:
+
+
+Can't reach database server at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`
+
+Please make sure your database server is running at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`.
+    at $n.handleRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\janpoll\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async h (C:\janpoll\.next\server\chunks\644.js:4:701) {
+  clientVersion: '5.22.0',
+  errorCode: undefined
+}
+फूटर डेटा लोड करने में त्रुटि: PrismaClientInitializationError: 
+Invalid `prisma.poll.count()` invocation:
+
+
+Can't reach database server at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`
+
+Please make sure your database server is running at `database-1.cjay0wsgmz2m.ap-south-1.rds.amazonaws.com:5432`.
+    at $n.handleRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:7615)
+    at $n.handleAndLogRequestError (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\janpoll\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\janpoll\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async h (C:\janpoll\.next\server\chunks\644.js:4:701) {
+  clientVersion: '5.22.0',
+  errorCode: undefined
+}
+   Generating static pages (16/22) 
+ ✓ Generating static pages (22/22)
+
+> Export encountered errors on following paths:
+	/sitemap.xml/route: /sitemap.xml
