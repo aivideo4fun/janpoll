@@ -110,7 +110,7 @@ async function FooterContent() {
               <a href="https://twitter.com/janpollindia" target="_blank" rel="noreferrer" title="X (Twitter)" className="h-10 w-10 rounded-full bg-white/10 p-2 flex items-center justify-center hover:bg-white/20 transition shadow">
                 <Image src="/images/x.png" alt="X (Twitter)" width={24} height={24} className="object-contain" />
               </a>
-              <a href="https://youtube.com" target="_blank" rel="noreferrer" title="YouTube" className="h-10 w-10 rounded-full bg-white/10 p-2 flex items-center justify-center hover:bg-white/20 transition shadow">
+              <a href="https://youtube.com/shorts/f7N05oSyfXc?feature=shared" target="_blank" rel="noreferrer" title="YouTube" className="h-10 w-10 rounded-full bg-white/10 p-2 flex items-center justify-center hover:bg-white/20 transition shadow">
                 <Image src="/images/youtube.png" alt="YouTube" width={24} height={24} className="object-contain" />
               </a>
             </div>
@@ -160,16 +160,15 @@ async function FooterContent() {
           </div>
         </div>
 
-        {/* 📢 विज्ञापन / प्रायोजक बैनर स्लॉट (अब कुल वोटर्स के ठीक नीचे / फूटर के बॉटम में) */}
+        {/* 📢 विज्ञापन: 728x90 */}
         <div className="rounded-2xl border border-dashed border-emerald-500/40 bg-emerald-950/30 p-6 text-center space-y-3 relative overflow-hidden shadow-sm">
           <span className="absolute top-2 right-3 text-[10px] uppercase tracking-widest text-emerald-400/60 font-bold bg-emerald-900/50 px-2 py-0.5 rounded">
-            विज्ञापनों की जगह (Ad Space)
+            विज्ञापन
           </span>
           <p className="text-xs font-bold text-emerald-300">📢 प्रायोजक एवं विज्ञापन (Sponsored / Ads)</p>
-          
-          <div className="flex flex-wrap justify-center items-center gap-4 py-2">
-            <AdsterraBanner adKey="284cee4d0f75c889cb2c8420f6c1834f" width={728} height={90} src="https://bicea.org/22/284cee4d0f75c889cb2c8420f6c1834f" />
-            <AdsterraBanner adKey="4801d526481e48f32daba116c6ca2a7c" width={300} height={250} src="https://bicea.org/22/4801d526481e48f32daba116c6ca2a7c" />
+
+          <div className="py-2">
+            <Ad728x90 />
           </div>
         </div>
 
