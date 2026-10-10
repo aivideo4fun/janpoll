@@ -2,8 +2,8 @@
 
 import { db } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
-import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { getDeadline } from '@/lib/poll-utils';
 import {
   adminConfigured,
   createAdminSession,
@@ -11,6 +11,8 @@ import {
   isAdmin,
   safeEqual,
 } from '@/lib/admin-auth';
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 function formValue(formData: FormData, key: string) {
   return String(formData.get(key) ?? '').trim();
@@ -33,18 +35,6 @@ export async function handleLogin(formData: FormData) {
   // सुरक्षित तुलना (Timing-safe comparison)
   if (safeEqual(username, adminUser) && safeEqual(password, adminPass)) {
     await createAdminSession();
-    const cookieStore = await cookies();
-
-    cookieStore.set({
-      name: 'admin_session',
-      value: 'authenticated',
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 12, // 12 घंटे का सत्र (Session timeout)
-      path: '/',
-    });
-
     redirect('/admin');
   }
 
@@ -54,8 +44,6 @@ export async function handleLogin(formData: FormData) {
 
 export async function handleLogout() {
   await destroyAdminSession();
-  const cookieStore = await cookies();
-  cookieStore.delete('admin_session');
   redirect('/admin');
 }
 
@@ -71,6 +59,10 @@ export async function editPoll(formData: FormData) {
   const gramPanchayatName = formValue(formData, 'gramPanchayatName');
   const gramPanchayatIdValue = formValue(formData, 'gramPanchayatId');
   const activeValue = formValue(formData, 'active');
+  const extendDays = Math.min(
+    365,
+    Math.max(0, parseInt(formValue(formData, 'extendDays'), 10) || 0),
+  );
 
   if (!pollId || !question) return;
 
@@ -82,6 +74,38 @@ export async function editPoll(formData: FormData) {
 
   try {
     await db.$transaction(async (tx) => {
+      // अवधि बढ़ाना: नई अंतिम तिथि = (मौजूदा अंतिम तिथि या आज, जो बाद की हो) + चुने हुए दिन
+      let newDeadlineDays: number | undefined;
+
+      if (extendDays > 0) {
+        const current = await tx.poll.findUnique({
+          where: { id: pollId },
+          select: { createdAt: true, deadlineDays: true },
+        });
+
+        if (current) {
+          const base = Math.max(
+            getDeadline(current.createdAt, current.deadlineDays).getTime(),
+            Date.now(),
+          );
+          const target = base + extendDays * DAY_MS;
+
+          let days = Math.max(
+            1,
+            Math.ceil((target - current.createdAt.getTime()) / DAY_MS),
+          );
+          let guard = 0;
+          while (
+            getDeadline(current.createdAt, days).getTime() < target &&
+            guard < 5000
+          ) {
+            days++;
+            guard++;
+          }
+          newDeadlineDays = days;
+        }
+      }
+
       await tx.poll.update({
         where: { id: pollId },
         data: {
@@ -93,6 +117,7 @@ export async function editPoll(formData: FormData) {
           gramPanchayatName: gramPanchayatName || null,
           gramPanchayatId,
           active,
+          ...(newDeadlineDays !== undefined ? { deadlineDays: newDeadlineDays } : {}),
         } as any,
       });
 
@@ -110,6 +135,7 @@ export async function editPoll(formData: FormData) {
 
     revalidatePath('/admin');
     revalidatePath('/');
+    revalidatePath('/closed-polls');
     revalidatePath(`/poll/${pollId}`);
   } catch (error) {
     console.error('पोल संपादित करने में त्रुटि:', error);

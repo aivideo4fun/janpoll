@@ -3,6 +3,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   Cell,
   Legend,
@@ -25,6 +26,35 @@ const COLORS = [
   '#EC4899', // गुलाबी
   '#14B8A6', // टील
   '#F97316', // नारंगी
+];
+
+// हमसे जुड़ें: सभी 5 सोशल लिंक
+const SOCIAL_LINKS = [
+  {
+    name: 'व्हाट्सएप चैनल',
+    href: 'https://whatsapp.com/channel/0029VbEDUaJ5Ui2OzmpEYI3D',
+    icon: '/images/whatsapp.png',
+  },
+  {
+    name: 'इंस्टाग्राम',
+    href: 'https://instagram.com/janpoll.in',
+    icon: '/images/instagram.png',
+  },
+  {
+    name: 'फेसबुक',
+    href: 'https://www.facebook.com/profile.php?id=61595121995283',
+    icon: '/images/facebook.png',
+  },
+  {
+    name: 'X (ट्विटर)',
+    href: 'https://twitter.com/janpollindia',
+    icon: '/images/x.png',
+  },
+  {
+    name: 'यूट्यूब',
+    href: 'https://youtube.com/shorts/f7N05oSyfXc?feature=shared',
+    icon: '/images/youtube.png',
+  },
 ];
 
 type PollOption = {
@@ -112,6 +142,7 @@ export default function PollClientView({
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [hasVoted, setHasVoted] = useState(alreadyVoted);
   const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [message, setMessage] = useState(
     alreadyVoted ? 'आप इस पोल में पहले ही वोट दे चुके हैं।' : '',
   );
@@ -171,6 +202,7 @@ export default function PollClientView({
     }
   };
 
+  // मुख्य शेयर बटन: फ़ोन का शेयर मेन्यू (WhatsApp, Facebook आदि सब यहीं से)
   const handleShare = async () => {
     const shareData = {
       title: poll.question,
@@ -183,13 +215,28 @@ export default function PollClientView({
         await navigator.share(shareData);
         return;
       }
-
-      await navigator.clipboard.writeText(shareData.url);
-      setMessage('पोल लिंक क्लिपबोर्ड पर कॉपी हो गया है।');
+      await handleCopyLink();
     } catch (error) {
       if ((error as DOMException)?.name !== 'AbortError') {
         setMessage('पोल शेयर नहीं हो सका। कृपया दोबारा प्रयास करें।');
       }
+    }
+  };
+
+  // सीधे WhatsApp पर भेजना
+  const handleWhatsAppShare = () => {
+    const text = `🗳️ ${poll.question}\nअपनी राय यहाँ दें: ${window.location.href}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+  };
+
+  // लिंक कॉपी करना
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      setMessage('लिंक कॉपी नहीं हो सका। कृपया ऐड्रेस बार से कॉपी करें।');
     }
   };
 
@@ -383,36 +430,88 @@ export default function PollClientView({
                 </div>
               )}
 
-              {/* विज्ञापन: 728x90 (मोबाइल पर स्क्रीन के अनुसार फिट होता है) */}
-              <div className="my-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                <Ad728x90 />
-              </div>
+              {/* 📲 शेयर सेक्शन (सबसे प्रमुख, अलग कार्ड) */}
+              <div className="rounded-2xl border-2 border-emerald-300 bg-gradient-to-br from-emerald-50 to-white p-4 shadow-sm sm:p-5">
+                <p className="mb-1 text-center text-sm font-black text-emerald-900 sm:text-base">
+                  📣 इस पोल को दोस्तों और गाँव के ग्रुप में शेयर करें
+                </p>
+                <p className="mb-4 text-center text-xs text-slate-500">
+                  जितने ज़्यादा लोग जुड़ेंगे, उतनी ज़्यादा आवाज़ें सुनी जाएँगी।
+                </p>
 
-              <div className="space-y-3">
                 <button
                   type="button"
                   onClick={handleShare}
-                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-700 px-5 py-3.5 text-base font-bold text-white shadow-sm transition-colors hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-700 px-5 py-4 text-lg font-black text-white shadow-md transition-colors hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
                 >
                   <span aria-hidden="true">📲</span>
                   पोल शेयर करें
                 </button>
 
-                {/* 🔗 Trending Polls & Create Poll Quick Navigation Buttons */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                  <Link
-                    href="/"
-                    className="flex items-center justify-center gap-2 rounded-2xl bg-amber-500 hover:bg-amber-600 text-gray-900 px-4 py-3 text-sm font-bold shadow-sm transition"
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={handleWhatsAppShare}
+                    className="flex items-center justify-center gap-2 rounded-xl bg-green-600 px-3 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-green-700"
                   >
-                    <span>🔥</span> अन्य ट्रेंडिंग पोल्स देखें
-                  </Link>
+                    <Image src="/images/whatsapp.png" alt="" width={18} height={18} className="object-contain" />
+                    WhatsApp पर भेजें
+                  </button>
 
-                  <Link
-                    href="/create"
-                    className="flex items-center justify-center gap-2 rounded-2xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 px-4 py-3 text-sm font-bold shadow-sm transition"
+                  <button
+                    type="button"
+                    onClick={handleCopyLink}
+                    className="flex items-center justify-center gap-2 rounded-xl border border-emerald-300 bg-white px-3 py-3 text-sm font-bold text-emerald-900 shadow-sm transition hover:bg-emerald-50"
                   >
-                    <span>＋</span> नया पोल बनाएँ
-                  </Link>
+                    {copied ? '✓ लिंक कॉपी हुआ' : '🔗 लिंक कॉपी करें'}
+                  </button>
+                </div>
+              </div>
+
+              {/* विज्ञापन: 728x90 (मोबाइल पर स्क्रीन के अनुसार फिट होता है) */}
+              <div className="my-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                <Ad728x90 />
+              </div>
+
+              {/* 🔗 अन्य पोल और नया पोल */}
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Link
+                  href="/"
+                  className="flex items-center justify-center gap-2 rounded-2xl bg-amber-500 hover:bg-amber-600 text-gray-900 px-4 py-3 text-sm font-bold shadow-sm transition"
+                >
+                  <span>🔥</span> अन्य ट्रेंडिंग पोल्स देखें
+                </Link>
+
+                <Link
+                  href="/create"
+                  className="flex items-center justify-center gap-2 rounded-2xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 px-4 py-3 text-sm font-bold shadow-sm transition"
+                >
+                  <span>＋</span> नया पोल बनाएँ
+                </Link>
+              </div>
+
+              {/* 🌐 हमसे जुड़ें (5 सोशल लिंक) */}
+              <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                <p className="mb-3 text-center text-xs font-bold text-slate-600">🌐 हमसे जुड़ें</p>
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                  {SOCIAL_LINKS.map((social) => (
+                    <a
+                      key={social.name}
+                      href={social.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex flex-col items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2 py-3 text-center text-[11px] font-semibold text-slate-700 transition hover:border-emerald-300 hover:bg-emerald-50"
+                    >
+                      <Image
+                        src={social.icon}
+                        alt={social.name}
+                        width={24}
+                        height={24}
+                        className="object-contain"
+                      />
+                      <span>{social.name}</span>
+                    </a>
+                  ))}
                 </div>
               </div>
             </div>

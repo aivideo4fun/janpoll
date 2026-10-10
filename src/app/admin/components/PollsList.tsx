@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { getDeadline } from '@/lib/poll-utils';
+import { formatIndiaDateTime } from '@/lib/format-india';
 
 type PollsListProps = {
   polls: any[];
@@ -11,6 +13,9 @@ type PollsListProps = {
   addPollOption: (formData: FormData) => Promise<void>;
   formatIndiaDate: (value: Date | string) => string;
 };
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const EXTEND_OPTIONS = [1, 2, 3, 5, 7, 10, 15, 30, 60, 90];
 
 export default function PollsList({
   polls,
@@ -51,6 +56,11 @@ export default function PollsList({
               0
             );
 
+            const deadline = getDeadline(new Date(poll.createdAt), poll.deadlineDays);
+            const msLeft = deadline.getTime() - Date.now();
+            const isExpired = msLeft <= 0;
+            const daysLeft = Math.ceil(msLeft / DAY_MS);
+
             return (
               <article key={poll.id} className="p-5 transition hover:bg-emerald-50/20 sm:p-6">
                 <div className="flex flex-col gap-5">
@@ -63,6 +73,13 @@ export default function PollsList({
                           }`}
                         >
                           {poll.active ? '● सक्रिय' : '○ निष्क्रिय'}
+                        </span>
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${
+                            isExpired ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-800'
+                          }`}
+                        >
+                          {isExpired ? '⏳ अवधि समाप्त' : `⏳ ${daysLeft} दिन शेष`}
                         </span>
                         <span className="text-[11px] text-gray-400">
                           {formatIndiaDate(poll.createdAt)}
@@ -210,6 +227,41 @@ export default function PollsList({
                           </div>
                         </div>
 
+                        {/* ⏳ पोल की अवधि */}
+                        <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4">
+                          <p className="text-xs font-black text-amber-900">⏳ पोल की अवधि</p>
+                          <p className="mt-1 text-xs text-gray-600">
+                            अंतिम तिथि: <strong className="text-gray-800">{formatIndiaDateTime(deadline)}</strong>
+                            {' · '}
+                            {isExpired ? (
+                              <span className="font-bold text-red-700">अवधि समाप्त हो चुकी है</span>
+                            ) : (
+                              <span className="font-bold text-emerald-700">{daysLeft} दिन शेष</span>
+                            )}
+                          </p>
+
+                          <label className="mb-1.5 mt-3 block text-xs font-bold text-gray-700">
+                            अवधि बढ़ाएँ
+                          </label>
+                          <select
+                            name="extendDays"
+                            defaultValue=""
+                            className="w-full rounded-xl border border-amber-200 bg-white px-3 py-2.5 text-sm outline-none"
+                          >
+                            <option value="">कोई बदलाव नहीं</option>
+                            {EXTEND_OPTIONS.map((d) => (
+                              <option key={d} value={d}>
+                                +{d} दिन बढ़ाएँ
+                              </option>
+                            ))}
+                          </select>
+                          <p className="mt-1.5 text-[10px] leading-4 text-gray-500">
+                            {isExpired
+                              ? 'अवधि समाप्त है, इसलिए चुने हुए दिन आज से गिने जाएँगे। वोटिंग दोबारा खोलने के लिए ऊपर पोल स्थिति "सक्रिय" रखें।'
+                              : 'चुने हुए दिन मौजूदा अंतिम तिथि में जुड़ जाएँगे।'}
+                          </p>
+                        </div>
+
                         <div>
                           <div className="mb-2 flex items-center justify-between">
                             <p className="text-xs font-black text-gray-700">विकल्प संपादित करें</p>
@@ -247,7 +299,7 @@ export default function PollsList({
                     </div>
                   </details>
 
-                  {/* विकल्प जोड़ें */}
+                  {/* विकल्प जोड़ें */}
                   <div className="rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4">
                     <div className="mb-3 flex items-center justify-between">
                       <p className="text-xs font-black text-emerald-900">मौजूदा विकल्प</p>
@@ -261,14 +313,14 @@ export default function PollsList({
                         name="optionText"
                         required
                         maxLength={255}
-                        placeholder="नया विकल्प यहाँ जोड़ें..."
+                        placeholder="नया विकल्प यहाँ जोड़ें..."
                         className="min-w-0 flex-1 rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-xs outline-none"
                       />
                       <button
                         type="submit"
                         className="rounded-xl bg-emerald-700 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-800"
                       >
-                        + विकल्प जोड़ें
+                        + विकल्प जोड़ें
                       </button>
                     </form>
                   </div>
@@ -279,7 +331,7 @@ export default function PollsList({
         )}
       </div>
 
-      {/* पेिजिनेशन नियंत्रण (Pagination Controls) */}
+      {/* पेजिनेशन नियंत्रण */}
       {totalPages > 1 && (
         <div className="flex flex-wrap justify-center items-center gap-2 p-6 bg-emerald-50/30 border-t border-emerald-100">
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => {

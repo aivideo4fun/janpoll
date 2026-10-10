@@ -6,7 +6,7 @@ import { cookies } from 'next/headers';
 
 import { db } from '@/lib/db';
 import { isPollOpen } from '@/lib/poll-utils';
-import { DEVICE_COOKIE } from '@/lib/voter';
+import { DEVICE_COOKIE, getVoterIdentity, isIpLimitReached } from '@/lib/voter';
 
 export type VoteResult =
   | { success: true }
@@ -40,9 +40,11 @@ export async function castVote(
       return { success: false, code: 'CLOSED', message: 'यह पोल बंद हो चुका है।' };
     }
 
-    // 1. Get or create unique cookie deviceId for this browser/device
+    // 1. पहचान: कुकी (डिवाइस) और हैश किया हुआ IP
+    const { ipHash, deviceId: existingDeviceId } = await getVoterIdentity();
+
     const cookieStore = await cookies();
-    let deviceId = cookieStore.get(DEVICE_COOKIE)?.value;
+    let deviceId = existingDeviceId;
 
     if (!deviceId) {
       deviceId = randomUUID();
@@ -55,7 +57,7 @@ export async function castVote(
       });
     }
 
-    // 2. Check ONLY by deviceId cookie (No IP restriction)
+    // 2. इसी डिवाइस/ब्राउज़र ने पहले वोट दिया है?
     const existingVote = await db.vote.findUnique({
       where: {
         pollId_anonymousUserId: {
@@ -73,14 +75,23 @@ export async function castVote(
       };
     }
 
-    // 3. Save vote securely with transaction
+    // 3. इसी नेटवर्क (IP) से सीमा से ज़्यादा वोट? (इनकॉग्निटो / हिस्ट्री डिलीट रोकने के लिए)
+    if (await isIpLimitReached(pollId, ipHash)) {
+      return {
+        success: false,
+        code: 'ALREADY_VOTED',
+        message: 'इस नेटवर्क से इस पोल में वोट की सीमा पूरी हो चुकी है।',
+      };
+    }
+
+    // 4. वोट सुरक्षित रूप से सहेजना
     await db.$transaction([
       db.vote.create({
         data: {
           pollId,
           optionId,
           anonymousUserId: deviceId,
-          ipAddress: null, // IP bypass to prevent shared proxy network blocks
+          ipAddress: ipHash,
         },
       }),
       db.pollOption.update({

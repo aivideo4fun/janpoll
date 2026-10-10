@@ -1,11 +1,11 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { cookies } from 'next/headers';
+import { hasAlreadyVoted } from '@/lib/voter';
 import type { Metadata } from 'next';
 
 import { db } from '@/lib/db';
 import { isPollOpen } from '@/lib/poll-utils';
-import { DEVICE_COOKIE } from '@/lib/voter';
+
 import PollClientView from '@/app/poll/[id]/PollClientView'; // 👈 एब्सोल्यूट पाथ का उपयोग करें
 
 export const dynamic = 'force-dynamic';
@@ -72,23 +72,7 @@ export default async function PollPage({ params }: PollPageProps) {
     return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
   });
 
-  const cookieStore = await cookies();
-  const deviceId = cookieStore.get(DEVICE_COOKIE)?.value;
-
-  let alreadyVoted = false;
-  if (deviceId) {
-    const existingVote = await db.vote.findUnique({
-      where: {
-        pollId_anonymousUserId: {
-          pollId: poll.id,
-          anonymousUserId: deviceId,
-        },
-      },
-    });
-    if (existingVote) {
-      alreadyVoted = true;
-    }
-  }
+  const alreadyVoted = await hasAlreadyVoted(poll.id);
 
   const isOpen = isPollOpen(poll);
 

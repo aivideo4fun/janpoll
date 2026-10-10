@@ -4,6 +4,8 @@ import { db } from '@/lib/db';
 import { subscribeNewsletter } from '@/app/actions/newsletterAction';
 import Ad728x90 from '@/components/Ad728x90';
 
+const WHATSAPP_CHANNEL_URL = 'https://whatsapp.com/channel/0029VbEDUaJ5Ui2OzmpEYI3D';
+
 export default function Footer() {
   return <FooterContent />;
 }
@@ -100,7 +102,10 @@ async function FooterContent() {
               <span>👥</span> हमसे जुड़ें
             </h3>
             
-            <div className="flex items-center gap-3 pt-1">
+            <div className="flex flex-wrap items-center gap-2.5 pt-1">
+              <a href={WHATSAPP_CHANNEL_URL} target="_blank" rel="noreferrer" title="WhatsApp चैनल" className="h-10 w-10 rounded-full bg-white/10 p-2 flex items-center justify-center hover:bg-white/20 transition shadow">
+                <Image src="/images/whatsapp.png" alt="WhatsApp" width={24} height={24} className="object-contain" />
+              </a>
               <a href="https://www.facebook.com/profile.php?id=61595121995283" target="_blank" rel="noreferrer" title="Facebook" className="h-10 w-10 rounded-full bg-white/10 p-2 flex items-center justify-center hover:bg-white/20 transition shadow">
                 <Image src="/images/facebook.png" alt="Facebook" width={24} height={24} className="object-contain" />
               </a>
@@ -114,6 +119,17 @@ async function FooterContent() {
                 <Image src="/images/youtube.png" alt="YouTube" width={24} height={24} className="object-contain" />
               </a>
             </div>
+
+            {/* WhatsApp चैनल बटन */}
+            <a
+              href={WHATSAPP_CHANNEL_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-center gap-2 rounded-xl bg-green-500 hover:bg-green-400 text-green-950 text-xs font-bold py-2.5 transition shadow"
+            >
+              <Image src="/images/whatsapp.png" alt="" width={18} height={18} className="object-contain" />
+              WhatsApp चैनल जॉइन करें
+            </a>
 
             {/* न्यूज़लेटर फॉर्म */}
             <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/50 p-3 space-y-2">

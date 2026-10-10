@@ -4,6 +4,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useRef, useEffect } from 'react';
 
+const WHATSAPP_CHANNEL_URL = 'https://whatsapp.com/channel/0029VbEDUaJ5Ui2OzmpEYI3D';
+
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [showSocials, setShowSocials] = useState(false);
@@ -43,7 +45,7 @@ export default function Navbar() {
           </div>
         </Link>
 
-        {/* राइट साइड: केवल सोशल मीडिया ड्रॉपडाउन (डेस्कटॉप) */}
+        {/* राइट साइड: सोशल मीडिया ड्रॉपडाउन (डेस्कटॉप) */}
         <div className="hidden md:flex items-center gap-3">
           <div className="relative" ref={socialRef}>
             <button
@@ -54,7 +56,16 @@ export default function Navbar() {
             </button>
 
             {showSocials && (
-              <div className="absolute right-0 mt-2 w-44 bg-white rounded-2xl shadow-xl border border-emerald-100 p-2 z-50 space-y-1 animate-fadeIn">
+              <div className="absolute right-0 mt-2 w-52 bg-white rounded-2xl shadow-xl border border-emerald-100 p-2 z-50 space-y-1 animate-fadeIn">
+                <a
+                  href={WHATSAPP_CHANNEL_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-green-800 bg-green-50 hover:bg-green-100 transition"
+                >
+                  <Image src="/images/whatsapp.png" alt="WhatsApp" width={20} height={20} className="object-contain" />
+                  <span>व्हाट्सएप चैनल जॉइन करें</span>
+                </a>
                 <a
                   href="https://instagram.com/janpoll.in"
                   target="_blank"
@@ -114,6 +125,16 @@ export default function Navbar() {
         <div className="md:hidden border-t border-emerald-100 bg-white px-4 py-4 shadow-lg space-y-2">
           <p className="text-xs font-bold text-gray-400 mb-1">सोशल मीडिया पर फॉलो करें:</p>
           <div className="grid grid-cols-2 gap-2">
+            <a
+              href={WHATSAPP_CHANNEL_URL}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => setIsOpen(false)}
+              className="col-span-2 flex items-center gap-2 p-2.5 bg-green-50 text-green-800 text-xs font-bold rounded-xl border border-green-200 justify-center"
+            >
+              <Image src="/images/whatsapp.png" alt="WhatsApp" width={18} height={18} className="object-contain" />
+              <span>व्हाट्सएप चैनल जॉइन करें</span>
+            </a>
             <a
               href="https://instagram.com/janpoll.in"
               target="_blank"

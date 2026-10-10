@@ -6,6 +6,10 @@ import { db } from '@/lib/db';
 
 export const DEVICE_COOKIE = 'jp_device';
 
+// एक पोल में एक ही नेटवर्क (IP) से अधिकतम इतने वोट मान्य होंगे।
+// 1 रखने पर एक ही वाई-फाई/नेटवर्क के बाकी असली लोग भी रुक जाएंगे।
+export const MAX_VOTES_PER_IP = 3;
+
 async function getClientIp(): Promise<string | null> {
   const h = await headers();
   const raw =
@@ -24,9 +28,15 @@ async function getClientIp(): Promise<string | null> {
 }
 
 function hashIp(ip: string) {
-  const salt = process.env.VOTE_SALT ?? 'janpoll-default-salt';
+  const salt = process.env.VOTE_SALT;
+  if (!salt) {
+    console.warn('VOTE_SALT सेट नहीं है, कृपया .env में जोड़ें।');
+  }
   // 32 hex chars = ipAddress VarChar(45) में fit
-  return createHash('sha256').update(`${salt}:${ip}`).digest('hex').slice(0, 32);
+  return createHash('sha256')
+    .update(`${salt ?? 'janpoll-default-salt'}:${ip}`)
+    .digest('hex')
+    .slice(0, 32);
 }
 
 export async function getVoterIdentity() {
@@ -39,20 +49,28 @@ export async function getVoterIdentity() {
   };
 }
 
+/** क्या इस पोल में इस नेटवर्क (IP) की वोट-सीमा पूरी हो चुकी है? */
+export async function isIpLimitReached(pollId: string, ipHash: string | null) {
+  if (!ipHash) return false;
+
+  const votesFromIp = await db.vote.count({
+    where: { pollId, ipAddress: ipHash },
+  });
+
+  return votesFromIp >= MAX_VOTES_PER_IP;
+}
+
+/** पोल पेज पर: इस आगंतुक को वोट फॉर्म दिखाना है या परिणाम? */
 export async function hasAlreadyVoted(pollId: string) {
   const { ipHash, deviceId } = await getVoterIdentity();
 
-  const conditions = [
-    ...(ipHash ? [{ ipAddress: ipHash }] : []),
-    ...(deviceId ? [{ anonymousUserId: deviceId }] : []),
-  ];
+  if (deviceId) {
+    const vote = await db.vote.findUnique({
+      where: { pollId_anonymousUserId: { pollId, anonymousUserId: deviceId } },
+      select: { id: true },
+    });
+    if (vote) return true;
+  }
 
-  if (conditions.length === 0) return false;
-
-  const vote = await db.vote.findFirst({
-    where: { pollId, OR: conditions },
-    select: { id: true },
-  });
-
-  return Boolean(vote);
+  return isIpLimitReached(pollId, ipHash);
 }
