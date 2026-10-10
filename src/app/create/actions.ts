@@ -30,23 +30,23 @@ function readText(formData: FormData, keys: string[], fallbackUrl: URL | null) {
 export async function createPollAction(formData: FormData) {
   const session = await getServerSession(googleAuthOptions);
   if (!session || !session.user) {
-    throw new Error('कृपया पहले गूगल से साइन-इन करें।');
+    throw new Error('Kripya pehle Google se sign-in karein.');
   }
 
   const question = String(formData.get('question') ?? '').trim();
-  const deadlineDays = Math.min(
-    Math.max(parseInt(String(formData.get('deadlineDays') ?? '3'), 10) || 3, 1),
-    30,
-  );
+  
+  // Handling deadline days or specific expiry date
+  const rawDays = String(formData.get('deadlineDays') ?? '3');
+  let deadlineDays = Math.min(Math.max(parseInt(rawDays, 10) || 3, 1), 60);
 
   const optionsText = formData
     .getAll('options')
     .map((opt) => (typeof opt === 'string' ? opt.trim() : ''))
     .filter((opt) => opt !== '')
-    .slice(0, 15); // 👈 अब अधिकतम 15 विकल्प स्वीकार किए जाएंगे
+    .slice(0, 15);
 
   if (!question || optionsText.length < 2) {
-    throw new Error('कृपया वैध प्रश्न एवं न्यूनतम 2 विकल्प दर्ज करें।');
+    throw new Error('Kripya vaidh prashn evam nyuntam 2 vikalp darj karein.');
   }
 
   const headersList = await headers();
