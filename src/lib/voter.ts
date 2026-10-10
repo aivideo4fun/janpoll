@@ -5,9 +5,6 @@ import { db } from '@/lib/db';
 
 export const DEVICE_COOKIE = 'jp_device';
 
-// एक पोल में एक ही नेटवर्क (IP) से अधिकतम इतने वोट मान्य होंगे।
-export const MAX_VOTES_PER_IP = 3;
-
 async function getClientIp(): Promise<string | null> {
   const h = await headers();
   const raw =
@@ -42,35 +39,25 @@ export async function getVoterIdentity() {
   };
 }
 
-/** क्या इस विशेष पोल में इस नेटवर्क (IP) की वोट-सीमा पूरी हो चुकी है? */
-export async function isIpLimitReached(pollId: string, ipHash: string | null) {
-  if (!ipHash) return false;
+/** 
+ * पोल पेज पर जाँच करें: 
+ * केवल यह देखा जाएगा कि क्या इस विशिष्ट डिवाइस/कुकी ने इस पोल पर पहले वोट दिया है या नहीं। 
+ * IP की कोई पाबंदी नहीं रहेगी, ताकि एक ही इंटरनेट/वाई-फाई से नए लोग आसानी से वोट दे सकें।
+ */
+export async function hasAlreadyVoted(pollId: string) {
+  const { deviceId } = await getVoterIdentity();
 
-  const votesFromIp = await db.vote.count({
-    where: { pollId, ipAddress: ipHash },
+  if (!deviceId) return false;
+
+  const vote = await db.vote.findUnique({
+    where: {
+      pollId_anonymousUserId: {
+        pollId,
+        anonymousUserId: deviceId,
+      },
+    },
+    select: { id: true },
   });
 
-  return votesFromIp >= MAX_VOTES_PER_IP;
-}
-
-/** केवल उसी विशिष्ट पोल के लिए जाँच करें कि इस उपयोगकर्ता/डिवाइस ने वोट दिया है या नहीं */
-export async function hasAlreadyVoted(pollId: string) {
-  const { ipHash, deviceId } = await getVoterIdentity();
-
-  // 1. यदि इस डिवाइस आईडी से इस विशेष पोल पर पहले वोट हुआ है
-  if (deviceId) {
-    const vote = await db.vote.findUnique({
-      where: {
-        pollId_anonymousUserId: {
-          pollId,
-          anonymousUserId: deviceId,
-        },
-      },
-      select: { id: true },
-    });
-    if (vote) return true;
-  }
-
-  // 2. IP लिमिट चेक (केवल उसी पोल के लिए)
-  return isIpLimitReached(pollId, ipHash);
+  return !!vote;
 }
