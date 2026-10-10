@@ -8,27 +8,28 @@ generator client {
 }
 
 model Poll {
-  id                  String   @id @default(uuid())
-  slug                String?  @db.VarChar(500)
-  question            String   @db.VarChar(500)
-  creatorName         String?  @db.VarChar(100)
-  creatorEmail        String?  @db.VarChar(255)
-  isVerified          Boolean  @default(false)
-  creatorIp           String?  @db.VarChar(45)
-  deadlineDays        Int      @default(3)
-  active              Boolean  @default(true)
+  id                String   @id @default(uuid())
+  slug              String?  @db.VarChar(500)
+  question          String   @db.VarChar(500)
+  creatorName       String?  @db.VarChar(100)
+  creatorEmail      String?  @db.VarChar(255)
+  isVerified        Boolean  @default(false)
+  creatorIp         String?  @db.VarChar(45)
+  deadlineDays      Int      @default(3)
+  active            Boolean  @default(true)
   
   // 📍 Location Fields
-  districtName        String?  @db.VarChar(100)
-  samitiName          String?  @db.VarChar(100)
-  gramPanchayatName   String?  @db.VarChar(100)
-  gramPanchayatId     String?  // 👈 यहाँ Int? की जगह String? कर लें
+  districtName      String?  @db.VarChar(100)
+  samitiName        String?  @db.VarChar(100)
+  gramPanchayatName String?  @db.VarChar(100)
+  gramPanchayatId   String?  
+  electionType      String?  @default("sarpanch") @db.VarChar(50) // 'sarpanch', 'samiti', 'zila'
 
-      createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
-  options             PollOption[]
-  votes               Vote[]
+  options           PollOption[]
+  votes             Vote[]
 
   @@index([active])
   @@index([createdAt])
@@ -42,10 +43,10 @@ model PollOption {
   pollId    String
   text      String   @db.VarChar(255)
   voteCount Int      @default(0)
-  order     Int?     // 👈 इसे Optional (Int?) रखें ताकि पुराने पोल्स सुरक्षित रहें
+  order     Int?     
   createdAt DateTime @default(now())
 
-  poll  Poll   @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  poll  Poll  @relation(fields: [pollId], references: [id], onDelete: Cascade)
   votes Vote[]
 
   @@index([pollId])
@@ -57,10 +58,10 @@ model Vote {
   optionId        String
   anonymousUserId String   @db.VarChar(100)
   ipAddress       String?  @db.VarChar(45)
-   deviceSig       String?  @db.VarChar(64)
+  deviceSig       String?  @db.VarChar(64)
   createdAt       DateTime @default(now())
 
-  poll   Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  poll   Poll     @relation(fields: [pollId], references: [id], onDelete: Cascade)
   option PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
 
   @@unique([pollId, anonymousUserId])
@@ -76,7 +77,7 @@ model ContactMessage {
   id        String   @id @default(uuid())
   name      String   @db.VarChar(100)
   email     String   @db.VarChar(255)
-  whatsapp  String?  @db.VarChar(20)   // 👈 नया WhatsApp फील्ड (ऑपशनल)
+  whatsapp  String?  @db.VarChar(20)   
   message   String   @db.Text
   createdAt DateTime @default(now())
 
@@ -88,14 +89,14 @@ model ContactMessage {
 // ---------------------------------------------------------
 
 model District {
-  id               String             @id @default(cuid())
-  nameEn           String             @unique
+  id               String            @id @default(cuid())
+  nameEn           String            @unique
   nameHi           String
   tehsils          Tehsil[]
   panchayatSamitis PanchayatSamiti[]
   gramPanchayats   GramPanchayat[]
   zilaWards        ZilaParishadWard[]
-  createdAt        DateTime           @default(now())
+  createdAt        DateTime          @default(now())
 }
 
 model ZilaParishadWard {
@@ -127,10 +128,33 @@ model PanchayatSamiti {
   district       District        @relation(fields: [districtId], references: [id], onDelete: Cascade)
   tehsilId       String?
   tehsil         Tehsil?         @relation(fields: [tehsilId], references: [id], onDelete: SetNull)
+  samitiWards    SamitiWard[]    // 👈 Panchayat Samiti ke andar Wards
   gramPanchayats GramPanchayat[]
 
   @@unique([districtId, nameEn])
   @@index([tehsilId])
+}
+
+model SamitiWard {
+  id       String          @id @default(cuid())
+  wardNo   Int
+  nameHi   String
+  samitiId String
+  samiti   PanchayatSamiti @relation(fields: [samitiId], references: [id], onDelete: Cascade)
+  villages Village[]       // 👈 Ward ke andar Villages/Gav
+  createdAt DateTime       @default(now())
+
+  @@unique([samitiId, wardNo])
+}
+
+model Village {
+  id     String     @id @default(cuid())
+  nameEn String
+  nameHi String
+  wardId String
+  ward   SamitiWard @relation(fields: [wardId], references: [id], onDelete: Cascade)
+
+  @@unique([wardId, nameEn])
 }
 
 model GramPanchayat {

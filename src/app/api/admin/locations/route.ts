@@ -12,13 +12,23 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const districtId = searchParams.get('districtId');
   const samitiId = searchParams.get('samitiId');
+  const wardId = searchParams.get('wardId');
 
   try {
-    if (samitiId) {
-      const items = await db.gramPanchayat.findMany({
-        where: { samitiId },
+    if (wardId) {
+      const items = await db.village.findMany({
+        where: { wardId },
         select: { id: true, nameHi: true, nameEn: true },
         orderBy: { nameHi: 'asc' },
+      });
+      return NextResponse.json({ items });
+    }
+
+    if (samitiId) {
+      const items = await db.samitiWard.findMany({
+        where: { samitiId },
+        select: { id: true, wardNo: true, nameHi: true },
+        orderBy: { wardNo: 'asc' },
       });
       return NextResponse.json({ items });
     }
@@ -39,7 +49,6 @@ export async function GET(request: Request) {
   return NextResponse.json({ items: [] });
 }
 
-// 🛠️ Naya POST method joda gaya hai bulk locations aur wards add karne ke liye
 export async function POST(request: Request) {
   if (!(await isAdmin())) {
     return new NextResponse('Unauthorized', { status: 401 });
@@ -47,47 +56,37 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { type, districtId, samitiId, dataList } = body;
-
-    if (!type || !dataList || !Array.isArray(dataList)) {
-      return NextResponse.json({ success: false, message: 'Invalid data format' }, { status: 400 });
-    }
+    const { type, districtId, samitiId, wardId, dataList } = body;
 
     let addedCount = 0;
 
     for (const item of dataList) {
-      if (type === 'gramPanchayat' && districtId && samitiId) {
-        await db.gramPanchayat.upsert({
-          where: { samitiId_nameEn: { samitiId, nameEn: item.nameEn } },
+      if (type === 'panchayatSamiti' && districtId) {
+        await db.panchayatSamiti.upsert({
+          where: { districtId_nameEn: { districtId, nameEn: item.nameEn } },
           update: { nameHi: item.nameHi || item.nameEn },
-          create: {
-            nameEn: item.nameEn,
-            nameHi: item.nameHi || item.nameEn,
-            districtId,
-            samitiId,
-          },
+          create: { nameEn: item.nameEn, nameHi: item.nameHi || item.nameEn, districtId },
         });
         addedCount++;
-      } else if (type === 'zilaWard' && districtId) {
-        await db.zilaParishadWard.upsert({
-          where: { districtId_wardNo: { districtId, wardNo: Number(item.wardNo) } },
+      } else if (type === 'samitiWard' && samitiId) {
+        await db.samitiWard.upsert({
+          where: { samitiId_wardNo: { samitiId, wardNo: Number(item.wardNo) } },
           update: { nameHi: item.nameHi || `वार्ड ${item.wardNo}` },
-          create: {
-            wardNo: Number(item.wardNo),
-            nameHi: item.nameHi || `वार्ड ${item.wardNo}`,
-            districtId,
-          },
+          create: { wardNo: Number(item.wardNo), nameHi: item.nameHi || `वार्ड ${item.wardNo}`, samitiId },
+        });
+        addedCount++;
+      } else if (type === 'village' && wardId) {
+        await db.village.upsert({
+          where: { wardId_nameEn: { wardId, nameEn: item.nameEn } },
+          update: { nameHi: item.nameHi || item.nameEn },
+          create: { nameEn: item.nameEn, nameHi: item.nameHi || item.nameEn, wardId },
         });
         addedCount++;
       }
     }
 
-    return NextResponse.json({
-      success: true,
-      message: `Safaltaपूर्वक ${addedCount} records database mein update/add kar diye gaye hain!`,
-    });
+    return NextResponse.json({ success: true, message: `सफलतापूर्वक ${addedCount} रिकॉर्ड्स जोड़ दिए गए हैं!` });
   } catch (error: any) {
-    console.error('Location upload error:', error);
-    return NextResponse.json({ success: false, message: error.message || 'Server error' }, { status: 500 });
+    return NextResponse.json({ success: false, message: error.message || 'त्रुटि हुई' }, { status: 500 });
   }
 }
