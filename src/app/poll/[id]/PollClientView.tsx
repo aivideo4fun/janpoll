@@ -28,7 +28,6 @@ const COLORS = [
   '#F97316', // नारंगी
 ];
 
-// हमसे जुड़ें: सभी 5 सोशल लिंक
 const SOCIAL_LINKS = [
   {
     name: 'व्हाट्सएप चैनल',
@@ -147,6 +146,13 @@ export default function PollClientView({
     alreadyVoted ? 'आप इस पोल में पहले ही वोट दे चुके हैं।' : '',
   );
 
+  // 🛠️ महत्वपूर्ण सुधार: जब भी पोल ID बदले (दूसरा पोल खुले), तो स्टेट बिल्कुल ताजा हो जाए
+  useEffect(() => {
+    setHasVoted(alreadyVoted);
+    setMessage(alreadyVoted ? 'आप इस पोल में पहले ही वोट दे चुके हैं।' : '');
+    setSelectedOption(null);
+  }, [poll.id, alreadyVoted]);
+
   const showResults = hasVoted || !isOpen;
 
   const totalVotes = useMemo(
@@ -202,7 +208,6 @@ export default function PollClientView({
     }
   };
 
-  // मुख्य शेयर बटन: फ़ोन का शेयर मेन्यू (WhatsApp, Facebook आदि सब यहीं से)
   const handleShare = async () => {
     const shareData = {
       title: poll.question,
@@ -223,13 +228,11 @@ export default function PollClientView({
     }
   };
 
-  // सीधे WhatsApp पर भेजना
   const handleWhatsAppShare = () => {
     const text = `🗳️ ${poll.question}\nअपनी राय यहाँ दें: ${window.location.href}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
   };
 
-  // लिंक कॉपी करना
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
@@ -430,7 +433,7 @@ export default function PollClientView({
                 </div>
               )}
 
-              {/* 📲 शेयर सेक्शन (सबसे प्रमुख, अलग कार्ड) */}
+              {/* 📲 शेयर सेक्शन */}
               <div className="rounded-2xl border-2 border-emerald-300 bg-gradient-to-br from-emerald-50 to-white p-4 shadow-sm sm:p-5">
                 <p className="mb-1 text-center text-sm font-black text-emerald-900 sm:text-base">
                   📣 इस पोल को दोस्तों और गाँव के ग्रुप में शेयर करें
@@ -468,12 +471,10 @@ export default function PollClientView({
                 </div>
               </div>
 
-              {/* विज्ञापन: 728x90 (मोबाइल पर स्क्रीन के अनुसार फिट होता है) */}
               <div className="my-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
                 <Ad728x90 />
               </div>
 
-              {/* 🔗 अन्य पोल और नया पोल */}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Link
                   href="/"
@@ -490,7 +491,6 @@ export default function PollClientView({
                 </Link>
               </div>
 
-              {/* 🌐 हमसे जुड़ें (5 सोशल लिंक) */}
               <div className="rounded-2xl border border-slate-200 bg-white p-4">
                 <p className="mb-3 text-center text-xs font-bold text-slate-600">🌐 हमसे जुड़ें</p>
                 <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
