@@ -41,6 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="hi">
       <head>
+        {/* Google AdSense Script (सुरक्षित रखा गया है) */}
         <script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4603205178906314"
@@ -53,6 +54,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main className="flex-grow">{children}</main>
           <Footer />
         </Providers>
+
+        {/* Infolinks Ads Script */}
+        <script
+          type="text/javascript"
+          dangerouslySetInnerHTML={{
+            __html: `
+              var infolinks_pid = 3448527;
+              var infolinks_wsid = 0;
+            `,
+          }}
+        />
+        <script
+          type="text/javascript"
+          src="https://resources.infolinks.com/js/infolinks_main.js"
+          async
+        />
       </body>
     </html>
   );
