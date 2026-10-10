@@ -2,7 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { db } from '@/lib/db';
 import { subscribeNewsletter } from '@/app/actions/newsletterAction';
-import AdsterraBanner from '@/components/AdBanner';
+import Ad728x90 from '@/components/Ad728x90';
 
 export default function Footer() {
   return <FooterContent />;

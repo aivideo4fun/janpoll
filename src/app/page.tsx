@@ -3,7 +3,7 @@ import React from 'react';
 import type { Metadata } from 'next';
 import { db } from '@/lib/db';
 import { getDeadline, isPollOpen } from '@/lib/poll-utils';
-import AdsterraBanner from '@/components/AdBanner';
+import Ad728x90 from '@/components/Ad728x90';
 
 export const dynamic = 'force-dynamic';
 
@@ -268,9 +268,8 @@ export default async function Home({ searchParams }: HomeProps) {
       </div>
 
       {/* सक्रिय पोल्स की सूची के ठीक ऊपर विज्ञापन (Ad Placement) */}
-      <div className="my-6 flex justify-center bg-white p-3 rounded-2xl border border-emerald-100 shadow-sm">
-        <AdsterraBanner adKey="284cee4d0f75c889cb2c8420f6c1834f" width={728} height={90} src="https://bicea.org/22/284cee4d0f75c889cb2c8420f6c1834f" className="hidden sm:block" />
-        <AdsterraBanner adKey="4801d526481e48f32daba116c6ca2a7c" width={300} height={250} src="https://bicea.org/22/4801d526481e48f32daba116c6ca2a7c" className="block sm:hidden" />
+       <div className="my-6 bg-white p-3 rounded-2xl border border-emerald-100 shadow-sm">
+        <Ad728x90 />
       </div>
 
       {/* सक्रिय पोल्स की सूची */}
@@ -300,7 +299,7 @@ export default async function Home({ searchParams }: HomeProps) {
             {polls.map((poll, index) => {
               const pollTotalVotes = poll.options.reduce((sum, opt) => sum + opt.voteCount, 0);
               const pollUrl = poll.slug ? `/poll/${poll.id}/${poll.slug}` : `/poll/${poll.id}`;
-              const showAdAfterThis = (index + 1) % 5 === 0;
+                           const showAdAfterThis = index === 4;
               const location = [poll.gramPanchayatName, poll.samitiName, poll.districtName].filter(Boolean).join(' · ');
 
               return (
@@ -350,9 +349,9 @@ export default async function Home({ searchParams }: HomeProps) {
                     </div>
                   </div>
 
-                  {showAdAfterThis && (
-                    <div className="my-6 p-3 bg-emerald-50/50 rounded-2xl border border-emerald-200 text-center overflow-hidden">
-                      <AdsterraBanner adKey="088d090f5a0ddc02fefc698afbfd2ece" width={320} height={50} src="https://bicea.org/21/088d090f5a0ddc02fefc698afbfd2ece" />
+                                    {showAdAfterThis && (
+                    <div className="my-6 p-3 bg-emerald-50/50 rounded-2xl border border-emerald-200 overflow-hidden">
+                      <Ad728x90 />
                     </div>
                   )}
                 </React.Fragment>

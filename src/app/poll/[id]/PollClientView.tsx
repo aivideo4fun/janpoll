@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -14,6 +14,7 @@ import {
 
 import { castVote } from '@/lib/actions';
 import { getDeadline } from '@/lib/poll-utils';
+import Ad728x90 from '@/components/Ad728x90';
 
 const COLORS = [
   '#10B981', // हरा
@@ -442,16 +443,9 @@ export default function PollClientView({
                 </div>
               )}
 
-              {/* 📱 Responsive Ad Unit: Mobile par 320x50 aur Desktop par 728x90 */}
-              <div className="my-4 p-3 bg-slate-50 rounded-2xl border border-slate-200 text-center flex justify-center overflow-hidden">
-                {/* Mobile View Ad (320x50) */}
-                <div className="block md:hidden">
-                  <MobileAdBanner320x50 />
-                </div>
-                {/* Desktop View Ad (728x90) */}
-                <div className="hidden md:block">
-                  <DesktopAdBanner728x90 />
-                </div>
+                            {/* विज्ञापन: 728x90 (मोबाइल पर स्क्रीन के अनुसार फिट होता है) */}
+              <div className="my-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                <Ad728x90 />
               </div>
 
               <div className="space-y-3">
