@@ -18,7 +18,6 @@ export default function ClosedPollsPage() {
   const [loading, setLoading] = useState(true);
   const [sharingId, setSharingId] = useState<string | null>(null);
 
-  // Closed polls fetch karna
   useEffect(() => {
     fetch('/api/closed-polls')
       .then((res) => res.json())
@@ -38,7 +37,6 @@ export default function ClosedPollsPage() {
     p.question.toLowerCase().includes(searchQuery)
   );
 
-  // HTML5 Canvas Share Card Generator
   const handleShareCard = async (poll: ClosedPoll) => {
     setSharingId(poll.id);
     const totalVotes = poll.options.reduce((sum, o) => sum + o.voteCount, 0);
@@ -49,21 +47,17 @@ export default function ClosedPollsPage() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Background Gradient
     ctx.fillStyle = '#064e3b';
     ctx.fillRect(0, 0, 1200, 630);
 
-    // Card Box
     ctx.fillStyle = '#ffffff';
     ctx.roundRect(50, 50, 1100, 530, 24);
     ctx.fill();
 
-    // Header Branding
     ctx.fillStyle = '#047857';
     ctx.font = 'bold 30px sans-serif';
     ctx.fillText('JanPoll.in — राजस्थान की जनता की आवाज़', 90, 110);
 
-    // Total Votes Badge
     ctx.fillStyle = '#f1f5f9';
     ctx.roundRect(830, 80, 280, 45, 12);
     ctx.fill();
@@ -71,14 +65,12 @@ export default function ClosedPollsPage() {
     ctx.font = 'bold 18px sans-serif';
     ctx.fillText(`कुल वोट: ${totalVotes.toLocaleString('en-IN')}`, 865, 110);
 
-    // Question
     ctx.fillStyle = '#0f172a';
     ctx.font = 'bold 34px sans-serif';
     let qText = poll.question;
     if (qText.length > 55) qText = qText.substring(0, 52) + '...';
     ctx.fillText(qText, 90, 180);
 
-    // Options Bars
     let startY = 240;
     poll.options.slice(0, 4).forEach((opt) => {
       const percentage = totalVotes > 0 ? Math.round((opt.voteCount / totalVotes) * 100) : 0;
@@ -105,7 +97,6 @@ export default function ClosedPollsPage() {
       startY += 75;
     });
 
-    // Footer
     ctx.fillStyle = '#64748b';
     ctx.font = '16px sans-serif';
     ctx.fillText('WhatsApp और सोशल मीडिया पर परिणाम देखें | JanPoll.in', 90, 545);
@@ -146,7 +137,6 @@ export default function ClosedPollsPage() {
         <p className="text-slate-300 text-xs md:text-sm">यहाँ पुराने पोल्स खोजें, परिणाम देखें और खूबसूरत रिजल्ट कार्ड इमेज शेयर करें।</p>
       </div>
 
-      {/* Search Bar with Button */}
       <div className="mb-8 bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
         <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2">
           <input
