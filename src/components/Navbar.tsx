@@ -11,7 +11,6 @@ export default function Navbar() {
   const [showSocials, setShowSocials] = useState(false);
   const socialRef = useRef<HTMLDivElement>(null);
 
-  // ड्रॉपडाउन के बाहर क्लिक करने पर बंद करने के लिए
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (socialRef.current && !socialRef.current.contains(event.target as Node)) {
@@ -56,12 +55,12 @@ export default function Navbar() {
             </button>
 
             {showSocials && (
-              <div className="absolute right-0 mt-2 w-52 bg-white rounded-2xl shadow-xl border border-emerald-100 p-2 z-50 space-y-1 animate-fadeIn">
+              <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-emerald-100 p-2 z-50 space-y-1 animate-fadeIn">
                 <a
                   href={WHATSAPP_CHANNEL_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-green-800 bg-green-50 hover:bg-green-100 transition"
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold text-green-900 bg-green-50 hover:bg-green-100 transition border border-green-200"
                 >
                   <Image src="/images/whatsapp.png" alt="WhatsApp" width={20} height={20} className="object-contain" />
                   <span>व्हाट्सएप चैनल जॉइन करें</span>
@@ -130,7 +129,7 @@ export default function Navbar() {
               target="_blank"
               rel="noreferrer"
               onClick={() => setIsOpen(false)}
-              className="col-span-2 flex items-center gap-2 p-2.5 bg-green-50 text-green-800 text-xs font-bold rounded-xl border border-green-200 justify-center"
+              className="col-span-2 flex items-center gap-2 p-2.5 bg-green-50 text-green-900 text-xs font-bold rounded-xl border border-green-200 justify-center shadow-sm"
             >
               <Image src="/images/whatsapp.png" alt="WhatsApp" width={18} height={18} className="object-contain" />
               <span>व्हाट्सएप चैनल जॉइन करें</span>
