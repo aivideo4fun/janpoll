@@ -57,6 +57,7 @@ model Vote {
   optionId        String
   anonymousUserId String   @db.VarChar(100)
   ipAddress       String?  @db.VarChar(45)
+   deviceSig       String?  @db.VarChar(64)
   createdAt       DateTime @default(now())
 
   poll   Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)

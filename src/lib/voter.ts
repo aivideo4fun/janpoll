@@ -5,72 +5,93 @@ import { db } from '@/lib/db';
 
 export const DEVICE_COOKIE = 'jp_device';
 
-// IP limit ko thoda bada rakha hai taaki naya traffic ya ek hi network se log aaram se vote de sakein
-export const MAX_VOTES_PER_IP = 100;
+// एक ही नेटवर्क + एक ही डिवाइस से, एक पोल में इतने घंटों के भीतर दोबारा वोट नहीं।
+// बढ़ाने पर सख्ती बढ़ेगी, पर एक ही वाई-फाई पर एक जैसे दो फ़ोन वालों के रुकने का खतरा भी।
+export const DUPLICATE_WINDOW_HOURS = 6;
 
-async function getClientIp(): Promise<string | null> {
-  const h = await headers();
-  const raw =
-    h.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-    h.get('x-real-ip') ||
-    h.get('cf-connecting-ip') ||
-    null;
+function normalizeIp(raw: string): string {
+  const ip = raw.trim();
+  if (ip.toLowerCase().startsWith('::ffff:') && ip.includes('.')) return ip.slice(7);
+  if (!ip.includes(':')) return ip;
 
-  if (!raw) return null;
-
-  if (raw.includes(':')) {
-    return raw.split(':').slice(0, 4).join(':');
+  // IPv6: पहले 4 हिस्से (/64) एक ही उपयोगकर्ता माने जाएँ
+  let parts: string[];
+  if (ip.includes('::')) {
+    const [head, tail] = ip.split('::');
+    const headParts = head ? head.split(':') : [];
+    const tailParts = tail ? tail.split(':') : [];
+    const zeros = Array<string>(Math.max(0, 8 - headParts.length - tailParts.length)).fill('0');
+    parts = [...headParts, ...zeros, ...tailParts];
+  } else {
+    parts = ip.split(':');
   }
-  return raw;
+  return parts.slice(0, 4).map((p) => p.padStart(4, '0')).join(':').toLowerCase();
 }
 
-function hashIp(ip: string) {
+// केवल .env में तय किया हुआ भरोसेमंद हेडर पढ़ा जाता है (TRUSTED_IP_HEADER)।
+// तय न हो तो IP का उपयोग बंद रहता है, ताकि गलत IP से असली लोग न रुकें।
+async function getClientIp(): Promise<string | null> {
+  const headerName = process.env.TRUSTED_IP_HEADER?.trim().toLowerCase();
+  if (!headerName) return null;
+
+  const h = await headers();
+  const value = h.get(headerName);
+  if (!value) return null;
+
+  const parts = value.split(',').map((s) => s.trim()).filter(Boolean);
+  if (parts.length === 0) return null;
+
+  // x-forwarded-for में आख़िरी एंट्री वही होती है जो आपके सर्वर/ALB ने खुद देखी
+  const raw = headerName === 'x-forwarded-for' ? parts[parts.length - 1] : parts[0];
+  return normalizeIp(raw);
+}
+
+function hashIp(ip: string): string | null {
   const salt = process.env.VOTE_SALT;
-  return createHash('sha256')
-    .update(`${salt ?? 'janpoll-default-salt'}:${ip}`)
-    .digest('hex')
-    .slice(0, 32);
+  if (!salt) return null;
+  return createHash('sha256').update(`${salt}:${ip}`).digest('hex').slice(0, 32);
+}
+
+async function getDeviceId(): Promise<string | null> {
+  const cookieStore = await cookies();
+  return cookieStore.get(DEVICE_COOKIE)?.value ?? null;
 }
 
 export async function getVoterIdentity() {
   const ip = await getClientIp();
-  const cookieStore = await cookies();
-
   return {
     ipHash: ip ? hashIp(ip) : null,
-    deviceId: cookieStore.get(DEVICE_COOKIE)?.value ?? null,
+    deviceId: await getDeviceId(),
   };
 }
 
-/** Kya is vishesh poll mein is network (IP) ki vote-सीमा poori ho chuki hai? */
-export async function isIpLimitReached(pollId: string, ipHash: string | null) {
-  if (!ipHash) return false;
+/** दूसरे ब्राउज़र/इनकॉग्निटो से दोहराया वोट: उसी पोल में, वही नेटवर्क + वही डिवाइस-हस्ताक्षर, हाल ही में */
+export async function isRepeatVote(
+  pollId: string,
+  ipHash: string | null,
+  deviceSig: string | null,
+) {
+  if (!ipHash || !deviceSig) return false;
 
-  const votesFromIp = await db.vote.count({
-    where: { pollId, ipAddress: ipHash },
+  const since = new Date(Date.now() - DUPLICATE_WINDOW_HOURS * 60 * 60 * 1000);
+
+  const vote = await db.vote.findFirst({
+    where: { pollId, ipAddress: ipHash, deviceSig, createdAt: { gte: since } },
+    select: { id: true },
   });
 
-  return votesFromIp >= MAX_VOTES_PER_IP;
+  return Boolean(vote);
 }
 
-/** Kewal usi vishisht poll ke liye jaanch karein ki is user/device ne vote diya hai ya nahi */
+/** पोल पेज पर: क्या इसी ब्राउज़र (कुकी) ने इस पोल में वोट दिया है? (IP से किसी को नहीं रोकते) */
 export async function hasAlreadyVoted(pollId: string) {
-  const { ipHash, deviceId } = await getVoterIdentity();
+  const deviceId = await getDeviceId();
+  if (!deviceId) return false;
 
-  // 1. Device ID check
-  if (deviceId) {
-    const vote = await db.vote.findUnique({
-      where: {
-        pollId_anonymousUserId: {
-          pollId,
-          anonymousUserId: deviceId,
-        },
-      },
-      select: { id: true },
-    });
-    if (vote) return true;
-  }
+  const vote = await db.vote.findUnique({
+    where: { pollId_anonymousUserId: { pollId, anonymousUserId: deviceId } },
+    select: { id: true },
+  });
 
-  // 2. IP limit check
-  return isIpLimitReached(pollId, ipHash);
+  return Boolean(vote);
 }

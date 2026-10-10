@@ -81,6 +81,32 @@ type ChartDataItem = {
   votes: number;
   percentage: number;
 };
+// डिवाइस-हस्ताक्षर: Chrome/Firefox/इनकॉग्निटो में एक ही फ़ोन पर लगभग एक जैसा बनता है
+async function getDeviceSig(): Promise<string | undefined> {
+  try {
+    const ratio = window.devicePixelRatio || 1;
+    const physical = [window.screen.width, window.screen.height]
+      .map((v) => Math.round((v * ratio) / 10) * 10)
+      .sort((a, b) => a - b);
+
+    const traits = [
+      physical.join('x'),
+      window.screen.colorDepth,
+      navigator.hardwareConcurrency ?? 0,
+      navigator.maxTouchPoints ?? 0,
+      navigator.platform ?? '',
+      Intl.DateTimeFormat().resolvedOptions().timeZone ?? '',
+    ].join('|');
+
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(traits));
+    return Array.from(new Uint8Array(digest))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('')
+      .slice(0, 32);
+  } catch {
+    return undefined;
+  }
+}
 
 function LiveCountdown({ createdAt, deadlineDays, isOpen }: { createdAt: string | Date; deadlineDays: number | null; isOpen: boolean }) {
   const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null);
@@ -185,7 +211,8 @@ export default function PollClientView({
     setMessage('');
 
     try {
-      const response = await castVote(poll.id, selectedOption);
+           const deviceSig = await getDeviceSig();
+      const response = await castVote(poll.id, selectedOption, deviceSig);
 
       if (response.success) {
         setHasVoted(true);

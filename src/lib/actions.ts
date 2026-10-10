@@ -6,7 +6,7 @@ import { cookies } from 'next/headers';
 
 import { db } from '@/lib/db';
 import { isPollOpen } from '@/lib/poll-utils';
-import { DEVICE_COOKIE, getVoterIdentity, isIpLimitReached } from '@/lib/voter';
+import { DEVICE_COOKIE, getVoterIdentity, isRepeatVote } from '@/lib/voter';
 
 export type VoteResult =
   | { success: true }
@@ -16,9 +16,12 @@ export type VoteResult =
       message: string;
     };
 
+const ALREADY_VOTED_MESSAGE = 'आप इस पोल में पहले ही वोट दे चुके हैं।';
+
 export async function castVote(
   pollId: string,
   optionId: string,
+  deviceSigRaw?: string,
 ): Promise<VoteResult> {
   try {
     const poll = await db.poll.findUnique({
@@ -40,6 +43,10 @@ export async function castVote(
       return { success: false, code: 'CLOSED', message: 'यह पोल बंद हो चुका है।' };
     }
 
+    // ब्राउज़र से आया डिवाइस-हस्ताक्षर (सिर्फ़ hex अक्षर मान्य)
+    const deviceSig =
+      deviceSigRaw && /^[a-f0-9]{16,64}$/.test(deviceSigRaw) ? deviceSigRaw : null;
+
     const { ipHash, deviceId: existingDeviceId } = await getVoterIdentity();
 
     const cookieStore = await cookies();
@@ -56,34 +63,22 @@ export async function castVote(
       });
     }
 
-    // 1. जांचें कि क्या इस विशिष्ट (Current) पोल पर इस डिवाइस ने पहले वोट दिया है
+    // 1. इसी ब्राउज़र (कुकी) ने इस पोल में पहले वोट दिया है?
     const existingVote = await db.vote.findUnique({
-      where: {
-        pollId_anonymousUserId: {
-          pollId,
-          anonymousUserId: deviceId,
-        },
-      },
+      where: { pollId_anonymousUserId: { pollId, anonymousUserId: deviceId } },
+      select: { id: true },
     });
 
     if (existingVote) {
-      return {
-        success: false,
-        code: 'ALREADY_VOTED',
-        message: 'आप इस पोल में पहले ही वोट दे चुके हैं।',
-      };
+      return { success: false, code: 'ALREADY_VOTED', message: ALREADY_VOTED_MESSAGE };
     }
 
-    // 2. इसी नेटवर्क (IP) से इस विशिष्ट पोल पर सीमा चेक
-    if (await isIpLimitReached(pollId, ipHash)) {
-      return {
-        success: false,
-        code: 'ALREADY_VOTED',
-        message: 'इस नेटवर्क से इस पोल में वोट की सीमा पूरी हो चुकी है।',
-      };
+    // 2. दूसरे ब्राउज़र/इनकॉग्निटो से वही डिवाइस, वही नेटवर्क, हाल ही में?
+    if (await isRepeatVote(pollId, ipHash, deviceSig)) {
+      return { success: false, code: 'ALREADY_VOTED', message: ALREADY_VOTED_MESSAGE };
     }
 
-    // 3. सुरक्षित रूप से वोट दर्ज करें
+    // 3. वोट सुरक्षित रूप से दर्ज करें
     await db.$transaction([
       db.vote.create({
         data: {
@@ -91,6 +86,7 @@ export async function castVote(
           optionId,
           anonymousUserId: deviceId,
           ipAddress: ipHash,
+          deviceSig,
         },
       }),
       db.pollOption.update({
@@ -105,11 +101,7 @@ export async function castVote(
     return { success: true };
   } catch (error: any) {
     if (error?.code === 'P2002') {
-      return {
-        success: false,
-        code: 'ALREADY_VOTED',
-        message: 'आप इस पोल में पहले ही वोट दे चुके हैं।',
-      };
+      return { success: false, code: 'ALREADY_VOTED', message: ALREADY_VOTED_MESSAGE };
     }
 
     console.error('castVote error:', error);
