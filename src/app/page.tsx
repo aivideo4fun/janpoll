@@ -1,31 +1,14 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import React from 'react';
-import type { Metadata } from 'next';
-import { db } from '@/lib/db';
-import { getDeadline, isPollOpen } from '@/lib/poll-utils';
 import Ad728x90 from '@/components/Ad728x90';
-
-export const dynamic = 'force-dynamic';
-
-export const metadata: Metadata = {
-  title: 'JanPoll Rajasthan - राजस्थान की जनता की राय और ऑनलाइन पोल',
-  description: 'राजस्थान के स्थानीय मुद्दों, ग्राम पंचायत, सरपंच चुनाव और राजनीतिक विषयों पर ऑनलाइन वोटिंग करें और जनता की राय जानें।',
-  keywords: ['rajasthan poll', 'sarpanch poll', 'vote poll', 'create poll', 'rajasthan public poll', 'janpoll'],
-  openGraph: {
-    title: 'JanPoll - राजस्थान पब्लिक पोल',
-    description: 'अपने स्थानीय मुद्दों पर अपनी राय दें और देखें जनता क्या सोचती है।',
-    url: 'https://janpoll.in',
-    siteName: 'JanPoll',
-    locale: 'hi_IN',
-    type: 'website',
-  },
-};
 
 type HomePoll = {
   id: string;
   slug: string | null;
   question: string;
-  createdAt: Date;
+  createdAt: string;
   deadlineDays: number | null;
   options: { id: string; text: string; voteCount: number }[];
   totalVotes: number;
@@ -34,89 +17,80 @@ type HomePoll = {
   gramPanchayatName: string | null;
 };
 
+function getDeadline(createdAt: string, deadlineDays: number | null) {
+  const date = new Date(createdAt);
+  const days = deadlineDays ?? 7;
+  date.setDate(date.getDate() + days);
+  return date;
+}
+
+function isPollOpen(poll: HomePoll) {
+  const deadline = getDeadline(poll.createdAt, poll.deadlineDays);
+  return deadline.getTime() > Date.now();
+}
+
 function daysLeft(poll: HomePoll) {
   const ms = getDeadline(poll.createdAt, poll.deadlineDays).getTime() - Date.now();
   return Math.max(1, Math.ceil(ms / (24 * 60 * 60 * 1000)));
 }
 
-type HomeProps = {
-  searchParams: Promise<{ q?: string; page?: string }>;
-};
+export default function HomePage() {
+  const [polls, setPolls] = useState<HomePoll[]>([]);
+  const [totalVotesCount, setTotalVotesCount] = useState(0);
+  const [totalRunningPollsCount, setTotalRunningPollsCount] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [dbError, setDbError] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-export default async function Home({ searchParams }: HomeProps) {
-  const resolvedSearchParams = await searchParams;
-  const q = resolvedSearchParams?.q ?? '';
-  const pageParam = resolvedSearchParams?.page ?? '1';
-  
-  const searchQuery = q.trim().toLowerCase();
-  const currentPage = Math.max(1, parseInt(pageParam, 10));
   const pollsPerPage = 15;
 
-  let polls: HomePoll[] = [];
-  let totalVotesCount = 0;
-  let totalRunningPollsCount = 0;
-  let totalPages = 1;
-  let dbError = false;
-
-  try {
-    const [allPolls, voteSum] = await Promise.all([
-      db.poll.findMany({
-        where: { active: true },
-        select: {
-          id: true,
-          slug: true,
-          question: true,
-          districtName: true,
-          samitiName: true,
-          gramPanchayatName: true,
-          active: true,
-          createdAt: true,
-          deadlineDays: true,
-          options: {
-            select: { id: true, text: true, voteCount: true },
-            orderBy: { createdAt: 'asc' },
-          },
-        },
-      }),
-      db.pollOption.aggregate({ _sum: { voteCount: true } }),
-    ]);
-
-    const activePolls = allPolls.filter(isPollOpen);
-    totalRunningPollsCount = activePolls.length;
-
-    let pollsWithVotes = activePolls.map((poll) => {
-      const totalVotes = poll.options.reduce((sum, opt) => sum + opt.voteCount, 0);
-      return { ...poll, totalVotes };
-    });
-
-    pollsWithVotes.sort((a, b) => b.totalVotes - a.totalVotes);
-
-    if (searchQuery) {
-      pollsWithVotes = pollsWithVotes.filter((p: any) => {
-        const qText = p.question.toLowerCase();
-        const dist = ((p.districtName as string) ?? '').toLowerCase();
-        const samiti = ((p.samitiName as string) ?? '').toLowerCase();
-        const gp = ((p.gramPanchayatName as string) ?? '').toLowerCase();
-
-        return (
-          qText.includes(searchQuery) ||
-          dist.includes(searchQuery) ||
-          samiti.includes(searchQuery) ||
-          gp.includes(searchQuery)
-        );
-      });
+  // Real-time data fetch function (auto-updates every 10 seconds)
+  const fetchPollsData = async (query = '') => {
+    try {
+      const res = await fetch(`/api/home-polls?q=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      if (data.success) {
+        setPolls(data.polls);
+        setTotalVotesCount(data.totalVotesCount);
+        setTotalRunningPollsCount(data.totalRunningPollsCount);
+        setTotalPages(Math.max(1, Math.ceil(data.polls.length / pollsPerPage)));
+        setDbError(false);
+      } else {
+        setDbError(true);
+      }
+    } catch (error) {
+      console.error('डाटा फेच करने में त्रुटि:', error);
+      setDbError(true);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    totalPages = Math.max(1, Math.ceil(pollsWithVotes.length / pollsPerPage));
-    const validPage = Math.min(currentPage, totalPages);
-    const startIndex = (validPage - 1) * pollsPerPage;
-    
-    polls = pollsWithVotes.slice(startIndex, startIndex + pollsPerPage);
-    totalVotesCount = voteSum._sum.voteCount ?? 0;
-  } catch (error) {
-    console.error('होम पोल लोड करने में त्रुटि:', error);
-    dbError = true;
-  }
+  // Initial load & Auto-refresh interval (हर 10 सेकंड में ऑटो-अपडेट)
+  useEffect(() => {
+    fetchPollsData(searchQuery);
+
+    const interval = setInterval(() => {
+      fetchPollsData(searchQuery);
+    }, 10000); // 10 seconds
+
+    return () => clearInterval(interval);
+  }, [searchQuery]);
+
+  const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const q = (formData.get('q') as string) || '';
+    setSearchQuery(q);
+    setCurrentPage(1);
+  };
+
+  const paginatedPolls = polls.slice(
+    (currentPage - 1) * pollsPerPage,
+    currentPage * pollsPerPage
+  );
 
   return (
     <div className="w-full max-w-4xl mx-auto px-3 sm:px-4 py-6 text-gray-800 overflow-x-hidden box-border">
@@ -168,7 +142,7 @@ export default async function Home({ searchParams }: HomeProps) {
 
       {/* सर्च बार */}
       <div className="mb-6 bg-white p-3 sm:p-4 rounded-2xl border border-emerald-100 shadow-sm">
-        <form method="GET" action="/" className="flex flex-col sm:flex-row gap-2">
+        <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row gap-2">
           <input
             type="text"
             name="q"
@@ -184,12 +158,16 @@ export default async function Home({ searchParams }: HomeProps) {
               खोजें 🔍
             </button>
             {searchQuery && (
-              <Link
-                href="/"
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  setCurrentPage(1);
+                }}
                 className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm transition flex items-center justify-center"
               >
                 रीसेट
-              </Link>
+              </button>
             )}
           </div>
         </form>
@@ -246,29 +224,8 @@ export default async function Home({ searchParams }: HomeProps) {
         </Link>
       </div>
 
-      {/* श्रेणियाँ */}
-      <div className="mb-8">
-        <h3 className="text-xs sm:text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">
-          📂 पोल की श्रेणियाँ एवं स्तर
-        </h3>
-        <div className="flex flex-wrap gap-2">
-          <Link href="/rajasthan" className="bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-emerald-100 transition">
-            🟢 सरपंच चुनाव
-          </Link>
-          <Link href="/rajasthan" className="bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-emerald-100 transition">
-            🏛️ ग्राम पंचायत
-          </Link>
-          <Link href="/rajasthan" className="bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-emerald-100 transition">
-            🔵 पंचायत समिति
-          </Link>
-          <Link href="/rajasthan" className="bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-emerald-100 transition">
-            🟠 जिला परिषद
-          </Link>
-        </div>
-      </div>
-
-      {/* सक्रिय पोल्स की सूची के ठीक ऊपर विज्ञापन (Ad Placement) */}
-       <div className="my-6 bg-white p-3 rounded-2xl border border-emerald-100 shadow-sm">
+      {/* विज्ञापन */}
+      <div className="my-6 bg-white p-3 rounded-2xl border border-emerald-100 shadow-sm">
         <Ad728x90 />
       </div>
 
@@ -281,11 +238,13 @@ export default async function Home({ searchParams }: HomeProps) {
           पृष्ठ {currentPage} / {totalPages} (कुल सक्रिय पोल: {totalRunningPollsCount})
         </p>
 
-        {dbError ? (
+        {loading ? (
+          <div className="text-center py-12 text-slate-500 font-medium">पोल्स लोड हो रहे हैं...</div>
+        ) : dbError ? (
           <div className="bg-amber-50 border border-amber-200 text-amber-800 p-6 rounded-xl text-center text-xs sm:text-sm">
             डेटाबेस से कनेक्ट नहीं हो पाया। कृपया थोड़ी देर बाद पुनः प्रयास करें।
           </div>
-        ) : polls.length === 0 ? (
+        ) : paginatedPolls.length === 0 ? (
           <div className="bg-white rounded-xl p-8 text-center border border-emerald-100 text-gray-500 shadow-sm">
             {searchQuery ? 'आपके खोज शब्द से मिलता-जुलता कोई पोल नहीं मिला।' : 'अभी कोई पोल चालू नहीं है। सबसे पहला पोल आप बनाएँ!'}
             <div className="mt-4">
@@ -296,10 +255,10 @@ export default async function Home({ searchParams }: HomeProps) {
           </div>
         ) : (
           <div className="space-y-4">
-            {polls.map((poll, index) => {
+            {paginatedPolls.map((poll, index) => {
               const pollTotalVotes = poll.options.reduce((sum, opt) => sum + opt.voteCount, 0);
               const pollUrl = poll.slug ? `/poll/${poll.id}/${poll.slug}` : `/poll/${poll.id}`;
-                           const showAdAfterThis = index === 4;
+              const showAdAfterThis = index === 4;
               const location = [poll.gramPanchayatName, poll.samitiName, poll.districtName].filter(Boolean).join(' · ');
 
               return (
@@ -349,7 +308,7 @@ export default async function Home({ searchParams }: HomeProps) {
                     </div>
                   </div>
 
-                                    {showAdAfterThis && (
+                  {showAdAfterThis && (
                     <div className="my-6 p-3 bg-emerald-50/50 rounded-2xl border border-emerald-200 overflow-hidden">
                       <Ad728x90 />
                     </div>
@@ -362,12 +321,12 @@ export default async function Home({ searchParams }: HomeProps) {
             {totalPages > 1 && (
               <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3 pt-6 pb-2">
                 {currentPage > 1 ? (
-                  <Link
-                    href={`/?page=${currentPage - 1}${searchQuery ? `&q=${searchQuery}` : ''}`}
+                  <button
+                    onClick={() => setCurrentPage((p) => p - 1)}
                     className="px-3.5 py-2 bg-white border border-emerald-200 rounded-xl text-xs font-bold text-emerald-900 hover:bg-emerald-50 transition shadow-sm"
                   >
                     &larr; पिछला पेज
-                  </Link>
+                  </button>
                 ) : (
                   <span className="px-3.5 py-2 bg-gray-100 border border-gray-200 rounded-xl text-xs font-bold text-gray-400 cursor-not-allowed">
                     &larr; पिछला पेज
@@ -379,12 +338,12 @@ export default async function Home({ searchParams }: HomeProps) {
                 </span>
 
                 {currentPage < totalPages ? (
-                  <Link
-                    href={`/?page=${currentPage + 1}${searchQuery ? `&q=${searchQuery}` : ''}`}
+                  <button
+                    onClick={() => setCurrentPage((p) => p + 1)}
                     className="px-3.5 py-2 bg-white border border-emerald-200 rounded-xl text-xs font-bold text-emerald-900 hover:bg-emerald-50 transition shadow-sm"
                   >
                     अगला पेज &rarr;
-                  </Link>
+                  </button>
                 ) : (
                   <span className="px-3.5 py-2 bg-gray-100 border border-gray-200 rounded-xl text-xs font-bold text-gray-400 cursor-not-allowed">
                     अगला पेज &rarr;
