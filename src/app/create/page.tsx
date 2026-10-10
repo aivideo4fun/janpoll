@@ -35,17 +35,19 @@ function CreatePollContent() {
   // Locations state
   const [districts, setDistricts] = useState<LocItem[]>([]);
   const [samitis, setSamitis] = useState<LocItem[]>([]);
-  const [wards, setWards] = useState<LocItem[]>([]);
+  const [zilaWards, setZilaWards] = useState<LocItem[]>([]);
+  const [samitiWards, setSamitiWards] = useState<LocItem[]>([]);
   const [villages, setVillages] = useState<LocItem[]>([]);
   const [gps, setGps] = useState<LocItem[]>([]);
 
   const [pickDistrictId, setPickDistrictId] = useState('');
   const [pickSamitiId, setPickSamitiId] = useState('');
-  const [pickWardId, setPickWardId] = useState('');
+  const [pickZilaWardId, setPickZilaWardId] = useState('');
+  const [pickSamitiWardId, setPickSamitiWardId] = useState('');
   const [pickVillageId, setPickVillageId] = useState('');
   const [pickGpId, setPickGpId] = useState('');
 
-  // Fetch Districts
+  // जिलों की सूची लोड करना
   useEffect(() => {
     fetch('/api/locations')
       .then((r) => r.json())
@@ -53,46 +55,62 @@ function CreatePollContent() {
       .catch(() => {});
   }, []);
 
-  // Fetch Samitis on District change
+  // जिला बदलने पर पंचायत समितियाँ और जिला परिषद वार्ड लोड करना
   useEffect(() => {
     setPickSamitiId('');
     setSamitis([]);
-    if (!pickDistrictId) return;
-    fetch(`/api/admin/locations?districtId=${pickDistrictId}`)
-      .then((r) => r.json())
-      .then((d) => setSamitis(d.items ?? []))
-      .catch(() => {});
-  }, [pickDistrictId]);
+    setPickZilaWardId('');
+    setZilaWards([]);
 
-  // Fetch Wards & Gram Panchayats on Samiti change
+    if (!pickDistrictId) return;
+
+    if (electionType === 'zila') {
+      fetch(`/api/admin/locations?districtId=${pickDistrictId}`)
+        .then((r) => r.json())
+        .then((d) => {
+          // Zila wards load (Agar zilaWards api ho ya general fetch)
+          setZilaWards(d.items ?? []);
+        })
+        .catch(() => {});
+    } else {
+      fetch(`/api/admin/locations?districtId=${pickDistrictId}`)
+        .then((r) => r.json())
+        .then((d) => setSamitis(d.items ?? []))
+        .catch(() => {});
+    }
+  }, [pickDistrictId, electionType]);
+
+  // समिति बदलने पर वार्ड और ग्राम पंचायतें लोड करना
   useEffect(() => {
-    setPickWardId('');
-    setWards([]);
+    setPickSamitiWardId('');
+    setSamitiWards([]);
     setPickGpId('');
     setGps([]);
-    if (!pickSamitiId) return;
+    if (!pickSamitiId || electionType !== 'samiti') return;
 
     fetch(`/api/admin/locations?samitiId=${pickSamitiId}`)
       .then((r) => r.json())
-      .then((d) => setWards(d.items ?? []))
+      .then((d) => setSamitiWards(d.items ?? []))
       .catch(() => {});
 
     fetch(`/api/locations?samitiId=${pickSamitiId}`)
       .then((r) => r.json())
       .then((d) => setGps(d.items ?? []))
       .catch(() => {});
-  }, [pickSamitiId]);
+  }, [pickSamitiId, electionType]);
 
-  // Fetch Villages on Ward change
+  // वार्ड बदलने पर गाँव लोड करना
   useEffect(() => {
     setPickVillageId('');
     setVillages([]);
-    if (!pickWardId) return;
-    fetch(`/api/admin/locations?wardId=${pickWardId}`)
+    const targetWardId = electionType === 'zila' ? pickZilaWardId : pickSamitiWardId;
+    if (!targetWardId) return;
+
+    fetch(`/api/admin/locations?wardId=${targetWardId}`)
       .then((r) => r.json())
       .then((d) => setVillages(d.items ?? []))
       .catch(() => {});
-  }, [pickWardId]);
+  }, [pickZilaWardId, pickSamitiWardId, electionType]);
 
   const handleAddOption = () => {
     if (options.length < 15) setOptions([...options, '']);
@@ -135,7 +153,9 @@ function CreatePollContent() {
 
     const selDistrict = districts.find((d) => d.id === pickDistrictId)?.nameHi || null;
     const selSamiti = samitis.find((s) => s.id === pickSamitiId)?.nameHi || null;
-    const selWard = wards.find((w) => w.id === pickWardId)?.nameHi || null;
+    const selWard = electionType === 'zila' 
+      ? zilaWards.find((w) => w.id === pickZilaWardId)?.nameHi || null
+      : samitiWards.find((w) => w.id === pickSamitiWardId)?.nameHi || null;
     const selVillage = villages.find((v) => v.id === pickVillageId)?.nameHi || null;
     const selGp = gps.find((g) => g.id === pickGpId)?.nameHi || null;
 
@@ -174,11 +194,11 @@ function CreatePollContent() {
       <div className="bg-white rounded-3xl shadow-md border border-emerald-100 p-8 md:p-10">
         <div className="mb-6 border-b border-emerald-100 pb-4 flex justify-between items-center">
           <div>
-            <h1 className="text-2xl md:text-3xl font-black text-emerald-900">Naya Opinion Poll Srijit Karein</h1>
-            <p className="text-xs text-slate-500 mt-1">Apne kshetra aur chunav shreni ke anusaar poll banayein.</p>
+            <h1 className="text-2xl md:text-3xl font-black text-emerald-900">नया ओपिनियन पोल बनाएँ</h1>
+            <p className="text-xs text-slate-500 mt-1">अपने क्षेत्र और चुनाव श्रेणी के अनुसार नया पोल प्रकाशित करें।</p>
           </div>
           <SmartBackLink fallbackHref="/" className="text-xs text-emerald-700 font-bold underline">
-            &larr; Wapas Jayein
+            &larr; वापस जाएं
           </SmartBackLink>
         </div>
 
@@ -187,74 +207,87 @@ function CreatePollContent() {
         {!session ? (
           <div className="text-center py-12 space-y-4 bg-emerald-50/50 rounded-2xl border border-emerald-100 p-8">
             <span className="text-4xl">🔐</span>
-            <h3 className="font-bold text-gray-900 text-base">Google Pehchan Satyapan Awashyak Hai</h3>
+            <h3 className="font-bold text-gray-900 text-base">गूगल पहचान सत्यापन आवश्यक है</h3>
             <button
               onClick={() => signIn('google')}
               className="px-6 py-3 bg-emerald-700 text-white font-bold rounded-xl text-sm shadow hover:bg-emerald-800 transition"
             >
-              🌐 Google ke sath Sign In karein
+              🌐 गूगल के साथ साइन इन करें
             </button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
             
-            {/* Election Type Selection */}
+            {/* चुनाव श्रेणी चयन */}
             <div>
-              <label className="block text-xs font-bold text-emerald-900 uppercase tracking-wider mb-2">Chunav Shreni Chunein:</label>
+              <label className="block text-xs font-bold text-emerald-900 uppercase tracking-wider mb-2">चुनाव श्रेणी चुनें:</label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <button
                   type="button"
-                  onClick={() => setElectionType('sarpanch')}
+                  onClick={() => { setElectionType('sarpanch'); setPickSamitiId(''); setPickZilaWardId(''); }}
                   className={`p-4 rounded-2xl border text-xs font-bold transition flex items-center justify-center gap-2 ${
                     electionType === 'sarpanch' ? 'bg-emerald-700 text-white border-emerald-700 shadow-md' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                   }`}
                 >
-                  🟢 Sarpanch Chunav
+                  🟢 सरपंच चुनाव
                 </button>
                 <button
                   type="button"
-                  onClick={() => setElectionType('samiti')}
+                  onClick={() => { setElectionType('samiti'); setPickSamitiId(''); setPickZilaWardId(''); }}
                   className={`p-4 rounded-2xl border text-xs font-bold transition flex items-center justify-center gap-2 ${
                     electionType === 'samiti' ? 'bg-emerald-700 text-white border-emerald-700 shadow-md' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                   }`}
                 >
-                  🔵 Panchayat Samiti Ward
+                  🔵 पंचायत समिति वार्ड
                 </button>
                 <button
                   type="button"
-                  onClick={() => setElectionType('zila')}
+                  onClick={() => { setElectionType('zila'); setPickSamitiId(''); setPickZilaWardId(''); }}
                   className={`p-4 rounded-2xl border text-xs font-bold transition flex items-center justify-center gap-2 ${
                     electionType === 'zila' ? 'bg-emerald-700 text-white border-emerald-700 shadow-md' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                   }`}
                 >
-                  🟠 Zila Parishad Ward
+                  🟠 जिला परिषद वार्ड
                 </button>
               </div>
             </div>
 
-            {/* Dynamic Location selectors */}
+            {/* स्थान चयन */}
             <div className="space-y-3 p-5 bg-emerald-50/40 rounded-2xl border border-emerald-200">
-              <p className="text-xs font-bold text-emerald-900 uppercase tracking-wider">📍 Sthan Chayan (Location Details)</p>
+              <p className="text-xs font-bold text-emerald-900 uppercase tracking-wider">📍 स्थान विवरण (Location)</p>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <select
                   value={pickDistrictId}
-                  onChange={(e) => setPickDistrictId(e.target.value)}
+                  onChange={(e) => { setPickDistrictId(e.target.value); setPickSamitiId(''); setPickZilaWardId(''); }}
                   className={selectClass}
                 >
-                  <option value="">Zila Chunein</option>
+                  <option value="">जिला चुनें</option>
                   {districts.map((d) => <option key={d.id} value={d.id}>{d.nameHi}</option>)}
                 </select>
 
-                <select
-                  value={pickSamitiId}
-                  onChange={(e) => setPickSamitiId(e.target.value)}
-                  disabled={!pickDistrictId}
-                  className={selectClass}
-                >
-                  <option value="">Panchayat Samiti Chunein</option>
-                  {samitis.map((s) => <option key={s.id} value={s.id}>{s.nameHi}</option>)}
-                </select>
+                {/* Sarpanch & Samiti ke liye Panchayat Samiti aayegi, Zila ke liye sidha Zila Ward aayega */}
+                {electionType !== 'zila' ? (
+                  <select
+                    value={pickSamitiId}
+                    onChange={(e) => setPickSamitiId(e.target.value)}
+                    disabled={!pickDistrictId}
+                    className={selectClass}
+                  >
+                    <option value="">पंचायत समिति चुनें</option>
+                    {samitis.map((s) => <option key={s.id} value={s.id}>{s.nameHi}</option>)}
+                  </select>
+                ) : (
+                  <select
+                    value={pickZilaWardId}
+                    onChange={(e) => setPickZilaWardId(e.target.value)}
+                    disabled={!pickDistrictId}
+                    className={selectClass}
+                  >
+                    <option value="">जिला परिषद वार्ड चुनें</option>
+                    {zilaWards.map((w) => <option key={w.id} value={w.id}>{w.nameHi}</option>)}
+                  </select>
+                )}
 
                 {electionType === 'sarpanch' && (
                   <select
@@ -263,30 +296,30 @@ function CreatePollContent() {
                     disabled={!pickSamitiId}
                     className={`${selectClass} sm:col-span-2`}
                   >
-                    <option value="">Gram Panchayat Chunein</option>
+                    <option value="">ग्राम पंचायत चुनें</option>
                     {gps.map((g) => <option key={g.id} value={g.id}>{g.nameHi}</option>)}
                   </select>
                 )}
 
-                {(electionType === 'samiti' || electionType === 'zila') && (
+                {electionType === 'samiti' && (
                   <>
                     <select
-                      value={pickWardId}
-                      onChange={(e) => setPickWardId(e.target.value)}
+                      value={pickSamitiWardId}
+                      onChange={(e) => setPickSamitiWardId(e.target.value)}
                       disabled={!pickSamitiId}
                       className={selectClass}
                     >
-                      <option value="">Ward Chunein</option>
-                      {wards.map((w) => <option key={w.id} value={w.id}>{w.nameHi}</option>)}
+                      <option value="">वार्ड चुनें</option>
+                      {samitiWards.map((w) => <option key={w.id} value={w.id}>{w.nameHi}</option>)}
                     </select>
 
                     <select
                       value={pickVillageId}
                       onChange={(e) => setPickVillageId(e.target.value)}
-                      disabled={!pickWardId}
+                      disabled={!pickSamitiWardId}
                       className={selectClass}
                     >
-                      <option value="">Gav / Gram Chunein</option>
+                      <option value="">गाँव / क्षेत्र चुनें</option>
                       {villages.map((v) => <option key={v.id} value={v.id}>{v.nameHi}</option>)}
                     </select>
                   </>
@@ -295,21 +328,21 @@ function CreatePollContent() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-emerald-900 uppercase tracking-wider mb-1">Poll ka Prashn (Question) *</label>
+              <label className="block text-xs font-bold text-emerald-900 uppercase tracking-wider mb-1">पोल का प्रश्न (Question) *</label>
               <textarea
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
-                placeholder="Yaha apna prashn spasht shabdon mein likhein..."
+                placeholder="यहाँ अपना प्रश्न स्पष्ट शब्दों में लिखें..."
                 rows={3}
                 required
                 className="w-full p-4 rounded-xl border border-emerald-200 text-sm bg-emerald-50/20 focus:ring-2 focus:ring-emerald-500"
               />
             </div>
 
-            {/* Calendar Expiry Date (Max 60 Days) */}
+            {/* कैलैंडर एक्सपायरी डेट */}
             <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200">
               <label className="block text-xs font-bold text-emerald-900 uppercase tracking-wider mb-2">
-                ⏳ Poll Samapt Hone ki Tithi (Calendar Expiry - Max 60 Days) *
+                ⏳ पोल समाप्त होने की तिथि (अधिकतम 60 दिन) *
               </label>
               <input
                 type="date"
@@ -323,7 +356,7 @@ function CreatePollContent() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-emerald-900 uppercase tracking-wider mb-2">Vikalp (Options - Maximum 15) *</label>
+              <label className="block text-xs font-bold text-emerald-900 uppercase tracking-wider mb-2">विकल्प (Options - अधिकतम 15) *</label>
               <div className="space-y-3">
                 {options.map((opt, index) => (
                   <div key={index} className="flex gap-2">
@@ -331,13 +364,13 @@ function CreatePollContent() {
                       type="text"
                       value={opt}
                       onChange={(e) => handleOptionChange(index, e.target.value)}
-                      placeholder={`Uम्मीदवार / Vikalp ${index + 1}`}
+                      placeholder={`उम्मीदवार / विकल्प ${index + 1}`}
                       required
                       className="flex-1 p-3 rounded-xl border border-emerald-200 text-sm bg-emerald-50/20"
                     />
                     {options.length > 2 && (
                       <button type="button" onClick={() => handleRemoveOption(index)} className="px-4 py-2 bg-red-50 text-red-600 rounded-xl text-xs border border-red-200 hover:bg-red-100">
-                        Hataein
+                        हटाएँ
                       </button>
                     )}
                   </div>
@@ -345,7 +378,7 @@ function CreatePollContent() {
               </div>
               {options.length < 15 && (
                 <button type="button" onClick={handleAddOption} className="mt-3 text-xs font-bold text-emerald-700 hover:text-emerald-800">
-                  + Naya Vikalp Jodein
+                  + नया विकल्प जोड़ें
                 </button>
               )}
             </div>
@@ -355,7 +388,7 @@ function CreatePollContent() {
               disabled={loading}
               className="w-full py-4 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-2xl shadow-md transition text-base"
             >
-              {loading ? 'Prakashit ho raha hai...' : 'Satyapit Poll Prakashit Karein'}
+              {loading ? 'प्रकाशित हो रहा है...' : 'सत्यापित पोल प्रकाशित करें'}
             </button>
           </form>
         )}
@@ -366,7 +399,7 @@ function CreatePollContent() {
 
 export default function CreatePoll() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-emerald-800 font-semibold bg-slate-50">Load ho raha hai...</div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-emerald-800 font-semibold bg-slate-50">लोड हो रहा है...</div>}>
       <CreatePollContent />
     </Suspense>
   );
