@@ -27,66 +27,6 @@ const COLORS = [
   '#F97316', // नारंगी
 ];
 
-// 📱 Mobile ke liye Optimized 320x50 Ad Banner Component
-function MobileAdBanner320x50() {
-  const bannerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!bannerRef.current) return;
-    bannerRef.current.innerHTML = '';
-
-    const confScript = document.createElement('script');
-    confScript.type = 'text/javascript';
-    confScript.text = `
-      atOptions = {
-        'key' : '41a306430c4cf4c05f5cca80c78a3fef',
-        'format' : 'iframe',
-        'height' : 50,
-        'width' : 320,
-        'params' : {}
-      };
-    `;
-    bannerRef.current.appendChild(confScript);
-
-    const invokeScript = document.createElement('script');
-    invokeScript.type = 'text/javascript';
-    invokeScript.src = 'https://bicea.org/22/41a306430c4cf4c05f5cca80c78a3fef';
-    bannerRef.current.appendChild(invokeScript);
-  }, []);
-
-  return <div ref={bannerRef} className="flex justify-center my-4 overflow-hidden" />;
-}
-
-// 💻 Desktop ke liye 728x90 Leaderboard Ad Banner Component
-function DesktopAdBanner728x90() {
-  const bannerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!bannerRef.current) return;
-    bannerRef.current.innerHTML = '';
-
-    const confScript = document.createElement('script');
-    confScript.type = 'text/javascript';
-    confScript.text = `
-      atOptions = {
-        'key' : '4801d526481e48f32daba116c6ca2a7c',
-        'format' : 'iframe',
-        'height' : 90,
-        'width' : 728,
-        'params' : {}
-      };
-    `;
-    bannerRef.current.appendChild(confScript);
-
-    const invokeScript = document.createElement('script');
-    invokeScript.type = 'text/javascript';
-    invokeScript.src = 'https://bicea.org/22/4801d526481e48f32daba116c6ca2a7c';
-    bannerRef.current.appendChild(invokeScript);
-  }, []);
-
-  return <div ref={bannerRef} className="flex justify-center my-4 overflow-hidden" />;
-}
-
 type PollOption = {
   id: string;
   text: string;
@@ -443,7 +383,7 @@ export default function PollClientView({
                 </div>
               )}
 
-                            {/* विज्ञापन: 728x90 (मोबाइल पर स्क्रीन के अनुसार फिट होता है) */}
+              {/* विज्ञापन: 728x90 (मोबाइल पर स्क्रीन के अनुसार फिट होता है) */}
               <div className="my-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
                 <Ad728x90 />
               </div>
