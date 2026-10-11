@@ -109,8 +109,8 @@ export default function ContactPage() {
 
         <div className="mt-6 pt-6 border-t border-gray-100 text-center">
           <p className="text-xs text-gray-500 mb-1">सीधे ईमेल द्वारा संपर्क करें:</p>
-          <a href="mailto:support@catchbuddy.in" className="text-xs font-bold text-emerald-700 hover:underline">
-            support@catchbuddy.in
+          <a href="mailto:support@janpoll.in" className="text-xs font-bold text-emerald-700 hover:underline">
+            support@janpoll.in
           </a>
         </div>
       </div>
