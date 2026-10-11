@@ -5,12 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession, signIn } from 'next-auth/react';
 import Link from 'next/link';
 import SmartBackLink from '@/components/SmartBackLink';
-import type { Metadata } from 'next';
 
-export const metadata: Metadata = {
-  title: 'नया ओपिनियन पोल बनाएँ (Create Poll) | JanPoll',
-  description: 'राजस्थान में अपनी ग्राम पंचायत, तहसील या जिले के लिए नया ओपिनियन पोल बनाएं।',
-};
 export const dynamic = 'force-dynamic';
 
 type LocItem = { id: string; nameHi: string; wardNo?: number };
@@ -53,7 +48,6 @@ function CreatePollContent() {
   const [pickSamitiWardId, setPickSamitiWardId] = useState('');
   const [pickVillageId, setPickVillageId] = useState('');
   const [pickGpId, setPickGpId] = useState('');
-
 
   // 1. जिले लोड करना
   useEffect(() => {
@@ -211,13 +205,10 @@ function CreatePollContent() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-10 text-gray-800">
-      {/* SEO के लिए Hidden H1 टैग ताकि बॉट को हमेशा H1 मिले */}
-      <h1 className="sr-only">नया ओपिनियन पोल बनाएँ - JanPoll Rajasthan</h1>
-
       <div className="bg-white rounded-3xl shadow-md border border-emerald-100 p-8 md:p-10">
         <div className="mb-6 border-b border-emerald-100 pb-4 flex justify-between items-center">
           <div>
-            <h2 className="text-2xl md:text-3xl font-black text-emerald-900">नया ओपिनियन पोल बनाएँ</h2>
+            <h1 className="text-2xl md:text-3xl font-black text-emerald-900">नया ओपिनियन पोल बनाएँ</h1>
             <p className="text-xs text-slate-500 mt-1">अपने क्षेत्र और चुनाव श्रेणी के अनुसार नया पोल प्रकाशित करें।</p>
           </div>
           <SmartBackLink fallbackHref="/" className="text-xs text-emerald-700 font-bold underline">
