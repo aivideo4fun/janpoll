@@ -114,32 +114,21 @@ export default async function Home({ searchParams }: HomeProps) {
     polls = pollsWithVotes.slice(startIndex, startIndex + pollsPerPage);
     totalVotesCount = voteSum._sum.voteCount ?? 0;
   } catch (error) {
-    console.error('होम पोल लोड करने में त्रुटि:', error);
+    console.error('Home poll load error:', error);
     dbError = true;
   }
 
   return (
     <div className="w-full max-w-4xl mx-auto px-3 sm:px-4 py-6 text-gray-800 overflow-x-hidden box-border">
       
-      {/* टॉप बार */}
+      {/* Top Bar - Cleaned up to show only Rajasthan No 1 badge */}
       <div className="flex flex-wrap justify-between items-center gap-2 mb-4">
         <span className="text-xs font-semibold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
           📍 राजस्थान का नंबर 1 ओपिनियन पोल प्लेटफॉर्म
         </span>
-        <div className="flex items-center gap-2">
-          <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-md border border-amber-300">
-            🇮🇳 भारत: जल्द आ रहा है (Coming Soon)
-          </span>
-          <Link
-            href="/contact"
-            className="inline-flex items-center gap-1 bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-3.5 py-1.5 rounded-xl text-xs shadow-sm transition"
-          >
-            <span>💬</span> सहायता / संपर्क
-          </Link>
-        </div>
       </div>
 
-      {/* मुख्य बैनर */}
+      {/* Main Banner */}
       <div className="bg-gradient-to-r from-emerald-800 to-green-700 text-white rounded-2xl p-6 md:p-10 mb-6 text-center shadow-md">
         <span className="bg-white/20 text-emerald-100 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider backdrop-blur-sm">
           राजस्थान की जनता की राय, एक मंच पर
@@ -166,7 +155,7 @@ export default async function Home({ searchParams }: HomeProps) {
         </div>
       </div>
 
-      {/* सर्च बार */}
+      {/* Search Bar */}
       <div className="mb-6 bg-white p-3 sm:p-4 rounded-2xl border border-emerald-100 shadow-sm">
         <form method="GET" action="/" className="flex flex-col sm:flex-row gap-2">
           <input
@@ -195,7 +184,7 @@ export default async function Home({ searchParams }: HomeProps) {
         </form>
       </div>
 
-      {/* चुनाव अपडेट बॉक्स */}
+      {/* Election Update Box */}
       <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 sm:p-5 md:p-6 mb-8 shadow-sm">
         <div className="flex items-start gap-3">
           <span className="text-xl sm:text-2xl">📢</span>
@@ -216,7 +205,7 @@ export default async function Home({ searchParams }: HomeProps) {
         </div>
       </div>
 
-      {/* लाइव आँकड़े */}
+      {/* Live Stats */}
       <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-6">
         <div className="bg-white p-3 sm:p-4 rounded-xl border border-emerald-100 text-center shadow-sm">
           <div className="text-xl sm:text-2xl md:text-3xl font-black text-emerald-800">
@@ -236,7 +225,7 @@ export default async function Home({ searchParams }: HomeProps) {
         </div>
       </div>
 
-      {/* समाप्त हो चुके पोल्स */}
+      {/* Closed Polls Link */}
       <div className="mb-8 text-center">
         <Link
           href="/closed-polls"
@@ -246,33 +235,11 @@ export default async function Home({ searchParams }: HomeProps) {
         </Link>
       </div>
 
-      {/* श्रेणियाँ */}
-      <div className="mb-8">
-        <h3 className="text-xs sm:text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">
-          📂 पोल की श्रेणियाँ एवं स्तर
-        </h3>
-        <div className="flex flex-wrap gap-2">
-          <Link href="/rajasthan" className="bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-emerald-100 transition">
-            🟢 सरपंच चुनाव
-          </Link>
-          <Link href="/rajasthan" className="bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-emerald-100 transition">
-            🏛️ ग्राम पंचायत
-          </Link>
-          <Link href="/rajasthan" className="bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-emerald-100 transition">
-            🔵 पंचायत समिति
-          </Link>
-          <Link href="/rajasthan" className="bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm hover:bg-emerald-100 transition">
-            🟠 जिला परिषद
-          </Link>
-        </div>
-      </div>
-
-      {/* सक्रिय पोल्स की सूची के ठीक ऊपर विज्ञापन (Ad Placement) */}
-       <div className="my-6 bg-white p-3 rounded-2xl border border-emerald-100 shadow-sm">
+      <div className="my-6 bg-white p-3 rounded-2xl border border-emerald-100 shadow-sm">
         <Ad728x90 />
       </div>
 
-      {/* सक्रिय पोल्स की सूची */}
+      {/* Active Polls List */}
       <div id="recent-polls" className="mb-10">
         <h2 className="text-xl sm:text-2xl font-bold text-emerald-900 mb-2 flex items-center gap-2">
           🔥 सक्रिय पोल्स की सूची {searchQuery ? `(खोज परिणाम: "${searchQuery}")` : ''}
@@ -299,7 +266,7 @@ export default async function Home({ searchParams }: HomeProps) {
             {polls.map((poll, index) => {
               const pollTotalVotes = poll.options.reduce((sum, opt) => sum + opt.voteCount, 0);
               const pollUrl = poll.slug ? `/poll/${poll.id}/${poll.slug}` : `/poll/${poll.id}`;
-                           const showAdAfterThis = index === 4;
+              const showAdAfterThis = index === 4;
               const location = [poll.gramPanchayatName, poll.samitiName, poll.districtName].filter(Boolean).join(' · ');
 
               return (
@@ -349,7 +316,7 @@ export default async function Home({ searchParams }: HomeProps) {
                     </div>
                   </div>
 
-                                    {showAdAfterThis && (
+                  {showAdAfterThis && (
                     <div className="my-6 p-3 bg-emerald-50/50 rounded-2xl border border-emerald-200 overflow-hidden">
                       <Ad728x90 />
                     </div>
@@ -358,7 +325,6 @@ export default async function Home({ searchParams }: HomeProps) {
               );
             })}
 
-            {/* Pagination Controls */}
             {totalPages > 1 && (
               <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3 pt-6 pb-2">
                 {currentPage > 1 ? (
@@ -396,7 +362,6 @@ export default async function Home({ searchParams }: HomeProps) {
         )}
       </div>
 
-      {/* कॉल-टू-एक्शन */}
       <div className="bg-gradient-to-r from-emerald-900 to-emerald-800 text-white rounded-3xl p-6 sm:p-8 text-center shadow-lg my-10">
         <h2 className="text-xl sm:text-2xl font-black mb-2">क्या आप अपनी पंचायत या वार्ड का पोल बनाना चाहते हैं?</h2>
         <p className="text-emerald-100 text-xs md:text-sm max-w-md mx-auto mb-6">
