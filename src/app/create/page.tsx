@@ -21,7 +21,6 @@ function CreatePollContent() {
   const [electionType, setElectionType] = useState<'sarpanch' | 'samiti' | 'zila'>('sarpanch');
   const [question, setQuestion] = useState('');
   
-  // कैलैंडर तिथि चयन (अधिकतम 60 दिन)
   const maxDate = new Date();
   maxDate.setDate(maxDate.getDate() + 60);
   const maxDateStr = maxDate.toISOString().split('T')[0];
@@ -51,13 +50,13 @@ function CreatePollContent() {
 
   // 1. जिले लोड करना
   useEffect(() => {
-    fetch('/api/locations')
+    fetch('/api/admin/locations')
       .then((r) => r.json())
       .then((d) => setDistricts(d.items ?? []))
       .catch(() => {});
   }, []);
 
-  // 2. जिला बदलने पर तहसील, पंचायत समिति या जिला परिषद वार्ड लोड करना
+  // 2. जिला बदलने पर तहसील और पंचायत समितियाँ लोड करना
   useEffect(() => {
     setPickTehsilId('');
     setTehsils([]);
@@ -69,55 +68,59 @@ function CreatePollContent() {
     if (!pickDistrictId) return;
 
     if (electionType === 'zila') {
-      // जिला परिषद के लिए सीधे उस जिले के वार्ड लोड करें
       fetch(`/api/admin/locations?districtId=${pickDistrictId}&type=zilaWard`)
         .then((r) => r.json())
         .then((d) => setZilaWards(d.items ?? []))
         .catch(() => {});
     } else {
-      // सरपंच या समिति के लिए तहसील और समितियाँ लोड करें
+      // तहसील लोड करें
       fetch(`/api/admin/locations?districtId=${pickDistrictId}&type=tehsil`)
         .then((r) => r.json())
         .then((d) => setTehsils(d.items ?? []))
         .catch(() => {});
 
-      fetch(`/api/admin/locations?districtId=${pickDistrictId}`)
+      // पंचायत समितियाँ लोड करें
+      fetch(`/api/admin/locations?districtId=${pickDistrictId}&type=samiti`)
         .then((r) => r.json())
         .then((d) => setSamitis(d.items ?? []))
         .catch(() => {});
     }
   }, [pickDistrictId, electionType]);
 
-  // 3. समिति बदलने पर वार्ड और ग्राम पंचायतें लोड करना
+  // 3. पंचायत समिति बदलने पर (सरपंच के लिए ग्राम पंचायत, समिति वार्ड के लिए वार्ड लोड करना)
   useEffect(() => {
     setPickSamitiWardId('');
     setSamitiWards([]);
     setPickGpId('');
     setGps([]);
-    if (!pickSamitiId || electionType !== 'samiti') return;
 
-    fetch(`/api/admin/locations?samitiId=${pickSamitiId}`)
-      .then((r) => r.json())
-      .then((d) => setSamitiWards(d.items ?? []))
-      .catch(() => {});
+    if (!pickSamitiId) return;
 
-    fetch(`/api/locations?samitiId=${pickSamitiId}`)
-      .then((r) => r.json())
-      .then((d) => setGps(d.items ?? []))
-      .catch(() => {});
+    if (electionType === 'sarpanch') {
+      fetch(`/api/admin/locations?samitiId=${pickSamitiId}&type=gp`)
+        .then((r) => r.json())
+        .then((d) => setGps(d.items ?? []))
+        .catch(() => {});
+    } else if (electionType === 'samiti') {
+      fetch(`/api/admin/locations?samitiId=${pickSamitiId}&type=samitiWard`)
+        .then((r) => r.json())
+        .then((d) => setSamitiWards(d.items ?? []))
+        .catch(() => {});
+    }
   }, [pickSamitiId, electionType]);
 
-  // 4. समिति वार्ड बदलने पर गाँव लोड करना
+  // 4. समिति वार्ड बदलने पर उस वार्ड के अंतर्गत आने वाले गाँव लोड करना
   useEffect(() => {
     setPickVillageId('');
     setVillages([]);
-    if (!pickSamitiWardId) return;
 
-    fetch(`/api/admin/locations?wardId=${pickSamitiWardId}`)
+    if (!pickSamitiWardId || electionType !== 'samiti') return;
+
+    fetch(`/api/admin/locations?wardId=${pickSamitiWardId}&type=village`)
       .then((r) => r.json())
       .then((d) => setVillages(d.items ?? []))
       .catch(() => {});
-  }, [pickSamitiWardId]);
+  }, [pickSamitiWardId, electionType]);
 
   const handleAddOption = () => {
     if (options.length < 15) setOptions([...options, '']);
@@ -137,7 +140,6 @@ function CreatePollContent() {
     e.preventDefault();
     setError('');
 
-    // गूगल ऑथेंटिकेशन सख्त जाँच
     if (status !== 'authenticated' || !session) {
       setError('कृपया पोल प्रकाशित करने से पहले अपने गूगल खाते से साइन इन करें।');
       return;
@@ -267,16 +269,16 @@ function CreatePollContent() {
               </div>
             </div>
 
-            {/* स्थान चयन (स्थान क्रम: जिला -> तहसील -> समिति -> वार्ड) */}
+            {/* स्थान चयन */}
             <div className="space-y-3 p-5 bg-emerald-50/40 rounded-2xl border border-emerald-200">
               <p className="text-xs font-bold text-emerald-900 uppercase tracking-wider">
-                📍 स्थान विवरण ({electionType === 'zila' ? 'जिला ➔ जिला परिषद वार्ड' : 'जिला ➔ तहसील ➔ पंचायत समिति ➔ वार्ड'})
+                📍 स्थान विवरण ({electionType === 'zila' ? 'जिला ➔ जिला परिषद वार्ड' : electionType === 'samiti' ? 'जिला ➔ तहसील ➔ पंचायत समिति ➔ समिति वार्ड ➔ वार्ड अंतर्गत गाँव' : 'जिला ➔ तहसील ➔ पंचायत समिति ➔ ग्राम पंचायत'})
               </p>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <select
                   value={pickDistrictId}
-                  onChange={(e) => { setPickDistrictId(e.target.value); setPickSamitiId(''); setPickZilaWardId(''); }}
+                  onChange={(e) => { setPickDistrictId(e.target.value); setPickTehsilId(''); setPickSamitiId(''); setPickZilaWardId(''); }}
                   className={selectClass}
                 >
                   <option value="">जिला चुनें</option>
@@ -324,7 +326,7 @@ function CreatePollContent() {
                           className={selectClass}
                         >
                           <option value="">समिति वार्ड चुनें</option>
-                          {samitiWards.map((w) => <option key={w.id} value={w.id}>{w.nameHi}</option>)}
+                          {samitiWards.map((w) => <option key={w.id} value={w.id}>वार्ड सं. {w.wardNo} - {w.nameHi}</option>)}
                         </select>
 
                         <select
@@ -340,7 +342,6 @@ function CreatePollContent() {
                     )}
                   </>
                 ) : (
-                  // जिला परिषद के लिए केवल जिला और सीधा जिला परिषद वार्ड
                   <select
                     value={pickZilaWardId}
                     onChange={(e) => setPickZilaWardId(e.target.value)}
@@ -348,9 +349,15 @@ function CreatePollContent() {
                     className={`${selectClass} sm:col-span-1`}
                   >
                     <option value="">जिला परिषद वार्ड चुनें</option>
-                    {zilaWards.map((w) => <option key={w.id} value={w.id}>{w.nameHi}</option>)}
+                    {zilaWards.map((w) => <option key={w.id} value={w.id}>वार्ड सं. {w.wardNo} - {w.nameHi}</option>)}
                   </select>
                 )}
+              </div>
+
+              {/* पेशेवर निर्देश */}
+              <div className="pt-2 text-[11px] text-emerald-800/80 leading-relaxed font-medium space-y-1">
+                <p>ℹ️ <strong>सहायता सूचना:</strong> यदि आपको अपनी तहसील, पंचायत या वार्ड सूची में नहीं मिल रहा है, तो कृपया हमें ईमेल करें: <a href="mailto:support@janpoll.in" className="underline font-bold text-emerald-900">support@janpoll.in</a></p>
+                <p>💡 <strong>नोट:</strong> यदि आपका पोल चुनाव से संबंधित नहीं है, तो स्थान विवरण को खाली छोड़कर सीधा प्रश्न और विकल्प लिखकर अपना पोल सुरक्षित रूप से प्रकाशित कर सकते हैं।</p>
               </div>
             </div>
 
@@ -405,7 +412,7 @@ function CreatePollContent() {
               </div>
               {options.length < 15 && (
                 <button type="button" onClick={handleAddOption} className="mt-3 text-xs font-bold text-emerald-700 hover:text-emerald-800">
-                  + नया विकल्प जोड़ें
+                  + नया विकल्प जोड़ें
                 </button>
               )}
             </div>
