@@ -4,8 +4,17 @@ import { db } from '@/lib/db';
 import SmartBackLink from '@/components/SmartBackLink';
 
 export const metadata: Metadata = {
-  title: 'राजस्थान जिला चयन - JanPoll',
-  description: 'अपने जिले का चयन करें और अपनी ग्राम पंचायत, पंचायत समिति या जिला परिषद के चुनाव पोल देखें।',
+  title: 'राजस्थान जिला चयन और पंचायत राज चुनाव ओपिनियन पोल | JanPoll',
+  description: 'राजस्थान के सभी जिलों, तहसीलों, और ग्राम पंचायतों के लाइव पंचायत राज चुनाव ओपिनियन पोल देखें और अपनी राय साझा करें।',
+  keywords: ['rajasthan districts poll', 'rajasthan election 2026', 'sarpanch chunav rajasthan', 'janpoll rajasthan'],
+  openGraph: {
+    title: 'राजस्थान जिला चयन और पंचायत राज चुनाव ओपिनियन पोल | JanPoll',
+    description: 'अपने जिले और ग्राम पंचायत के चुनाव पर ऑनलाइन वोटिंग करें।',
+    url: 'https://janpoll.in/rajasthan',
+    siteName: 'JanPoll',
+    locale: 'hi_IN',
+    type: 'website',
+  },
 };
 
 export default async function RajasthanStatePage() {

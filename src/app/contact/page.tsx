@@ -2,6 +2,12 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'हमसे संपर्क करें (Contact Us) | JanPoll',
+  description: 'किसी भी सहायता या प्रश्न के लिए JanPoll टीम से संपर्क करें।',
+};
 
 export default function ContactPage() {
   const [name, setName] = useState('');
