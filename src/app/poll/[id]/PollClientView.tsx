@@ -26,6 +26,13 @@ const COLORS = [
   '#EC4899', // गुलाबी
   '#14B8A6', // टील
   '#F97316', // नारंगी
+  '#6366F1', // इंडिगो
+  '#84CC16', // लाइम
+  '#06B6D4', // सियान
+  '#D946EF', // फुकशिया
+  '#EAB308', // पीला
+  '#14532D', // गहरा हरा
+  '#1E3A8A', // गहरा नीला
 ];
 
 const SOCIAL_LINKS = [
@@ -81,7 +88,7 @@ type ChartDataItem = {
   votes: number;
   percentage: number;
 };
-// डिवाइस-हस्ताक्षर: Chrome/Firefox/इनकॉग्निटो में एक ही फ़ोन पर लगभग एक जैसा बनता है
+
 async function getDeviceSig(): Promise<string | undefined> {
   try {
     const ratio = window.devicePixelRatio || 1;
@@ -172,7 +179,6 @@ export default function PollClientView({
     alreadyVoted ? 'आप इस पोल में पहले ही वोट दे चुके हैं।' : '',
   );
 
-  // 🛠️ महत्वपूर्ण सुधार: जब भी पोल ID बदले (दूसरा पोल खुले), तो स्टेट बिल्कुल ताजा हो जाए
   useEffect(() => {
     setHasVoted(alreadyVoted);
     setMessage(alreadyVoted ? 'आप इस पोल में पहले ही वोट दे चुके हैं।' : '');
@@ -199,6 +205,9 @@ export default function PollClientView({
     [poll.options, totalVotes],
   );
 
+  // यदि विकल्प 6 से ज़्यादा हैं, तो पाई चार्ट दिखाना बंद कर देंगे ताकि लेआउट खराब न हो
+  const showPieChart = chartData.length <= 6;
+
   const handleVoteSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -211,7 +220,7 @@ export default function PollClientView({
     setMessage('');
 
     try {
-           const deviceSig = await getDeviceSig();
+      const deviceSig = await getDeviceSig();
       const response = await castVote(poll.id, selectedOption, deviceSig);
 
       if (response.success) {
@@ -310,10 +319,11 @@ export default function PollClientView({
             <form onSubmit={handleVoteSubmit} className="space-y-5">
               <fieldset disabled={loading}>
                 <legend className="mb-3 text-sm font-bold text-slate-700">
-                  नीचे दिए गए विकल्पों में से एक चुनें
+                  नीचे दिए गए विकल्पों में से एक चुनें ({poll.options.length} उम्मीदवार/विकल्प)
                 </legend>
 
-                <div className="space-y-3">
+                {/* 🛠️ यदि बहुत सारे विकल्प हों, तो इन्हें scrollable बना दिया गया है */}
+                <div className="max-h-[450px] space-y-3 overflow-y-auto pr-1">
                   {poll.options.map((option) => {
                     const isSelected = selectedOption === option.id;
 
@@ -379,46 +389,50 @@ export default function PollClientView({
               <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-center">
                 <p className="font-bold text-emerald-900">✅ परिणाम और आंकड़े</p>
                 <p className="mt-1 text-sm text-emerald-700">
-                  अब तक कुल {totalVotes.toLocaleString('en-IN')} वोट
+                  अब तक कुल {totalVotes.toLocaleString('en-IN')} वोट ({poll.options.length} उम्मीदवार)
                 </p>
               </div>
 
               {totalVotes > 0 ? (
                 <>
-                  <div className="h-72 w-full" aria-label="पोल परिणामों का पाई चार्ट">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={chartData}
-                          dataKey="votes"
-                          nameKey="name"
-                          cx="50%"
-                          cy="45%"
-                          innerRadius={45}
-                          outerRadius={88}
-                          paddingAngle={2}
-                          label={({ percentage }) => `${percentage}%`}
-                          labelLine={false}
-                        >
-                          {chartData.map((entry, index) => (
-                            <Cell
-                              key={`${entry.name}-${index}`}
-                              fill={COLORS[index % COLORS.length]}
-                            />
-                          ))}
-                        </Pie>
+                  {/* केवल तभी पाई चार्ट दिखाएं जब विकल्प 6 या उससे कम हों */}
+                  {showPieChart && (
+                    <div className="h-72 w-full" aria-label="पोल परिणामों का पाई चार्ट">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={chartData}
+                            dataKey="votes"
+                            nameKey="name"
+                            cx="50%"
+                            cy="45%"
+                            innerRadius={45}
+                            outerRadius={88}
+                            paddingAngle={2}
+                            label={({ percentage }) => `${percentage}%`}
+                            labelLine={false}
+                          >
+                            {chartData.map((entry, index) => (
+                              <Cell
+                                key={`${entry.name}-${index}`}
+                                fill={COLORS[index % COLORS.length]}
+                              />
+                            ))}
+                          </Pie>
 
-                        <Tooltip formatter={(value, name) => [`${value} वोट`, name]} />
+                          <Tooltip formatter={(value, name) => [`${value} वोट`, name]} />
 
-                        <Legend
-                          verticalAlign="bottom"
-                          height={36}
-                          wrapperStyle={{ fontSize: '12px' }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
+                          <Legend
+                            verticalAlign="bottom"
+                            height={36}
+                            wrapperStyle={{ fontSize: '12px' }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
 
+                  {/* सभी विकल्पों/उम्मीदवारों की साफ-सुथरी प्रोग्रेस बार सूची */}
                   <div className="space-y-3">
                     {chartData.map((item, index) => (
                       <div
@@ -426,9 +440,11 @@ export default function PollClientView({
                         className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
                       >
                         <div className="mb-2 flex items-start justify-between gap-4 text-sm">
-                          <span className="font-semibold text-slate-700">{item.name}</span>
+                          <span className="font-semibold text-slate-700">
+                            {index + 1}. {item.name}
+                          </span>
                           <span className="shrink-0 font-bold text-emerald-800">
-                            {item.votes} ({item.percentage}%)
+                            {item.votes} वोट ({item.percentage}%)
                           </span>
                         </div>
 

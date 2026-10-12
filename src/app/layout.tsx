@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     'online voting poll India',
   ],
   alternates: {
-    canonical: 'https://janpoll.in',
+    canonical: './',
   },
   icons: {
     icon: '/favicon.ico',
@@ -44,7 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="hi">
       <head>
-        {/* Google AdSense Script (सुरक्षित रखा गया है) */}
+        {/* Google AdSense Script */}
         <script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4603205178906314"

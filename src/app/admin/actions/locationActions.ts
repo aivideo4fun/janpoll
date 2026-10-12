@@ -16,7 +16,7 @@ function finish(section: 'map' | 'loc', message: string): never {
   redirect(`/admin?${section}=1&msg=${encodeURIComponent(message)}`);
 }
 
-// Har pankti: "Hindi naam | English name"
+// हर पंक्ति: "हिंदी नाम | English name"
 function parseNames(text: string) {
   const seen = new Set<string>();
   const out: { nameHi: string; nameEn: string }[] = [];
@@ -34,7 +34,7 @@ function parseNames(text: string) {
   return out.slice(0, 2000);
 }
 
-// Har pankti: "1 | Ward ka naam"
+// हर पंक्ति: "1 | वार्ड का नाम"
 function parseWards(text: string) {
   const seen = new Set<number>();
   const out: { wardNo: number; nameHi: string }[] = [];
@@ -50,7 +50,7 @@ function parseWards(text: string) {
   return out;
 }
 
-/** Poll ko district / samiti / gram panchayat se jodna */
+/** पोल को जिला / समिति / पंचायत से जोड़ना */
 export async function assignPollLocation(formData: FormData) {
   if (!(await isAdmin())) return;
 
@@ -120,14 +120,14 @@ export async function assignPollLocation(formData: FormData) {
         : `पोल को ${district.nameHi}${samitiName ? ` · ${samitiName}` : ''} से जोड़ा गया।`;
     }
   } catch (error) {
-    console.error('Poll mapping error:', error);
+    console.error('पोल मैपिंग त्रुटि:', error);
     message = 'पोल को जोड़ने में त्रुटि हुई।';
   }
 
   finish('map', message);
 }
 
-/** Tehsilein jorna */
+/** तहसीलें जोड़ना */
 export async function addTehsils(formData: FormData) {
   if (!(await isAdmin())) return;
 
@@ -146,7 +146,7 @@ export async function addTehsils(formData: FormData) {
       const skipped = items.length - result.count;
       message = `${result.count} नई तहसीलें जोड़ी गईं${skipped > 0 ? ` (${skipped} पहले से मौजूद थीं)` : ''}।`;
     } catch (error) {
-      console.error('Tehsil error:', error);
+      console.error('तहसील त्रुटि:', error);
       message = 'तहसीलें जोड़ने में त्रुटि हुई।';
     }
   }
@@ -154,7 +154,7 @@ export async function addTehsils(formData: FormData) {
   finish('loc', message);
 }
 
-/** Panchayat Samiti jorna */
+/** पंचायत समितियाँ जोड़ना */
 export async function addSamitis(formData: FormData) {
   if (!(await isAdmin())) return;
 
@@ -173,7 +173,7 @@ export async function addSamitis(formData: FormData) {
       const skipped = items.length - result.count;
       message = `${result.count} नई पंचायत समितियाँ जोड़ी गईं${skipped > 0 ? ` (${skipped} पहले से मौजूद थीं)` : ''}।`;
     } catch (error) {
-      console.error('Samiti error:', error);
+      console.error('समिति त्रुटि:', error);
       message = 'पंचायत समितियाँ जोड़ने में त्रुटि हुई।';
     }
   }
@@ -181,7 +181,7 @@ export async function addSamitis(formData: FormData) {
   finish('loc', message);
 }
 
-/** Gram Panchayat jorna */
+/** ग्राम पंचायतें जोड़ना */
 export async function addGramPanchayats(formData: FormData) {
   if (!(await isAdmin())) return;
 
@@ -214,7 +214,7 @@ export async function addGramPanchayats(formData: FormData) {
         message = `${result.count} नई ग्राम पंचायतें जोड़ी गईं${skipped > 0 ? ` (${skipped} पहले से मौजूद थीं)` : ''}।`;
       }
     } catch (error) {
-      console.error('GP error:', error);
+      console.error('ग्राम पंचायत त्रुटि:', error);
       message = 'ग्राम पंचायतें जोड़ने में त्रुटि हुई।';
     }
   }
@@ -222,7 +222,7 @@ export async function addGramPanchayats(formData: FormData) {
   finish('loc', message);
 }
 
-/** Samiti Ward jorna (Panchayat Samiti ke antargat ward) */
+/** पंचायत समिति वार्ड जोड़ना */
 export async function addSamitiWards(formData: FormData) {
   if (!(await isAdmin())) return;
 
@@ -241,7 +241,7 @@ export async function addSamitiWards(formData: FormData) {
       const skipped = items.length - result.count;
       message = `${result.count} नए समिति वार्ड जोड़े गए${skipped > 0 ? ` (${skipped} पहले से मौजूद थे)` : ''}।`;
     } catch (error) {
-      console.error('Samiti Ward error:', error);
+      console.error('समिति वार्ड त्रुटि:', error);
       message = 'समिति वार्ड जोड़ने में त्रुटि हुई।';
     }
   }
@@ -249,7 +249,7 @@ export async function addSamitiWards(formData: FormData) {
   finish('loc', message);
 }
 
-/** Ward ke antargat Gaon jorna */
+/** वार्ड के अंतर्गत गाँव जोड़ना */
 export async function addVillages(formData: FormData) {
   if (!(await isAdmin())) return;
 
@@ -272,7 +272,7 @@ export async function addVillages(formData: FormData) {
       const skipped = items.length - result.count;
       message = `${result.count} नए गाँव जोड़े गए${skipped > 0 ? ` (${skipped} पहले से मौजूद थे)` : ''}।`;
     } catch (error) {
-      console.error('Village error:', error);
+      console.error('गाँव त्रुटि:', error);
       message = 'गाँव जोड़ने में त्रुटि हुई।';
     }
   }
@@ -280,7 +280,7 @@ export async function addVillages(formData: FormData) {
   finish('loc', message);
 }
 
-/** Zila Parishad Ward jorna */
+/** जिला परिषद वार्ड जोड़ना */
 export async function addZilaWards(formData: FormData) {
   if (!(await isAdmin())) return;
 
@@ -299,7 +299,7 @@ export async function addZilaWards(formData: FormData) {
       const skipped = items.length - result.count;
       message = `${result.count} नए जिला परिषद वार्ड जोड़े गए${skipped > 0 ? ` (${skipped} पहले से मौजूद थे)` : ''}।`;
     } catch (error) {
-      console.error('Zila Ward error:', error);
+      console.error('जिला वार्ड त्रुटि:', error);
       message = 'जिला परिषद वार्ड जोड़ने में त्रुटि हुई।';
     }
   }
@@ -307,11 +307,11 @@ export async function addZilaWards(formData: FormData) {
   finish('loc', message);
 }
 
-/** Sthan ka naam ya spelling sudhaarne (Update) karne ke liye */
+/** स्थान का नाम या स्पेलिंग सुधारना (Update) */
 export async function updateLocationName(formData: FormData) {
   if (!(await isAdmin())) return;
 
-  const type = val(formData, 'locType'); // tehsil, samiti, gp, village, samitiWard, zilaWard
+  const type = val(formData, 'locType');
   const id = val(formData, 'locId');
   const nameHi = val(formData, 'nameHi');
   const nameEn = val(formData, 'nameEn');

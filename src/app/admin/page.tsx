@@ -24,6 +24,8 @@ import {
   addSamitis,
   addGramPanchayats,
   addZilaWards,
+  addSamitiWards,
+  updateLocationName,
 } from './actions/locationActions';
 
 export const dynamic = 'force-dynamic';
@@ -58,16 +60,14 @@ export default async function AdminDashboard(props: {
   const showAllSubscribers = params.subs === 'all';
   const flashMessage = (params.msg ?? '').slice(0, 250);
 
-  // पेज बदलने या खोज करने पर पोल वाला कार्ड खुला रहे
   const pollsOpen = Boolean(searchQuery) || currentPage > 1;
 
-  // कोई एक क्वेरी फेल हो तो पूरा पेज न टूटे, पर त्रुटि साफ़ दिखे
   const failed: string[] = [];
   async function safe<T>(label: string, run: () => Promise<T>, fallback: T): Promise<T> {
     try {
       return await run();
     } catch (e) {
-      console.error(`${label} लोड त्रुटि:`, e);
+      console.error(`${label} load truti:`, e);
       failed.push(label);
       return fallback;
     }
@@ -78,7 +78,7 @@ export default async function AdminDashboard(props: {
   const [polls, totalPolls, messages, subscribers, totalSubscribers, voteSum, districts, coverage] =
     await Promise.all([
       safe(
-        'पोल',
+        'poll',
         () =>
           db.poll.findMany({
             where: pollWhere,
@@ -89,10 +89,10 @@ export default async function AdminDashboard(props: {
           }),
         [] as any[]
       ),
-      safe('पोल गणना', () => db.poll.count({ where: pollWhere }), 0),
-      safe('संपर्क संदेश', () => db.contactMessage.findMany({ orderBy: { createdAt: 'desc' } }), [] as any[]),
+      safe('poll ganana', () => db.poll.count({ where: pollWhere }), 0),
+      safe('sampark sandesh', () => db.contactMessage.findMany({ orderBy: { createdAt: 'desc' } }), [] as any[]),
       safe(
-        'सदस्य सूची',
+        'sadasya सूची',
         () =>
           (db as any).newsletterSubscriber.findMany({
             orderBy: { createdAt: 'desc' },
@@ -100,10 +100,10 @@ export default async function AdminDashboard(props: {
           }),
         [] as any[]
       ),
-      safe('सदस्य गणना', () => (db as any).newsletterSubscriber.count(), 0),
-      safe('कुल मत', () => db.pollOption.aggregate({ _sum: { voteCount: true } }), null as any),
+      safe('sadasya ganana', () => (db as any).newsletterSubscriber.count(), 0),
+      safe('kul mat', () => db.pollOption.aggregate({ _sum: { voteCount: true } }), null as any),
       safe(
-        'जिले',
+        'jile',
         () =>
           db.district.findMany({
             select: { id: true, nameHi: true, nameEn: true },
@@ -111,12 +111,12 @@ export default async function AdminDashboard(props: {
           }),
         [] as DistrictItem[]
       ),
-      safe('पंचायत कवरेज', () => getCoverage(), null as CoverageData | null),
+      safe('panchayat coverage', () => getCoverage(), null as CoverageData | null),
     ]);
 
   const unmappedPolls = coverage
     ? await safe(
-        'बिना पंचायत वाले पोल',
+        'bina panchayat wale poll',
         () => getUnmappedPolls(coverage.unmappedIds),
         [] as Awaited<ReturnType<typeof getUnmappedPolls>>
       )
@@ -145,18 +145,18 @@ export default async function AdminDashboard(props: {
 
         {failed.length > 0 && (
           <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold text-red-700">
-            ⚠️ इन अनुभागों का डेटा लोड नहीं हो सका: {failed.join(', ')}। कृपया पेज रीफ़्रेश करें या सर्वर लॉग देखें।
+            ⚠️ in anubhagon ka data load nahi ho saka: {failed.join(', ')}।
           </div>
         )}
 
-        {/* नया 1. पंचायत कवरेज विश्लेषण */}
+        {/* 1. Panchayat Coverage Analysis */}
         {coverage && (
           <AdminAccordion
             icon="📈"
-            title="पंचायत कवरेज विश्लेषण"
-            subtitle="कितनी पंचायतों में पोल चल रहे हैं और कहाँ अभी तक पोल नहीं बना"
+            title="Panchayat Coverage Analysis"
+            subtitle="Kitni panchayaton me poll chal rahe hain"
             count={coverage.totals.gpWithRunning}
-            countLabel="चालू पोल वाली पंचायतें"
+            countLabel="Chalu poll wali panchayatein"
             tone="emerald"
             defaultOpen={Boolean(params.cov)}
           >
@@ -164,13 +164,13 @@ export default async function AdminDashboard(props: {
           </AdminAccordion>
         )}
 
-        {/* नया 2. बिना पंचायत वाले पोल (मैपिंग) */}
+        {/* 2. Unmapped Polls */}
         <AdminAccordion
           icon="📍"
-          title="बिना पंचायत वाले पोल"
-          subtitle="जिले में सीधे बने पोल को उनकी पंचायत, समिति और जिले से जोड़ें"
+          title="Bina Panchayat Wale Poll"
+          subtitle="Jile me seedhe bane poll ko unki panchayat se jodein"
           count={unmappedCount}
-          countLabel="जोड़ना बाकी"
+          countLabel="Jodna baki"
           tone="amber"
           defaultOpen={Boolean(params.map)}
         >
@@ -183,13 +183,13 @@ export default async function AdminDashboard(props: {
           />
         </AdminAccordion>
 
-        {/* नया 3. स्थान डेटा प्रबंधन */}
+        {/* 3. Location Data Management */}
         <AdminAccordion
           icon="🗺️"
-          title="स्थान डेटा प्रबंधन"
-          subtitle="पंचायत समितियाँ, ग्राम पंचायतें और जिला परिषद वार्ड भरें"
+          title="Sthan Data Prabandhan"
+          subtitle="Panchayat samitiyan, gram panchayatein, samiti ward aur zila parishad ward bharein"
           count={coverage?.totals.samitis ?? 0}
-          countLabel="कुल समितियाँ"
+          countLabel="Kul samitiyan"
           tone="blue"
           defaultOpen={Boolean(params.loc)}
         >
@@ -197,17 +197,19 @@ export default async function AdminDashboard(props: {
             districts={districts}
             addSamitis={addSamitis}
             addGramPanchayats={addGramPanchayats}
+            addSamitiWards={addSamitiWards}
             addZilaWards={addZilaWards}
+            updateLocationName={updateLocationName}
           />
         </AdminAccordion>
 
-        {/* 1. संपर्क संदेश */}
+        {/* 4. Contact Messages */}
         <AdminAccordion
           icon="✉️"
-          title="उपयोगकर्ता संपर्क संदेश"
-          subtitle="संपर्क फॉर्म से प्राप्त सभी संदेश देखें और प्रबंधित करें"
+          title="Upayogkarta Sampark Sandesh"
+          subtitle="Sampark form se prapt sabhi sandesh dekhein"
           count={messages.length}
-          countLabel="कुल संदेश"
+          countLabel="Kul sandesh"
           tone="blue"
         >
           <ContactMsgs
@@ -218,13 +220,13 @@ export default async function AdminDashboard(props: {
           />
         </AdminAccordion>
 
-        {/* 2. न्यूज़लेटर सदस्य */}
+        {/* 5. Newsletter Subscribers */}
         <AdminAccordion
           icon="📧"
-          title="न्यूज़लेटर सदस्य सूची"
-          subtitle="सदस्यों के ईमेल देखें और एक्सेल में डाउनलोड करें"
+          title="Newsletter Sadasya Suchi"
+          subtitle="Sadasyon ke email dekhein"
           count={totalSubscribers}
-          countLabel="कुल सदस्य"
+          countLabel="Kul sadasya"
           tone="amber"
           defaultOpen={showAllSubscribers}
         >
@@ -236,13 +238,13 @@ export default async function AdminDashboard(props: {
           />
         </AdminAccordion>
 
-        {/* 3. पोल प्रबंधन */}
+        {/* 6. Poll Management */}
         <AdminAccordion
           icon="📊"
-          title="पोल प्रबंधन"
-          subtitle="पोल खोजें, संपादित करें, विकल्प जोड़ें या हटाएं"
+          title="Poll Prabandhan"
+          subtitle="Poll khojein, sampadit karein"
           count={totalPolls}
-          countLabel="कुल पोल"
+          countLabel="Kul poll"
           tone="emerald"
           defaultOpen={pollsOpen}
         >
@@ -255,21 +257,21 @@ export default async function AdminDashboard(props: {
               type="search"
               name="search"
               defaultValue={searchQuery}
-              placeholder="पोल के प्रश्न से खोजें..."
+              placeholder="Poll ke prashn se khojein..."
               className="min-w-0 flex-1 rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
             />
             <button
               type="submit"
               className="rounded-xl bg-emerald-700 px-5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-800"
             >
-              🔍 खोजें
+              🔍 Khojein
             </button>
             {searchQuery && (
               <Link
                 href="/admin"
                 className="rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-center text-xs font-bold text-gray-700 transition hover:bg-gray-50"
               >
-                खोज हटाएं
+                Khoj hatayein
               </Link>
             )}
           </form>
