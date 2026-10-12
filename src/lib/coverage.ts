@@ -38,6 +38,7 @@ const pollSelect = {
   deadlineDays: true,
   gramPanchayatId: true,
   districtName: true,
+  gramPanchayatName: true,
 } as const;
 
 export async function getCoverage(): Promise<CoverageData> {
@@ -46,14 +47,20 @@ export async function getCoverage(): Promise<CoverageData> {
       select: { id: true, nameHi: true, nameEn: true },
       orderBy: { nameEn: 'asc' },
     }),
-    db.gramPanchayat.findMany({ select: { id: true, districtId: true } }),
+    db.gramPanchayat.findMany({ select: { id: true, districtId: true, nameHi: true } }),
     db.poll.findMany({ select: pollSelect, orderBy: { createdAt: 'desc' } }),
     db.panchayatSamiti.groupBy({ by: ['districtId'], _count: { _all: true } }),
     db.zilaParishadWard.groupBy({ by: ['districtId'], _count: { _all: true } }),
   ]);
 
   const gpDistrict = new Map<string, string>();
-  for (const g of gps) gpDistrict.set(g.id, g.districtId);
+  const gpNameToId = new Map<string, string>();
+  for (const g of gps) {
+    gpDistrict.set(g.id, g.districtId);
+    if (g.nameHi) {
+      gpNameToId.set(g.nameHi.trim().toLowerCase(), g.id);
+    }
+  }
 
   const nameToDistrict = new Map<string, string>();
   for (const d of districts) {
@@ -95,17 +102,30 @@ export async function getCoverage(): Promise<CoverageData> {
     if (open) runningPolls++;
 
     let districtId: string | null = null;
+    let validGpId = p.gramPanchayatId;
 
-    if (p.gramPanchayatId && gpDistrict.has(p.gramPanchayatId)) {
-      districtId = gpDistrict.get(p.gramPanchayatId) ?? null;
-      const stat = gpStats.get(p.gramPanchayatId) ?? { any: 0, running: 0 };
+    // Agar gramPanchayatId nahi hai par gramPanchayatName diya gaya hai, toh naam se match karein
+    if (!validGpId && p.gramPanchayatName) {
+      const matchedGpId = gpNameToId.get(p.gramPanchayatName.trim().toLowerCase());
+      if (matchedGpId) {
+        validGpId = matchedGpId;
+      }
+    }
+
+    if (validGpId && gpDistrict.has(validGpId)) {
+      districtId = gpDistrict.get(validGpId) ?? null;
+      const stat = gpStats.get(validGpId) ?? { any: 0, running: 0 };
       stat.any++;
       if (open) stat.running++;
-      gpStats.set(p.gramPanchayatId, stat);
+      gpStats.set(validGpId, stat);
     } else {
-      unmappedIds.push(p.id);
+      // Kewal tabhi unmapped maanein jab district bhi match na ho raha ho
       if (p.districtName) {
         districtId = nameToDistrict.get(p.districtName.trim().toLowerCase()) ?? null;
+      }
+      
+      if (!districtId) {
+        unmappedIds.push(p.id);
       }
     }
 
@@ -153,7 +173,6 @@ export async function getCoverage(): Promise<CoverageData> {
   };
 }
 
-/** जिन पोल्स का पंचायत से मेल नहीं (सबसे नए पहले) */
 export async function getUnmappedPolls(ids: string[], limit = 100) {
   if (ids.length === 0) return [];
 
@@ -173,7 +192,6 @@ export async function getUnmappedPolls(ids: string[], limit = 100) {
   });
 }
 
-/** एक्सपोर्ट के लिए: हर पंचायत के कुल/चालू पोल */
 export async function getGpStatsMap(): Promise<Map<string, GpPollStat>> {
   const [gps, polls] = await Promise.all([
     db.gramPanchayat.findMany({ select: { id: true } }),

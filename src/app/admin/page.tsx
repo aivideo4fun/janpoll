@@ -67,7 +67,7 @@ export default async function AdminDashboard(props: {
     try {
       return await run();
     } catch (e) {
-      console.error(`${label} load truti:`, e);
+      console.error(`${label} लोड त्रुटि:`, e);
       failed.push(label);
       return fallback;
     }
@@ -78,7 +78,7 @@ export default async function AdminDashboard(props: {
   const [polls, totalPolls, messages, subscribers, totalSubscribers, voteSum, districts, coverage] =
     await Promise.all([
       safe(
-        'poll',
+        'पोल',
         () =>
           db.poll.findMany({
             where: pollWhere,
@@ -89,10 +89,10 @@ export default async function AdminDashboard(props: {
           }),
         [] as any[]
       ),
-      safe('poll ganana', () => db.poll.count({ where: pollWhere }), 0),
-      safe('sampark sandesh', () => db.contactMessage.findMany({ orderBy: { createdAt: 'desc' } }), [] as any[]),
+      safe('पोल गणना', () => db.poll.count({ where: pollWhere }), 0),
+      safe('संपर्क संदेश', () => db.contactMessage.findMany({ orderBy: { createdAt: 'desc' } }), [] as any[]),
       safe(
-        'sadasya सूची',
+        'सदस्य सूची',
         () =>
           (db as any).newsletterSubscriber.findMany({
             orderBy: { createdAt: 'desc' },
@@ -100,10 +100,10 @@ export default async function AdminDashboard(props: {
           }),
         [] as any[]
       ),
-      safe('sadasya ganana', () => (db as any).newsletterSubscriber.count(), 0),
-      safe('kul mat', () => db.pollOption.aggregate({ _sum: { voteCount: true } }), null as any),
+      safe('सदस्य गणना', () => (db as any).newsletterSubscriber.count(), 0),
+      safe('कुल मत', () => db.pollOption.aggregate({ _sum: { voteCount: true } }), null as any),
       safe(
-        'jile',
+        'जिले',
         () =>
           db.district.findMany({
             select: { id: true, nameHi: true, nameEn: true },
@@ -111,12 +111,12 @@ export default async function AdminDashboard(props: {
           }),
         [] as DistrictItem[]
       ),
-      safe('panchayat coverage', () => getCoverage(), null as CoverageData | null),
+      safe('पंचायत कवरेज', () => getCoverage(), null as CoverageData | null),
     ]);
 
   const unmappedPolls = coverage
     ? await safe(
-        'bina panchayat wale poll',
+        'बिना पंचायत वाले पोल',
         () => getUnmappedPolls(coverage.unmappedIds),
         [] as Awaited<ReturnType<typeof getUnmappedPolls>>
       )
@@ -145,18 +145,18 @@ export default async function AdminDashboard(props: {
 
         {failed.length > 0 && (
           <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold text-red-700">
-            ⚠️ in anubhagon ka data load nahi ho saka: {failed.join(', ')}।
+            ⚠️ इन अनुभागों का डेटा लोड नहीं हो सका: {failed.join(', ')}। कृपया पृष्ठ रीफ्रेश करें।
           </div>
         )}
 
-        {/* 1. Panchayat Coverage Analysis */}
+        {/* 1. पंचायत कवरेज विश्लेषण */}
         {coverage && (
           <AdminAccordion
             icon="📈"
-            title="Panchayat Coverage Analysis"
-            subtitle="Kitni panchayaton me poll chal rahe hain"
+            title="पंचायत कवरेज विश्लेषण"
+            subtitle="कितनी पंचायतों में पोल सक्रिय रूप से चल रहे हैं"
             count={coverage.totals.gpWithRunning}
-            countLabel="Chalu poll wali panchayatein"
+            countLabel="चालू पोल वाली पंचायतें"
             tone="emerald"
             defaultOpen={Boolean(params.cov)}
           >
@@ -164,13 +164,13 @@ export default async function AdminDashboard(props: {
           </AdminAccordion>
         )}
 
-        {/* 2. Unmapped Polls */}
+        {/* 2. बिना पंचायत वाले पोल */}
         <AdminAccordion
           icon="📍"
-          title="Bina Panchayat Wale Poll"
-          subtitle="Jile me seedhe bane poll ko unki panchayat se jodein"
+          title="बिना पंचायत वाले पोल"
+          subtitle="जिले में सीधे बनाए गए पोल को उनकी संबंधित पंचायत से जोड़ें"
           count={unmappedCount}
-          countLabel="Jodna baki"
+          countLabel="जोड़ना बाकी"
           tone="amber"
           defaultOpen={Boolean(params.map)}
         >
@@ -183,13 +183,13 @@ export default async function AdminDashboard(props: {
           />
         </AdminAccordion>
 
-        {/* 3. Location Data Management */}
+        {/* 3. स्थान डेटा प्रबंधन */}
         <AdminAccordion
           icon="🗺️"
-          title="Sthan Data Prabandhan"
-          subtitle="Panchayat samitiyan, gram panchayatein, samiti ward aur zila parishad ward bharein"
+          title="स्थान डेटा प्रबंधन"
+          subtitle="पंचायत समितियाँ, ग्राम पंचायतें, समिति वार्ड और जिला परिषद वार्ड प्रबंधित करें"
           count={coverage?.totals.samitis ?? 0}
-          countLabel="Kul samitiyan"
+          countLabel="कुल समितियाँ"
           tone="blue"
           defaultOpen={Boolean(params.loc)}
         >
@@ -203,13 +203,13 @@ export default async function AdminDashboard(props: {
           />
         </AdminAccordion>
 
-        {/* 4. Contact Messages */}
+        {/* 4. उपयोगकर्ता संपर्क संदेश */}
         <AdminAccordion
           icon="✉️"
-          title="Upayogkarta Sampark Sandesh"
-          subtitle="Sampark form se prapt sabhi sandesh dekhein"
+          title="उपयोगकर्ता संपर्क संदेश"
+          subtitle="संपर्क फ़ॉर्म से प्राप्त सभी संदेश देखें और प्रबंधित करें"
           count={messages.length}
-          countLabel="Kul sandesh"
+          countLabel="कुल संदेश"
           tone="blue"
         >
           <ContactMsgs
@@ -220,13 +220,13 @@ export default async function AdminDashboard(props: {
           />
         </AdminAccordion>
 
-        {/* 5. Newsletter Subscribers */}
+        {/* 5. न्यूज़लेटर सदस्य सूची */}
         <AdminAccordion
           icon="📧"
-          title="Newsletter Sadasya Suchi"
-          subtitle="Sadasyon ke email dekhein"
+          title="न्यूज़लेटर सदस्य सूची"
+          subtitle="पंजीकृत सदस्यों के ईमेल पते देखें और प्रबंधित करें"
           count={totalSubscribers}
-          countLabel="Kul sadasya"
+          countLabel="कुल सदस्य"
           tone="amber"
           defaultOpen={showAllSubscribers}
         >
@@ -238,13 +238,13 @@ export default async function AdminDashboard(props: {
           />
         </AdminAccordion>
 
-        {/* 6. Poll Management */}
+        {/* 6. पोल प्रबंधन */}
         <AdminAccordion
           icon="📊"
-          title="Poll Prabandhan"
-          subtitle="Poll khojein, sampadit karein"
+          title="पोल प्रबंधन"
+          subtitle="पोल खोजें, संपादित करें, विकल्प जोड़ें या हटाएँ"
           count={totalPolls}
-          countLabel="Kul poll"
+          countLabel="कुल पोल"
           tone="emerald"
           defaultOpen={pollsOpen}
         >
@@ -257,21 +257,21 @@ export default async function AdminDashboard(props: {
               type="search"
               name="search"
               defaultValue={searchQuery}
-              placeholder="Poll ke prashn se khojein..."
+              placeholder="पोल के प्रश्न द्वारा खोजें..."
               className="min-w-0 flex-1 rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
             />
             <button
               type="submit"
               className="rounded-xl bg-emerald-700 px-5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-800"
             >
-              🔍 Khojein
+              🔍 खोजें
             </button>
             {searchQuery && (
               <Link
                 href="/admin"
                 className="rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-center text-xs font-bold text-gray-700 transition hover:bg-gray-50"
               >
-                Khoj hatayein
+                खोज हटाएँ
               </Link>
             )}
           </form>
