@@ -70,7 +70,7 @@ export async function assignPollLocation(formData: FormData) {
     });
 
     if (!district) {
-      message = 'Chuna hua jila nahi mila.';
+      message = 'चुना हुआ जिला नहीं मिला।';
     } else {
       let samitiName: string | null = null;
       let gramPanchayatName: string | null = null;
@@ -116,12 +116,12 @@ export async function assignPollLocation(formData: FormData) {
       revalidatePath(`/poll/${pollId}`);
 
       message = gramPanchayatId
-        ? `Poll ko ${gramPanchayatName} panchayat (${samitiName}, ${district.nameHi}) se jod diya gaya.`
-        : `Poll ko ${district.nameHi}${samitiName ? ` · ${samitiName}` : ''} se joda gaya.`;
+        ? `पोल को ${gramPanchayatName} पंचायत (${samitiName}, ${district.nameHi}) से जोड़ दिया गया।`
+        : `पोल को ${district.nameHi}${samitiName ? ` · ${samitiName}` : ''} से जोड़ा गया।`;
     }
   } catch (error) {
     console.error('Poll mapping error:', error);
-    message = 'Poll jodne me truti hui.';
+    message = 'पोल को जोड़ने में त्रुटि हुई।';
   }
 
   finish('map', message);
@@ -136,7 +136,7 @@ export async function addTehsils(formData: FormData) {
   let message = '';
 
   if (!districtId || items.length === 0) {
-    message = 'Jila chune aur kam se kam ek tehsil ka naam likhein.';
+    message = 'जिला चुनें और कम से कम एक तहसील का नाम लिखें।';
   } else {
     try {
       const result = await db.tehsil.createMany({
@@ -144,10 +144,10 @@ export async function addTehsils(formData: FormData) {
         skipDuplicates: true,
       });
       const skipped = items.length - result.count;
-      message = `${result.count} nayi tehsilein jodi gayi${skipped > 0 ? ` (${skipped} pehle se maujud thi)` : ''}.`;
+      message = `${result.count} नई तहसीलें जोड़ी गईं${skipped > 0 ? ` (${skipped} पहले से मौजूद थीं)` : ''}।`;
     } catch (error) {
       console.error('Tehsil error:', error);
-      message = 'Tehsilein jodne me truti hui.';
+      message = 'तहसीलें जोड़ने में त्रुटि हुई।';
     }
   }
 
@@ -163,7 +163,7 @@ export async function addSamitis(formData: FormData) {
   let message = '';
 
   if (!districtId || items.length === 0) {
-    message = 'Jila chune aur kam se kam ek naam likhein.';
+    message = 'जिला चुनें और कम से कम एक नाम लिखें।';
   } else {
     try {
       const result = await db.panchayatSamiti.createMany({
@@ -171,10 +171,10 @@ export async function addSamitis(formData: FormData) {
         skipDuplicates: true,
       });
       const skipped = items.length - result.count;
-      message = `${result.count} nayi panchayat samitiyan jodi gayi${skipped > 0 ? ` (${skipped} pehle se maujud thi)` : ''}.`;
+      message = `${result.count} नई पंचायत समितियाँ जोड़ी गईं${skipped > 0 ? ` (${skipped} पहले से मौजूद थीं)` : ''}।`;
     } catch (error) {
       console.error('Samiti error:', error);
-      message = 'Panchayat samitiyan jodne me truti hui.';
+      message = 'पंचायत समितियाँ जोड़ने में त्रुटि हुई।';
     }
   }
 
@@ -190,7 +190,7 @@ export async function addGramPanchayats(formData: FormData) {
   let message = '';
 
   if (!samitiId || items.length === 0) {
-    message = 'Panchayat samiti chune aur kam se kam ek naam likhein.';
+    message = 'पंचायत समिति चुनें और कम से कम एक नाम लिखें।';
   } else {
     try {
       const samiti = await db.panchayatSamiti.findUnique({
@@ -199,7 +199,7 @@ export async function addGramPanchayats(formData: FormData) {
       });
 
       if (!samiti) {
-        message = 'Chuni hui panchayat samiti nahi mili.';
+        message = 'चुनी हुई पंचायत समिति नहीं मिली।';
       } else {
         const result = await db.gramPanchayat.createMany({
           data: items.map((i) => ({
@@ -211,18 +211,18 @@ export async function addGramPanchayats(formData: FormData) {
           skipDuplicates: true,
         });
         const skipped = items.length - result.count;
-        message = `${result.count} nayi gram panchayatein jodi gayi${skipped > 0 ? ` (${skipped} pehle se maujud thi)` : ''}.`;
+        message = `${result.count} नई ग्राम पंचायतें जोड़ी गईं${skipped > 0 ? ` (${skipped} पहले से मौजूद थीं)` : ''}।`;
       }
     } catch (error) {
       console.error('GP error:', error);
-      message = 'Gram panchayatein jodne me truti hui.';
+      message = 'ग्राम पंचायतें जोड़ने में त्रुटि हुई।';
     }
   }
 
   finish('loc', message);
 }
 
-/** Samiti Ward jorna */
+/** Samiti Ward jorna (Panchayat Samiti ke antargat ward) */
 export async function addSamitiWards(formData: FormData) {
   if (!(await isAdmin())) return;
 
@@ -231,7 +231,7 @@ export async function addSamitiWards(formData: FormData) {
   let message = '';
 
   if (!samitiId || items.length === 0) {
-    message = 'Panchayat samiti chune aur ward number (jaise 1 | naam) likhein.';
+    message = 'पंचायत समिति चुनें और वार्ड नंबर (जैसे 1 | नाम) लिखें।';
   } else {
     try {
       const result = await db.samitiWard.createMany({
@@ -239,10 +239,10 @@ export async function addSamitiWards(formData: FormData) {
         skipDuplicates: true,
       });
       const skipped = items.length - result.count;
-      message = `${result.count} naye samiti ward jode gaye${skipped > 0 ? ` (${skipped} pehle se maujud the)` : ''}.`;
+      message = `${result.count} नए समिति वार्ड जोड़े गए${skipped > 0 ? ` (${skipped} पहले से मौजूद थे)` : ''}।`;
     } catch (error) {
       console.error('Samiti Ward error:', error);
-      message = 'Samiti ward jodne me truti hui.';
+      message = 'समिति वार्ड जोड़ने में त्रुटि हुई।';
     }
   }
 
@@ -258,7 +258,7 @@ export async function addVillages(formData: FormData) {
   let message = '';
 
   if (!wardId || items.length === 0) {
-    message = 'Samiti ward chune aur kam se kam ek gaon ka naam likhein.';
+    message = 'समिति वार्ड चुनें और कम से कम एक गाँव का नाम लिखें।';
   } else {
     try {
       const result = await db.village.createMany({
@@ -270,10 +270,10 @@ export async function addVillages(formData: FormData) {
         skipDuplicates: true,
       });
       const skipped = items.length - result.count;
-      message = `${result.count} naye gaon jode gaye${skipped > 0 ? ` (${skipped} pehle se maujud the)` : ''}.`;
+      message = `${result.count} नए गाँव जोड़े गए${skipped > 0 ? ` (${skipped} पहले से मौजूद थे)` : ''}।`;
     } catch (error) {
       console.error('Village error:', error);
-      message = 'Gaon jodne me truti hui.';
+      message = 'गाँव जोड़ने में त्रुटि हुई।';
     }
   }
 
@@ -289,7 +289,7 @@ export async function addZilaWards(formData: FormData) {
   let message = '';
 
   if (!districtId || items.length === 0) {
-    message = 'Jila chune aur ward number (jaise 1 | naam) likhein.';
+    message = 'जिला चुनें और वार्ड नंबर (जैसे 1 | नाम) लिखें।';
   } else {
     try {
       const result = await db.zilaParishadWard.createMany({
@@ -297,11 +297,50 @@ export async function addZilaWards(formData: FormData) {
         skipDuplicates: true,
       });
       const skipped = items.length - result.count;
-      message = `${result.count} naye zila parishad ward jode gaye${skipped > 0 ? ` (${skipped} pehle se maujud the)` : ''}.`;
+      message = `${result.count} नए जिला परिषद वार्ड जोड़े गए${skipped > 0 ? ` (${skipped} पहले से मौजूद थे)` : ''}।`;
     } catch (error) {
       console.error('Zila Ward error:', error);
-      message = 'Zila parishad ward jodne me truti hui.';
+      message = 'जिला परिषद वार्ड जोड़ने में त्रुटि हुई।';
     }
+  }
+
+  finish('loc', message);
+}
+
+/** Sthan ka naam ya spelling sudhaarne (Update) karne ke liye */
+export async function updateLocationName(formData: FormData) {
+  if (!(await isAdmin())) return;
+
+  const type = val(formData, 'locType'); // tehsil, samiti, gp, village, samitiWard, zilaWard
+  const id = val(formData, 'locId');
+  const nameHi = val(formData, 'nameHi');
+  const nameEn = val(formData, 'nameEn');
+  let message = '';
+
+  if (!id || !nameHi) {
+    message = 'स्थान की आईडी और नया हिंदी नाम दर्ज करना अनिवार्य है।';
+    finish('loc', message);
+  }
+
+  try {
+    if (type === 'tehsil') {
+      await db.tehsil.update({ where: { id }, data: { nameHi, nameEn: nameEn || nameHi } });
+    } else if (type === 'samiti') {
+      await db.panchayatSamiti.update({ where: { id }, data: { nameHi, nameEn: nameEn || nameHi } });
+    } else if (type === 'gp') {
+      await db.gramPanchayat.update({ where: { id }, data: { nameHi, nameEn: nameEn || nameHi } });
+    } else if (type === 'village') {
+      await db.village.update({ where: { id }, data: { nameHi, nameEn: nameEn || nameHi } });
+    } else if (type === 'samitiWard') {
+      await db.samitiWard.update({ where: { id }, data: { nameHi } });
+    } else if (type === 'zilaWard') {
+      await db.zilaParishadWard.update({ where: { id }, data: { nameHi } });
+    }
+
+    message = 'स्थान का नाम सफलतापूर्वक सुधार/अपडेट कर दिया गया है।';
+  } catch (error) {
+    console.error('नाम अपडेट त्रुटि:', error);
+    message = 'नाम अपडेट करने में त्रुटि हुई।';
   }
 
   finish('loc', message);

@@ -63,7 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           type="text/javascript"
           dangerouslySetInnerHTML={{
             __html: `
-              var infolinks_pid = 3448527;
+              var infolinks_pid = 3448579;
               var infolinks_wsid = 0;
             `,
           }}
