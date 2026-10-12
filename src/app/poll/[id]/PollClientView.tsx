@@ -186,6 +186,7 @@ export default function PollClientView({
   }, [poll.id, alreadyVoted]);
 
   const showResults = hasVoted || !isOpen;
+  const isClosedPoll = !isOpen; // 👈 केवल बंद (Closed) पोल्स की पहचान
 
   const totalVotes = useMemo(
     () => poll.options.reduce((total, option) => total + option.voteCount, 0),
@@ -205,7 +206,6 @@ export default function PollClientView({
     [poll.options, totalVotes],
   );
 
-  // यदि विकल्प 6 से ज़्यादा हैं, तो पाई चार्ट दिखाना बंद कर देंगे ताकि लेआउट खराब न हो
   const showPieChart = chartData.length <= 6;
 
   const handleVoteSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -322,7 +322,6 @@ export default function PollClientView({
                   नीचे दिए गए विकल्पों में से एक चुनें ({poll.options.length} उम्मीदवार/विकल्प)
                 </legend>
 
-                {/* 🛠️ यदि बहुत सारे विकल्प हों, तो इन्हें scrollable बना दिया गया है */}
                 <div className="max-h-[450px] space-y-3 overflow-y-auto pr-1">
                   {poll.options.map((option) => {
                     const isSelected = selectedOption === option.id;
@@ -393,9 +392,68 @@ export default function PollClientView({
                 </p>
               </div>
 
+              {/* 🖨️ केवल बंद (Closed) पोल्स के लिए प्रोफेशनल प्रिंटेबल कार्ड */}
+              {isClosedPoll && (
+                <div id="printable-result" className="rounded-3xl bg-gradient-to-br from-emerald-900 to-emerald-950 p-6 text-white shadow-2xl print:m-0 print:rounded-none">
+                  <div className="mb-4 flex items-center justify-between border-b border-emerald-800 pb-3">
+                    <span className="rounded-full bg-emerald-800/60 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-emerald-300">
+                      🏛️ JanPoll Official Result (समाप्त पोल)
+                    </span>
+                    <span className="font-mono text-xs text-emerald-300">कुल मत: {totalVotes.toLocaleString('en-IN')}</span>
+                  </div>
+
+                  <h3 className="mb-5 text-lg font-black leading-snug text-white">
+                    {poll.question}
+                  </h3>
+
+                  <div className="space-y-3 mb-6">
+                    {chartData.map((item, index) => (
+                      <div key={index} className="rounded-xl border border-emerald-700/50 bg-emerald-900/40 p-3">
+                        <div className="mb-1 flex justify-between text-xs font-bold">
+                          <span className="text-emerald-100">{index + 1}. {item.name}</span>
+                          <span className="font-mono text-emerald-300">{item.percentage}% ({item.votes} वोट)</span>
+                        </div>
+                        <div className="h-2 w-full overflow-hidden rounded-full bg-emerald-950 border border-emerald-800">
+                          <div className="h-full rounded-full bg-emerald-400" style={{ width: `${item.percentage}%` }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* 🌐 सोशल हैंडल्स के साथ प्रोफेशनल फुटर */}
+                  <div className="border-t border-emerald-800/80 pt-4 text-center">
+                    <p className="mb-2 text-[11px] font-semibold text-emerald-300">हमारे सोशल मीडिया हैंडल्स से जुड़ें:</p>
+                    <div className="flex flex-wrap items-center justify-center gap-2 mb-3">
+                      {SOCIAL_LINKS.map((s) => (
+                        <div key={s.name} className="flex items-center gap-1.5 rounded-lg bg-emerald-950/80 px-2.5 py-1 text-[10px] font-bold text-emerald-200 border border-emerald-700/60">
+                          <Image src={s.icon} alt={s.name} width={14} height={14} className="object-contain" />
+                          <span>{s.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex justify-between items-center text-[10px] text-emerald-400 border-t border-emerald-800/40 pt-2">
+                      <span>WhatsApp और सोशल मीडिया पर परिणाम देखें</span>
+                      <span className="font-bold text-white tracking-widest">JanPoll.in</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* प्रिंट बटन (केवल क्लोज्ड पोल पर स्क्रीन पर दिखेगा) */}
+              {isClosedPoll && (
+                <div className="text-center print:hidden">
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="mx-auto flex items-center gap-2 rounded-2xl bg-emerald-700 px-6 py-3 text-sm font-bold text-white shadow transition hover:bg-emerald-800"
+                  >
+                    <span>🖨️</span> परिणाम कार्ड प्रिंट / डाउनलोड करें (PDF)
+                  </button>
+                </div>
+              )}
+
               {totalVotes > 0 ? (
                 <>
-                  {/* केवल तभी पाई चार्ट दिखाएं जब विकल्प 6 या उससे कम हों */}
                   {showPieChart && (
                     <div className="h-72 w-full" aria-label="पोल परिणामों का पाई चार्ट">
                       <ResponsiveContainer width="100%" height="100%">
@@ -432,7 +490,6 @@ export default function PollClientView({
                     </div>
                   )}
 
-                  {/* सभी विकल्पों/उम्मीदवारों की साफ-सुथरी प्रोग्रेस बार सूची */}
                   <div className="space-y-3">
                     {chartData.map((item, index) => (
                       <div
