@@ -34,18 +34,20 @@ export default function LocationManager({
   addZilaWards,
   updateLocationName,
 }: LocationManagerProps) {
+  // 1. Gram Panchayat / Samiti Add Form State
   const [selectedDistrictId, setSelectedDistrictId] = useState('');
   const [samitis, setSamitis] = useState<Samiti[]>([]);
   const [selectedSamitiId, setSelectedSamitiId] = useState('');
 
-  // ✏️ नाम सुधारने (Edit) के लिए स्टेट्स
+  // 2. Name Correction (Edit) Form State
   const [editLocType, setEditLocType] = useState('');
   const [editDistrictId, setEditDistrictId] = useState('');
+  const [editSamitis, setEditSamitis] = useState<Samiti[]>([]);
   const [editSamitiId, setEditSamitiId] = useState('');
   const [editItemList, setEditItemList] = useState<ItemType[]>([]);
   const [selectedEditId, setSelectedEditId] = useState('');
 
-  // पंचायत समिति लोड करना (मुख्य फॉर्म के लिए)
+  // Main Form ke liye Samiti fetch karna
   useEffect(() => {
     setSelectedSamitiId('');
     setSamitis([]);
@@ -54,10 +56,22 @@ export default function LocationManager({
     fetch(`/api/admin/locations?districtId=${selectedDistrictId}&type=samiti`)
       .then((res) => res.json())
       .then((data) => setSamitis(data.items ?? []))
-      .catch((err) => console.error('समिति लोड त्रुटि:', err));
+      .catch((err) => console.error('Samiti fetch error:', err));
   }, [selectedDistrictId]);
 
-  // ✏️ नाम सुधारने वाले फॉर्म के लिए डायनेमिक डेटा लोड करना
+  // Edit Form ke liye District change hone par Samiti fetch karna
+  useEffect(() => {
+    setEditSamitiId('');
+    setEditSamitis([]);
+    if (!editDistrictId) return;
+
+    fetch(`/api/admin/locations?districtId=${editDistrictId}&type=samiti`)
+      .then((res) => res.json())
+      .then((data) => setEditSamitis(data.items ?? []))
+      .catch((err) => console.error('Edit Samiti fetch error:', err));
+  }, [editDistrictId]);
+
+  // Edit Form ke liye items (Tehsil, GP, Ward etc.) load karna
   useEffect(() => {
     setSelectedEditId('');
     setEditItemList([]);
@@ -69,102 +83,101 @@ export default function LocationManager({
       fetch(`/api/admin/locations?districtId=${editDistrictId}&type=${apiType}`)
         .then((res) => res.json())
         .then((data) => setEditItemList(data.items ?? []))
-        .catch((err) => console.error('एडिट लिस्ट लोड त्रुटि:', err));
+        .catch((err) => console.error('Edit item list error:', err));
     } else if (editLocType === 'gp' || editLocType === 'samitiWard') {
       if (!editSamitiId) return;
       let apiType = editLocType === 'gp' ? 'gp' : 'samitiWard';
       fetch(`/api/admin/locations?samitiId=${editSamitiId}&type=${apiType}`)
         .then((res) => res.json())
         .then((data) => setEditItemList(data.items ?? []))
-        .catch((err) => console.error('एडिट लिस्ट लोड त्रुटि:', err));
+        .catch((err) => console.error('Edit item list error:', err));
     }
   }, [editLocType, editDistrictId, editSamitiId]);
 
   return (
     <div className="space-y-6">
       <p className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs leading-5 text-blue-900">
-        💡 <strong>निर्देश:</strong> हर पंक्ति में एक नाम लिखें: <strong>हिंदी नाम | English name</strong>। यदि किसी नाम या स्पेलिंग में सुधार करना हो, तो नीचे दिए गए <strong>'स्थान का नाम सुधारें'</strong> सेक्शन में सीधे जिले/समिति से चुनकर नाम बदलें।
+        💡 <strong>Nirdesh:</strong> Har pankti me ek naam likhen: <strong>Hindi naam | English name</strong>. Kisi bhi naam me sudhaar karne ke liye niche diye gaye 'Sthan ka naam sudhaaren' section ka upyog karein.
       </p>
 
-      {/* 1. पंचायत समितियाँ जोड़ें */}
+      {/* 1. Panchayat Samiti Jodein */}
       <form action={addSamitis} className={cardClass}>
-        <h3 className="text-sm font-black text-gray-900">🏛️ पंचायत समितियाँ जोड़ें</h3>
+        <h3 className="text-sm font-black text-gray-900">🏛️ Panchayat Samitiyan Jodein</h3>
         <LocationPicker districts={districts} depth="district" />
-        <textarea name="items" required rows={4} placeholder={'अजमेर | Ajmer'} className={textareaClass} />
+        <textarea name="items" required rows={4} placeholder={'Ajmer | Ajmer'} className={textareaClass} />
         <div className="flex justify-end">
-          <button type="submit" className={buttonClass}>+ समितियाँ जोड़ें</button>
+          <button type="submit" className={buttonClass}>+ Samitiyan Jodein</button>
         </div>
       </form>
 
-      {/* 2. ग्राम पंचायतें जोड़ें */}
+      {/* 2. Gram Panchayat Jodein */}
       <form action={addGramPanchayats} className={cardClass}>
-        <h3 className="text-sm font-black text-gray-900">🏘️ ग्राम पंचायतें जोड़ें</h3>
+        <h3 className="text-sm font-black text-gray-900">🏘️ Gram Panchayatein Jodein</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-[11px] font-bold text-gray-700 mb-1">जिला चुनें</label>
+            <label className="block text-[11px] font-bold text-gray-700 mb-1">Jila Chunein</label>
             <select value={selectedDistrictId} onChange={(e) => setSelectedDistrictId(e.target.value)} className={selectClass} required>
-              <option value="">-- जिला चुनें --</option>
+              <option value="">-- Jila Chunein --</option>
               {districts.map((d) => <option key={d.id} value={d.id}>{d.nameHi} ({d.nameEn})</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-[11px] font-bold text-gray-700 mb-1">पंचायत समिति चुनें</label>
+            <label className="block text-[11px] font-bold text-gray-700 mb-1">Panchayat Samiti Chunein</label>
             <select name="samitiId" value={selectedSamitiId} onChange={(e) => setSelectedSamitiId(e.target.value)} disabled={!selectedDistrictId} className={`${selectClass} disabled:bg-gray-100`} required>
-              <option value="">-- पंचायत समिति चुनें --</option>
+              <option value="">-- Panchayat Samiti Chunein --</option>
               {samitis.map((s) => <option key={s.id} value={s.id}>{s.nameHi}</option>)}
             </select>
           </div>
         </div>
-        <textarea name="items" required rows={5} placeholder={'रामगढ़ | Ramgarh'} className={textareaClass} />
+        <textarea name="items" required rows={5} placeholder={'Ramgarh | Ramgarh'} className={textareaClass} />
         <div className="flex justify-end">
-          <button type="submit" className={buttonClass}>+ पंचायतें जोड़ें</button>
+          <button type="submit" className={buttonClass}>+ Panchayatein Jodein</button>
         </div>
       </form>
 
-      {/* 3. पंचायत समिति वार्ड जोड़ें */}
+      {/* 3. Panchayat Samiti Ward Jodein */}
       <form action={addSamitiWards} className={cardClass}>
-        <h3 className="text-sm font-black text-gray-900">🗳️ पंचायत समिति वार्ड जोड़ें</h3>
+        <h3 className="text-sm font-black text-gray-900">🗳️ Panchayat Samiti Ward Jodein</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-[11px] font-bold text-gray-700 mb-1">जिला चुनें</label>
+            <label className="block text-[11px] font-bold text-gray-700 mb-1">Jila Chunein</label>
             <select value={selectedDistrictId} onChange={(e) => setSelectedDistrictId(e.target.value)} className={selectClass} required>
-              <option value="">-- जिला चुनें --</option>
+              <option value="">-- Jila Chunein --</option>
               {districts.map((d) => <option key={d.id} value={d.id}>{d.nameHi}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-[11px] font-bold text-gray-700 mb-1">पंचायत समिति चुनें</label>
+            <label className="block text-[11px] font-bold text-gray-700 mb-1">Panchayat Samiti Chunein</label>
             <select name="samitiId" value={selectedSamitiId} onChange={(e) => setSelectedSamitiId(e.target.value)} disabled={!selectedDistrictId} className={`${selectClass} disabled:bg-gray-100`} required>
-              <option value="">-- पंचायत समिति चुनें --</option>
+              <option value="">-- Panchayat Samiti Chunein --</option>
               {samitis.map((s) => <option key={s.id} value={s.id}>{s.nameHi}</option>)}
             </select>
           </div>
         </div>
-        <textarea name="items" required rows={4} placeholder={'1 | वार्ड 1'} className={textareaClass} />
+        <textarea name="items" required rows={4} placeholder={'1 | Ward 1'} className={textareaClass} />
         <div className="flex justify-end">
-          <button type="submit" className={buttonClass}>+ समिति वार्ड जोड़ें</button>
+          <button type="submit" className={buttonClass}>+ Samiti Ward Jodein</button>
         </div>
       </form>
 
-      {/* 4. जिला परिषद वार्ड जोड़ें */}
+      {/* 4. Zila Parishad Ward Jodein */}
       <form action={addZilaWards} className={cardClass}>
-        <h3 className="text-sm font-black text-gray-900">🏛️ जिला परिषद वार्ड जोड़ें</h3>
+        <h3 className="text-sm font-black text-gray-900">🏛️ Zila Parishad Ward Jodein</h3>
         <LocationPicker districts={districts} depth="district" />
-        <textarea name="items" required rows={4} placeholder={'1 | वार्ड 1'} className={textareaClass} />
+        <textarea name="items" required rows={4} placeholder={'1 | Ward 1'} className={textareaClass} />
         <div className="flex justify-end">
-          <button type="submit" className={buttonClass}>+ जिला परिषद वार्ड जोड़ें</button>
+          <button type="submit" className={buttonClass}>+ Zila Parishad Ward Jodein</button>
         </div>
       </form>
 
-      {/* 5. ✏️ स्थान का नाम सुधारें (Smart Interactive Dropdown - No ID required) */}
+      {/* 5. ✏️ Sthan Ka Naam Sudhaaren (Fixed Panchayat Samiti Dropdown) */}
       <form action={updateLocationName} className="space-y-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 shadow-sm">
-        <h3 className="text-sm font-black text-amber-900">✏️ स्थान का नाम सुधारें (Spelling / Pronunciation Fix)</h3>
-        <p className="text-[11px] text-amber-800">श्रेणी और स्थान चुनकर नया सही नाम दर्ज करें। अब डेटाबेस आईडी याद रखने की आवश्यकता नहीं है!</p>
+        <h3 className="text-sm font-black text-amber-900">✏️ Sthan Ka Naam Sudhaaren (Spelling Correction)</h3>
+        <p className="text-[11px] text-amber-800">Shreni aur sthan chunakar naya sahi naam darj karein.</p>
         
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {/* स्थान श्रेणी */}
           <div>
-            <label className="block text-[11px] font-bold text-amber-900 mb-1">1. श्रेणी चुनें</label>
+            <label className="block text-[11px] font-bold text-amber-900 mb-1">1. Shreni Chunein</label>
             <select
               name="locType"
               value={editLocType}
@@ -177,19 +190,18 @@ export default function LocationManager({
               className={selectClass}
               required
             >
-              <option value="">-- श्रेणी चुनें --</option>
-              <option value="tehsil">तहसील (Tehsil)</option>
-              <option value="samiti">पंचायत समिति (Samiti)</option>
-              <option value="gp">ग्राम पंचायत (GP)</option>
-              <option value="samitiWard">समिति वार्ड (Samiti Ward)</option>
-              <option value="zilaWard">जिला परिषद वार्ड (Zila Ward)</option>
+              <option value="">-- Shreni Chunein --</option>
+              <option value="tehsil">Tehsil</option>
+              <option value="samiti">Panchayat Samiti</option>
+              <option value="gp">Gram Panchayat (GP)</option>
+              <option value="samitiWard">Samiti Ward</option>
+              <option value="zilaWard">Zila Parishad Ward</option>
             </select>
           </div>
 
-          {/* जिला चयन (यदि आवश्यक हो) */}
           {(editLocType === 'tehsil' || editLocType === 'samiti' || editLocType === 'gp' || editLocType === 'samitiWard' || editLocType === 'zilaWard') && (
             <div>
-              <label className="block text-[11px] font-bold text-amber-900 mb-1">2. जिला चुनें</label>
+              <label className="block text-[11px] font-bold text-amber-900 mb-1">2. Jila Chunein</label>
               <select
                 value={editDistrictId}
                 onChange={(e) => {
@@ -200,16 +212,15 @@ export default function LocationManager({
                 className={selectClass}
                 required
               >
-                <option value="">-- जिला चुनें --</option>
+                <option value="">-- Jila Chunein --</option>
                 {districts.map((d) => <option key={d.id} value={d.id}>{d.nameHi}</option>)}
               </select>
             </div>
           )}
 
-          {/* पंचायत समिति चयन (यदि ग्राम पंचायत या समिति वार्ड हो) */}
           {(editLocType === 'gp' || editLocType === 'samitiWard') && (
             <div>
-              <label className="block text-[11px] font-bold text-amber-900 mb-1">3. पंचायत समिति चुनें</label>
+              <label className="block text-[11px] font-bold text-amber-900 mb-1">3. Panchayat Samiti Chunein</label>
               <select
                 value={editSamitiId}
                 onChange={(e) => {
@@ -220,17 +231,16 @@ export default function LocationManager({
                 className={`${selectClass} disabled:bg-gray-100`}
                 required
               >
-                <option value="">-- पंचायत समिति चुनें --</option>
-                {samitis.map((s) => <option key={s.id} value={s.id}>{s.nameHi}</option>)}
+                <option value="">-- Panchayat Samiti Chunein --</option>
+                {editSamitis.map((s) => <option key={s.id} value={s.id}>{s.nameHi}</option>)}
               </select>
             </div>
           )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-          {/* वास्तविक स्थान का चयन (Dropdown) */}
           <div>
-            <label className="block text-[11px] font-bold text-amber-900 mb-1">सुधारने के लिए स्थान चुनें</label>
+            <label className="block text-[11px] font-bold text-amber-900 mb-1">Sudharne Ke Liye Sthan Chunein</label>
             <select
               name="locId"
               value={selectedEditId}
@@ -238,22 +248,21 @@ export default function LocationManager({
               className={selectClass}
               required
             >
-              <option value="">-- पहले ऊपर दिए विकल्प चुनें --</option>
+              <option value="">-- Pehle Upar Diye Vikalp Chunein --</option>
               {editItemList.map((item) => (
                 <option key={item.id} value={item.id}>
-                  {item.wardNo ? `वार्ड सं. ${item.wardNo} - ` : ''}{item.nameHi}
+                  {item.wardNo ? `Ward No. ${item.wardNo} - ` : ''}{item.nameHi}
                 </option>
               ))}
             </select>
           </div>
 
-          {/* नया सही नाम */}
           <div>
-            <label className="block text-[11px] font-bold text-amber-900 mb-1">नया सही हिंदी नाम</label>
+            <label className="block text-[11px] font-bold text-amber-900 mb-1">Naya Sahi Hindi Naam</label>
             <input
               type="text"
               name="nameHi"
-              placeholder="जैसे: नया सही नाम"
+              placeholder="Jaise: Naya Sahi Naam"
               className={inputClass}
               required
             />
@@ -265,7 +274,7 @@ export default function LocationManager({
             type="submit"
             className="rounded-xl bg-amber-700 px-6 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-amber-800"
           >
-            ✏️ नाम अपडेट करें
+            ✏️ Naam Update Karein
           </button>
         </div>
       </form>
