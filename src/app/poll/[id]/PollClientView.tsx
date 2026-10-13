@@ -179,6 +179,17 @@ export default function PollClientView({
     alreadyVoted ? 'आप इस पोल में पहले ही वोट दे चुके हैं।' : '',
   );
 
+  // 🎯 Adsterra Vignette Ad integration for Poll View only
+  useEffect(() => {
+    try {
+      const script = document.createElement('script');
+      script.innerHTML = `(function(s){s.dataset.zone='12021752',s.src='https://n6wxm.com/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))`;
+      document.body.appendChild(script);
+    } catch (e) {
+      console.error('Adsterra script error:', e);
+    }
+  }, []);
+
   useEffect(() => {
     setHasVoted(alreadyVoted);
     setMessage(alreadyVoted ? 'आप इस पोल में पहले ही वोट दे चुके हैं।' : '');
@@ -571,6 +582,7 @@ export default function PollClientView({
                 </div>
               </div>
 
+              {/* Google AdSense Ad (सुरक्षित है, इसे हटाया नहीं गया है) */}
               <div className="my-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
                 <Ad728x90 />
               </div>
