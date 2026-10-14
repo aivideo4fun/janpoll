@@ -67,7 +67,7 @@ export default async function AdminDashboard(props: {
     try {
       return await run();
     } catch (e) {
-      console.error(`${label} लोड त्रुटि:`, e);
+      console.error(`${label} डेटा लोड करने में विफल:`, e);
       failed.push(label);
       return fallback;
     }
@@ -145,7 +145,7 @@ export default async function AdminDashboard(props: {
 
         {failed.length > 0 && (
           <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold text-red-700">
-            ⚠️ इन अनुभागों का डेटा लोड नहीं हो सका: {failed.join(', ')}। कृपया पृष्ठ रीफ्रेश करें।
+            ⚠️ इन विभागों का डेटा लोड नहीं हो सका: {failed.join(', ')}। कृपया पृष्ठ पुनः लोड करें।
           </div>
         )}
 
