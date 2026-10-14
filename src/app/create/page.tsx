@@ -164,11 +164,15 @@ function CreatePollContent() {
           question,
           deadlineDays: diffDays,
           options: validOptions,
-          districtName: selDistrict,
-          samitiName: selSamiti,
-          gramPanchayatName: electionType === 'sarpanch' ? selGp : null,
-          wardName: selWard,
           electionType,
+          districtId: pickDistrictId || null,
+          districtName: selDistrict,
+          samitiId: electionType === 'samiti' ? pickSamitiId || null : null,
+          samitiName: selSamiti,
+          zilaWardId: electionType === 'zila' ? pickZilaWardId || null : null,
+          gramPanchayatName: electionType === 'sarpanch' ? selGp : null,
+          gramPanchayatId: electionType === 'sarpanch' ? pickGpId || null : null,
+          wardName: selWard,
           creatorName: session.user?.name || null,
           creatorEmail: session.user?.email || null,
         }),
@@ -328,6 +332,7 @@ function CreatePollContent() {
               {/* पेशेवर निर्देश */}
               <div className="pt-2 text-[11px] text-emerald-800/80 leading-relaxed font-medium space-y-1">
                 <p>ℹ️ <strong>सहायता सूचना:</strong> यदि आपको अपनी तहसील, पंचायत या वार्ड सूची में नहीं मिल रहा है, तो कृपया हमें ईमेल करें: <a href="mailto:support@janpoll.in" className="underline font-bold text-emerald-900">support@janpoll.in</a></p>
+                <p>💡 <strong>नोट:</strong> यदि आपका पोल चुनाव से संबंधित नहीं है, तो स्थान विवरण को खाली छोड़कर सीधा प्रश्न और विकल्प लिखकर अपना पोल सुरक्षित रूप से प्रकाशित कर सकते हैं। इसका वास्तविक चुनाव से कोई लेना-देना नहीं है।</p>
               </div>
             </div>
 
