@@ -38,6 +38,8 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+    console.log('--- RECEIVED POLL PAYLOAD ---', body); // डिबगिंग के लिए
+
     const { 
       question, 
       deadlineDays, 
@@ -81,9 +83,10 @@ export async function POST(req: Request) {
       },
     });
 
+    console.log('--- POLL CREATED SUCCESSFULLY ---', newPoll.id);
     return NextResponse.json({ pollId: newPoll.id }, { status: 201 });
   } catch (error: any) {
     console.error('पोल बनाने के दौरान एपीआई में त्रुटि:', error);
-    return NextResponse.json({ message: 'सर्वर पर तकनीकी त्रुटि हुई है।' }, { status: 500 });
+    return NextResponse.json({ message: error.message || 'सर्वर पर तकनीकी त्रुटि हुई है।' }, { status: 500 });
   }
 }
