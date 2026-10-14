@@ -115,7 +115,7 @@ async function FooterContent() {
               <a href="https://twitter.com/janpollindia" target="_blank" rel="noreferrer" title="X (Twitter)" className="h-10 w-10 rounded-full bg-white/10 p-2 flex items-center justify-center hover:bg-white/20 transition shadow">
                 <Image src="/images/x.png" alt="X (Twitter)" width={24} height={24} className="object-contain" />
               </a>
-              <a href="https://youtube.com/shorts/f7N05oSyfXc?feature=shared" target="_blank" rel="noreferrer" title="YouTube" className="h-10 w-10 rounded-full bg-white/10 p-2 flex items-center justify-center hover:bg-white/20 transition shadow">
+              <a href="https://whatsapp.com/channel/0029VbEDUaJ5Ui2OzmpEYI3D/113" target="_blank" rel="noreferrer" title="YouTube" className="h-10 w-10 rounded-full bg-white/10 p-2 flex items-center justify-center hover:bg-white/20 transition shadow">
                 <Image src="/images/youtube.png" alt="YouTube" width={24} height={24} className="object-contain" />
               </a>
             </div>
@@ -148,7 +148,7 @@ async function FooterContent() {
                   type="submit"
                   className="w-full rounded-xl bg-emerald-500 py-2 text-xs font-bold text-emerald-950 hover:bg-emerald-400 transition shadow"
                 >
-                  सब्सक्राइब करें
+                  सबस्क्राइब करें
                 </button>
               </form>
             </div>

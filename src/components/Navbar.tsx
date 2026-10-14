@@ -93,7 +93,7 @@ export default function Navbar() {
                   <span>X (ट्विटर)</span>
                 </a>
                 <a
-                  href="https://youtube.com/shorts/f7N05oSyfXc?feature=shared"
+                  href="https://whatsapp.com/channel/0029VbEDUaJ5Ui2OzmpEYI3D/113"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-gray-700 hover:bg-red-50 hover:text-red-700 transition"
@@ -165,7 +165,7 @@ export default function Navbar() {
               <span>X (ट्विटर)</span>
             </a>
             <a
-              href="https://youtube.com/shorts/f7N05oSyfXc?feature=shared"
+              href="https://whatsapp.com/channel/0029VbEDUaJ5Ui2OzmpEYI3D/113"
               target="_blank"
               rel="noreferrer"
               onClick={() => setIsOpen(false)}

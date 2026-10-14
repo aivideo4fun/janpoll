@@ -58,7 +58,7 @@ const SOCIAL_LINKS = [
   },
   {
     name: 'यूट्यूब',
-    href: 'https://youtube.com/shorts/f7N05oSyfXc?feature=shared',
+    href: 'https://whatsapp.com/channel/0029VbEDUaJ5Ui2OzmpEYI3D/113',
     icon: '/images/youtube.png',
   },
 ];
