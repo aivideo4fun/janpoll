@@ -1,7 +1,7 @@
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-  // 👈 Connection pool aur timeout yahan configure kar diye gaye hain taaki P2024 error kabhi na aaye
+  // Connection pool/timeout DATABASE_URL me configure karo (e.g. ?connection_limit=10&pool_timeout=20)
 }
 
 generator client {
@@ -9,25 +9,35 @@ generator client {
 }
 
 model Poll {
-  id                String       @id @default(uuid())
-  slug              String?      @db.VarChar(500)
-  question          String       @db.VarChar(500)
-  creatorName       String?      @db.VarChar(100)
-  creatorEmail      String?      @db.VarChar(255)
-  isVerified        Boolean      @default(false)
-  creatorIp         String?      @db.VarChar(45)
-  deadlineDays      Int          @default(3)
-  active            Boolean      @default(true)
-  
-  // 📍 Location Fields
-  districtName      String?      @db.VarChar(100)
-  samitiName        String?      @db.VarChar(100)
-  gramPanchayatName String?      @db.VarChar(100)
-  gramPanchayatId   String?  
-  electionType      String?      @default("sarpanch") @db.VarChar(50) // 'sarpanch', 'samiti', 'zila'
+  id                String   @id @default(uuid())
+  slug              String?  @db.VarChar(500)
+  question          String   @db.VarChar(500)
+  creatorName       String?  @db.VarChar(100)
+  creatorEmail      String?  @db.VarChar(255)
+  isVerified        Boolean  @default(false)
+  creatorIp         String?  @db.VarChar(45)
+  deadlineDays      Int      @default(3)
+  active            Boolean  @default(true)
 
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
+  // Location (purane fields: jaise the waise, sarpanch isi par chalta hai)
+  districtName      String?  @db.VarChar(100)
+  samitiName        String?  @db.VarChar(100)
+  gramPanchayatName String?  @db.VarChar(100)
+  gramPanchayatId   String?
+  electionType      String?  @default("sarpanch") @db.VarChar(50) // 'sarpanch' | 'samiti' | 'zila'
+
+  // Location (NAYE: asli relations, mandal aur zila ke liye)
+  districtId        String?
+  district          District?          @relation(fields: [districtId], references: [id], onDelete: SetNull)
+  samitiId          String?
+  samiti            PanchayatSamiti?   @relation(fields: [samitiId], references: [id], onDelete: SetNull)
+  samitiWardId      String?
+  samitiWard        SamitiWard?        @relation(fields: [samitiWardId], references: [id], onDelete: SetNull)
+  zilaWardId        String?
+  zilaWard          ZilaParishadWard?  @relation(fields: [zilaWardId], references: [id], onDelete: SetNull)
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   options           PollOption[]
   votes             Vote[]
@@ -39,6 +49,10 @@ model Poll {
   @@index([gramPanchayatName])
   @@index([gramPanchayatId])
   @@index([electionType])
+  @@index([districtId])
+  @@index([samitiId])
+  @@index([samitiWardId])
+  @@index([zilaWardId])
 }
 
 model PollOption {
@@ -46,10 +60,10 @@ model PollOption {
   pollId    String
   text      String   @db.VarChar(255)
   voteCount Int      @default(0)
-  order     Int?     
+  order     Int?
   createdAt DateTime @default(now())
 
-  poll  Poll  @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  poll  Poll   @relation(fields: [pollId], references: [id], onDelete: Cascade)
   votes Vote[]
 
   @@index([pollId])
@@ -64,7 +78,7 @@ model Vote {
   deviceSig       String?  @db.VarChar(64)
   createdAt       DateTime @default(now())
 
-  poll   Poll     @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  poll   Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
   option PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
 
   @@unique([pollId, anonymousUserId])
@@ -80,7 +94,7 @@ model ContactMessage {
   id        String   @id @default(uuid())
   name      String   @db.VarChar(100)
   email     String   @db.VarChar(255)
-  whatsapp  String?  @db.VarChar(20)   
+  whatsapp  String?  @db.VarChar(20)
   message   String   @db.Text
   createdAt DateTime @default(now())
 
@@ -92,14 +106,15 @@ model ContactMessage {
 // ---------------------------------------------------------
 
 model District {
-  id               String            @id @default(cuid())
-  nameEn           String            @unique
+  id               String             @id @default(cuid())
+  nameEn           String             @unique
   nameHi           String
   tehsils          Tehsil[]
   panchayatSamitis PanchayatSamiti[]
   gramPanchayats   GramPanchayat[]
   zilaWards        ZilaParishadWard[]
-  createdAt        DateTime          @default(now())
+  polls            Poll[]
+  createdAt        DateTime           @default(now())
 
   @@index([nameEn])
 }
@@ -110,6 +125,7 @@ model ZilaParishadWard {
   nameHi     String
   districtId String
   district   District @relation(fields: [districtId], references: [id], onDelete: Cascade)
+  polls      Poll[]
 
   @@unique([districtId, wardNo])
   @@index([districtId])
@@ -135,8 +151,9 @@ model PanchayatSamiti {
   district       District        @relation(fields: [districtId], references: [id], onDelete: Cascade)
   tehsilId       String?
   tehsil         Tehsil?         @relation(fields: [tehsilId], references: [id], onDelete: SetNull)
-  samitiWards    SamitiWard[]    
+  samitiWards    SamitiWard[]
   gramPanchayats GramPanchayat[]
+  polls          Poll[]
 
   @@unique([districtId, nameEn])
   @@index([districtId])
@@ -149,7 +166,8 @@ model SamitiWard {
   nameHi    String
   samitiId  String
   samiti    PanchayatSamiti @relation(fields: [samitiId], references: [id], onDelete: Cascade)
-  villages  Village[]       
+  villages  Village[]
+  polls     Poll[]
   createdAt DateTime        @default(now())
 
   @@unique([samitiId, wardNo])
