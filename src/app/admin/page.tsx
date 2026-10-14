@@ -26,6 +26,7 @@ import {
   addZilaWards,
   addSamitiWards,
   updateLocationName,
+  deleteLocationItem,
 } from './actions/locationActions';
 
 export const dynamic = 'force-dynamic';
@@ -200,6 +201,7 @@ export default async function AdminDashboard(props: {
             addSamitiWards={addSamitiWards}
             addZilaWards={addZilaWards}
             updateLocationName={updateLocationName}
+            deleteLocationItem={deleteLocationItem}
           />
         </AdminAccordion>
 

@@ -14,6 +14,7 @@ type LocationManagerProps = {
   addSamitiWards: (formData: FormData) => Promise<void>;
   addZilaWards: (formData: FormData) => Promise<void>;
   updateLocationName: (formData: FormData) => Promise<void>;
+  deleteLocationItem?: (formData: FormData) => Promise<void>;
 };
 
 const cardClass = 'space-y-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm';
@@ -33,13 +34,14 @@ export default function LocationManager({
   addSamitiWards,
   addZilaWards,
   updateLocationName,
+  deleteLocationItem,
 }: LocationManagerProps) {
   // 1. Gram Panchayat / Samiti Add Form State
   const [selectedDistrictId, setSelectedDistrictId] = useState('');
   const [samitis, setSamitis] = useState<Samiti[]>([]);
   const [selectedSamitiId, setSelectedSamitiId] = useState('');
 
-  // 2. Name Correction (Edit) Form State
+  // 2. Name Correction (Edit/Delete) Form State
   const [editLocType, setEditLocType] = useState('');
   const [editDistrictId, setEditDistrictId] = useState('');
   const [editSamitis, setEditSamitis] = useState<Samiti[]>([]);
@@ -97,7 +99,7 @@ export default function LocationManager({
   return (
     <div className="space-y-6">
       <p className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs leading-5 text-blue-900">
-        💡 <strong>Nirdesh:</strong> Har pankti me ek naam likhen: <strong>Hindi naam | English name</strong>. Kisi bhi naam me sudhaar karne ke liye niche diye gaye 'Sthan ka naam sudhaaren' section ka upyog karein.
+        💡 <strong>Nirdesh:</strong> Har pankti me ek naam likhen: <strong>Hindi naam | English name</strong>. Kisi bhi naam me sudhaar karne ya duplicate hatane ke liye niche diye gaye section ka upyog karein.
       </p>
 
       {/* 1. Panchayat Samiti Jodein */}
@@ -170,16 +172,15 @@ export default function LocationManager({
         </div>
       </form>
 
-      {/* 5. ✏️ Sthan Ka Naam Sudhaaren (Fixed Panchayat Samiti Dropdown) */}
-      <form action={updateLocationName} className="space-y-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 shadow-sm">
-        <h3 className="text-sm font-black text-amber-900">✏️ Sthan Ka Naam Sudhaaren (Spelling Correction)</h3>
-        <p className="text-[11px] text-amber-800">Shreni aur sthan chunakar naya sahi naam darj karein.</p>
+      {/* 5. ✏️ Sthan Ka Naam Sudhaaren aur Delete Karein */}
+      <div className="space-y-4 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 shadow-sm">
+        <h3 className="text-sm font-black text-amber-900">✏️ Sthan Ka Naam Sudhaaren ya Delete Karein</h3>
+        <p className="text-[11px] text-amber-800">Shreni aur sthan chunakar naya naam update karein ya duplicate/galat sthan ko delete karein.</p>
         
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <label className="block text-[11px] font-bold text-amber-900 mb-1">1. Shreni Chunein</label>
             <select
-              name="locType"
               value={editLocType}
               onChange={(e) => {
                 setEditLocType(e.target.value);
@@ -188,7 +189,6 @@ export default function LocationManager({
                 setSelectedEditId('');
               }}
               className={selectClass}
-              required
             >
               <option value="">-- Shreni Chunein --</option>
               <option value="tehsil">Tehsil</option>
@@ -210,7 +210,6 @@ export default function LocationManager({
                   setSelectedEditId('');
                 }}
                 className={selectClass}
-                required
               >
                 <option value="">-- Jila Chunein --</option>
                 {districts.map((d) => <option key={d.id} value={d.id}>{d.nameHi}</option>)}
@@ -229,7 +228,6 @@ export default function LocationManager({
                 }}
                 disabled={!editDistrictId}
                 className={`${selectClass} disabled:bg-gray-100`}
-                required
               >
                 <option value="">-- Panchayat Samiti Chunein --</option>
                 {editSamitis.map((s) => <option key={s.id} value={s.id}>{s.nameHi}</option>)}
@@ -238,46 +236,91 @@ export default function LocationManager({
           )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-          <div>
-            <label className="block text-[11px] font-bold text-amber-900 mb-1">Sudharne Ke Liye Sthan Chunein</label>
-            <select
-              name="locId"
-              value={selectedEditId}
-              onChange={(e) => setSelectedEditId(e.target.value)}
-              className={selectClass}
-              required
+        {/* Update Form */}
+        <form action={updateLocationName} className="space-y-3 pt-2 border-t border-amber-200">
+          <input type="hidden" name="locType" value={editLocType} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[11px] font-bold text-amber-900 mb-1">Sudharne Ke Liye Sthan Chunein</label>
+              <select
+                name="locId"
+                value={selectedEditId}
+                onChange={(e) => setSelectedEditId(e.target.value)}
+                className={selectClass}
+                required
+              >
+                <option value="">-- Sthan Chunein --</option>
+                {editItemList.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.wardNo ? `Ward No. ${item.wardNo} - ` : ''}{item.nameHi}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-amber-900 mb-1">Naya Sahi Hindi Naam</label>
+              <input
+                type="text"
+                name="nameHi"
+                placeholder="Jaise: Naya Sahi Naam"
+                className={inputClass}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-1">
+            <button
+              type="submit"
+              className="rounded-xl bg-amber-700 px-6 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-amber-800"
             >
-              <option value="">-- Pehle Upar Diye Vikalp Chunein --</option>
-              {editItemList.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.wardNo ? `Ward No. ${item.wardNo} - ` : ''}{item.nameHi}
-                </option>
-              ))}
-            </select>
+              ✏️ Naam Update Karein
+            </button>
           </div>
+        </form>
 
-          <div>
-            <label className="block text-[11px] font-bold text-amber-900 mb-1">Naya Sahi Hindi Naam</label>
-            <input
-              type="text"
-              name="nameHi"
-              placeholder="Jaise: Naya Sahi Naam"
-              className={inputClass}
-              required
-            />
-          </div>
-        </div>
-
-        <div className="flex justify-end pt-2">
-          <button
-            type="submit"
-            className="rounded-xl bg-amber-700 px-6 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-amber-800"
+        {/* Delete Form */}
+        {deleteLocationItem && (
+          <form 
+            action={deleteLocationItem} 
+            onSubmit={(e) => {
+              if (!confirm('Kya aap wakai is sthan ko delete karna chahte hain?')) {
+                e.preventDefault();
+              }
+            }}
+            className="space-y-3 pt-3 border-t border-red-200"
           >
-            ✏️ Naam Update Karein
-          </button>
-        </div>
-      </form>
+            <input type="hidden" name="locType" value={editLocType} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+              <div>
+                <label className="block text-[11px] font-bold text-red-900 mb-1">Delete Karne Ke Liye Sthan Chunein</label>
+                <select
+                  name="locId"
+                  className={selectClass}
+                  required
+                >
+                  <option value="">-- Delete Karne Ke Liye Sthan Chunein --</option>
+                  {editItemList.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.wardNo ? `Ward No. ${item.wardNo} - ` : ''}{item.nameHi}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <button
+                  type="submit"
+                  className="w-full sm:w-auto rounded-xl bg-red-600 px-6 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-red-700"
+                >
+                  🗑️ Sthan Delete Karein
+                </button>
+              </div>
+            </div>
+          </form>
+        )}
+      </div>
     </div>
   );
 }

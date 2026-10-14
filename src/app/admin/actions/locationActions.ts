@@ -16,7 +16,6 @@ function finish(section: 'map' | 'loc', message: string): never {
   redirect(`/admin?${section}=1&msg=${encodeURIComponent(message)}`);
 }
 
-// हर पंक्ति: "हिंदी नाम | English name"
 function parseNames(text: string) {
   const seen = new Set<string>();
   const out: { nameHi: string; nameEn: string }[] = [];
@@ -34,7 +33,6 @@ function parseNames(text: string) {
   return out.slice(0, 2000);
 }
 
-// हर पंक्ति: "1 | वार्ड का नाम"
 function parseWards(text: string) {
   const seen = new Set<number>();
   const out: { wardNo: number; nameHi: string }[] = [];
@@ -50,7 +48,6 @@ function parseWards(text: string) {
   return out;
 }
 
-/** पोल को जिला / समिति / पंचायत से जोड़ना */
 export async function assignPollLocation(formData: FormData) {
   if (!(await isAdmin())) return;
 
@@ -127,7 +124,6 @@ export async function assignPollLocation(formData: FormData) {
   finish('map', message);
 }
 
-/** तहसीलें जोड़ना */
 export async function addTehsils(formData: FormData) {
   if (!(await isAdmin())) return;
 
@@ -154,7 +150,6 @@ export async function addTehsils(formData: FormData) {
   finish('loc', message);
 }
 
-/** पंचायत समितियाँ जोड़ना */
 export async function addSamitis(formData: FormData) {
   if (!(await isAdmin())) return;
 
@@ -181,7 +176,6 @@ export async function addSamitis(formData: FormData) {
   finish('loc', message);
 }
 
-/** ग्राम पंचायतें जोड़ना */
 export async function addGramPanchayats(formData: FormData) {
   if (!(await isAdmin())) return;
 
@@ -222,7 +216,6 @@ export async function addGramPanchayats(formData: FormData) {
   finish('loc', message);
 }
 
-/** पंचायत समिति वार्ड जोड़ना */
 export async function addSamitiWards(formData: FormData) {
   if (!(await isAdmin())) return;
 
@@ -231,7 +224,7 @@ export async function addSamitiWards(formData: FormData) {
   let message = '';
 
   if (!samitiId || items.length === 0) {
-    message = 'पंचायत समिति चुनें और वार्ड नंबर (जैसे 1 | नाम) लिखें।';
+    message = 'पंचायत समिति चुनें और वार्ड नंबर लिखें।';
   } else {
     try {
       const result = await db.samitiWard.createMany({
@@ -249,7 +242,6 @@ export async function addSamitiWards(formData: FormData) {
   finish('loc', message);
 }
 
-/** वार्ड के अंतर्गत गाँव जोड़ना */
 export async function addVillages(formData: FormData) {
   if (!(await isAdmin())) return;
 
@@ -258,7 +250,7 @@ export async function addVillages(formData: FormData) {
   let message = '';
 
   if (!wardId || items.length === 0) {
-    message = 'समिति वार्ड चुनें और कम से कम एक गाँव का नाम लिखें।';
+    message = 'समिति वार्ड चुनें और गाँव का नाम लिखें।';
   } else {
     try {
       const result = await db.village.createMany({
@@ -280,7 +272,6 @@ export async function addVillages(formData: FormData) {
   finish('loc', message);
 }
 
-/** जिला परिषद वार्ड जोड़ना */
 export async function addZilaWards(formData: FormData) {
   if (!(await isAdmin())) return;
 
@@ -289,7 +280,7 @@ export async function addZilaWards(formData: FormData) {
   let message = '';
 
   if (!districtId || items.length === 0) {
-    message = 'जिला चुनें और वार्ड नंबर (जैसे 1 | नाम) लिखें।';
+    message = 'जिला चुनें और वार्ड नंबर लिखें।';
   } else {
     try {
       const result = await db.zilaParishadWard.createMany({
@@ -307,7 +298,6 @@ export async function addZilaWards(formData: FormData) {
   finish('loc', message);
 }
 
-/** स्थान का नाम या स्पेलिंग सुधारना (Update) */
 export async function updateLocationName(formData: FormData) {
   if (!(await isAdmin())) return;
 
@@ -318,7 +308,7 @@ export async function updateLocationName(formData: FormData) {
   let message = '';
 
   if (!id || !nameHi) {
-    message = 'स्थान की आईडी और नया हिंदी नाम दर्ज करना अनिवार्य है।';
+    message = 'Sthan ki ID aur naya naam darj karna anivary hai.';
     finish('loc', message);
   }
 
@@ -337,10 +327,47 @@ export async function updateLocationName(formData: FormData) {
       await db.zilaParishadWard.update({ where: { id }, data: { nameHi } });
     }
 
-    message = 'स्थान का नाम सफलतापूर्वक सुधार/अपडेट कर दिया गया है।';
+    message = 'Sthan ka naam safalpurvak update kar diya gaya hai.';
   } catch (error) {
-    console.error('नाम अपडेट त्रुटि:', error);
-    message = 'नाम अपडेट करने में त्रुटि हुई।';
+    console.error('Naam update truti:', error);
+    message = 'Naam update karne me truti hui.';
+  }
+
+  finish('loc', message);
+}
+
+/** Sthan ko Delete karne ke liye action */
+export async function deleteLocationItem(formData: FormData) {
+  if (!(await isAdmin())) return;
+
+  const type = val(formData, 'locType');
+  const id = val(formData, 'locId');
+  let message = '';
+
+  if (!id || !type) {
+    message = 'Kripya delete karne ke liye sthan chunein.';
+    finish('loc', message);
+  }
+
+  try {
+    if (type === 'tehsil') {
+      await db.tehsil.delete({ where: { id } });
+    } else if (type === 'samiti') {
+      await db.panchayatSamiti.delete({ where: { id } });
+    } else if (type === 'gp') {
+      await db.gramPanchayat.delete({ where: { id } });
+    } else if (type === 'village') {
+      await db.village.delete({ where: { id } });
+    } else if (type === 'samitiWard') {
+      await db.samitiWard.delete({ where: { id } });
+    } else if (type === 'zilaWard') {
+      await db.zilaParishadWard.delete({ where: { id } });
+    }
+
+    message = 'Sthan safalpurvak delete kar diya gaya hai.';
+  } catch (error) {
+    console.error('Sthan delete truti:', error);
+    message = 'Sthan delete karne me truti hui (ho sakta hai isse jude anya data maujud hon).';
   }
 
   finish('loc', message);
