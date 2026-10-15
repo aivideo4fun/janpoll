@@ -29,6 +29,7 @@ export default async function ZilaParishadIndexPage({ params }: Props) {
 
   let districtNameHi = decodedDistrict;
   let districtId = '';
+  let districtSlug = district;
   let wardsWithPolls: Array<{
     id: string;
     wardNo: number;
@@ -45,9 +46,9 @@ export default async function ZilaParishadIndexPage({ params }: Props) {
     if (districtRecord) {
       districtNameHi = districtRecord.nameHi;
       districtId = districtRecord.id;
+      districtSlug = districtRecord.nameEn.toLowerCase().replace(/\s+/g, '-');
       const wards = districtRecord.zilaWards;
 
-      // सिर्फ़ इसी जिले के वार्डों के सक्रिय पोल
       const polls = await db.poll.findMany({
         where: { active: true, zilaWardId: { in: wards.map((w) => w.id) } },
         include: { options: true },
@@ -119,7 +120,8 @@ export default async function ZilaParishadIndexPage({ params }: Props) {
                 {pollCount > 0 && (
                   <div className="space-y-3">
                     {ward.polls.map((poll) => {
-                      const pollUrl = poll.slug ? `/poll/${poll.id}/${poll.slug}` : `/poll/${poll.id}`;
+                      // 🟢 Zila Parishad ke liye short aur clean URL
+                      const pollUrl = `/zila/${districtSlug}/${ward.id}`;
                       const totalVotes = poll.options.reduce((s, o) => s + (o.voteCount || 0), 0);
 
                       return (

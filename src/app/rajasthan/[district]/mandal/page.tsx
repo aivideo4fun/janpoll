@@ -19,8 +19,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const decodedDistrict = safeDecode(district);
   return {
     title: `${decodedDistrict.toUpperCase()} पंचायत समिति (मंडल) सदस्य चुनाव और लाइव पोल्स | JanPoll`,
-    description:
-      'अपनी पंचायत समिति चुनें, मंडल सदस्य चुनाव के लाइव ओपिनियन पोल देखें व नए पोल बनाएं।',
+    description: 'अपनी पंचायत समिति चुनें, मंडल सदस्य चुनाव के लाइव ओपिनियन पोल देखें व नए पोल बनाएं।',
   };
 }
 
@@ -30,6 +29,7 @@ export default async function MandalIndexPage({ params }: Props) {
 
   let districtNameHi = decodedDistrict;
   let districtId = '';
+  let districtSlug = district;
   let mandalsWithPolls: Array<{
     id: string;
     nameHi: string;
@@ -46,9 +46,10 @@ export default async function MandalIndexPage({ params }: Props) {
     if (districtRecord) {
       districtNameHi = districtRecord.nameHi;
       districtId = districtRecord.id;
+      // Agar district me slug field nahi hai toh nameEn ko slug bana lenge
+      districtSlug = districtRecord.nameEn.toLowerCase().replace(/\s+/g, '-');
       const mandals = districtRecord.panchayatSamitis;
 
-      // इसी जिले के सक्रिय पोल: नए पोल samitiId से, पुराने पोल (सिर्फ़ नाम सेव था) जिले के नाम से
       const polls = await db.poll.findMany({
         where: {
           active: true,
@@ -107,6 +108,7 @@ export default async function MandalIndexPage({ params }: Props) {
           {mandalsWithPolls.map((mandal) => {
             const pollCount = mandal.polls.length;
             const hasReachedLimit = pollCount >= MAX_POLLS;
+            const samitiSlug = mandal.nameEn.toLowerCase().replace(/\s+/g, '-');
 
             return (
               <div
@@ -128,7 +130,8 @@ export default async function MandalIndexPage({ params }: Props) {
                 {pollCount > 0 && (
                   <div className="space-y-3">
                     {mandal.polls.map((poll) => {
-                      const pollUrl = poll.slug ? `/poll/${poll.id}/${poll.slug}` : `/poll/${poll.id}`;
+                      // 🟢 Short aur clean URL format (Jaise aapne manga tha)
+                      const pollUrl = `/samiti/${districtSlug}/${samitiSlug}/${poll.id}`;
                       const totalVotes = poll.options.reduce((s, o) => s + (o.voteCount || 0), 0);
 
                       return (
