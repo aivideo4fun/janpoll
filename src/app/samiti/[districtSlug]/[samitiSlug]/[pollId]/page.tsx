@@ -48,7 +48,7 @@ export default async function SamitiPollDetailPage({ params }: PageProps) {
             {poll.question}
           </h1>
           <p className="text-xs text-slate-500">
-            प्रसारणकर्ता: {poll.creatorName || 'अज्ञात यूजर'} | स्थिति: {poll.active ? 'सक्रिय (Active)' : 'समाप्त'}
+            स्थिति: {poll.active ? 'सक्रिय (Active)' : 'समाप्त'}
           </p>
         </div>
 

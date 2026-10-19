@@ -4,13 +4,14 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { db } from '@/lib/db';
 import { isAdmin } from '@/lib/admin-auth';
+import { getRegionByCode } from '@/lib/regions';
 
 function val(formData: FormData, key: string) {
   return String(formData.get(key) ?? '').trim();
 }
 
 function finish(section: 'map' | 'loc', message: string): never {
-  revalidatePath('/admin');
+  revalidatePath('/admin', 'layout');
   revalidatePath('/');
   revalidatePath('/rajasthan', 'layout');
   redirect(`/admin?${section}=1&msg=${encodeURIComponent(message)}`);
@@ -63,7 +64,7 @@ export async function assignPollLocation(formData: FormData) {
   try {
     const district = await db.district.findUnique({
       where: { id: districtId },
-      select: { nameHi: true },
+      select: { id: true, nameHi: true, stateCode: true },
     });
 
     if (!district) {
@@ -103,6 +104,10 @@ export async function assignPollLocation(formData: FormData) {
       await db.poll.update({
         where: { id: pollId },
         data: {
+          districtId: district.id,
+          samitiId,
+          scope: 'STATE',
+          stateCode: district.stateCode || 'RJ',
           districtName: district.nameHi,
           samitiName,
           gramPanchayatName,
@@ -154,6 +159,8 @@ export async function addSamitis(formData: FormData) {
   if (!(await isAdmin())) return;
 
   const districtId = val(formData, 'districtId');
+  const tehsilId = val(formData, 'tehsilId');
+  if (tehsilId && !(await db.tehsil.findFirst({ where: { id: tehsilId, districtId } }))) finish('loc', 'तहसील और जिला मेल नहीं खाते।');
   const items = parseNames(val(formData, 'items'));
   let message = '';
 
@@ -162,7 +169,7 @@ export async function addSamitis(formData: FormData) {
   } else {
     try {
       const result = await db.panchayatSamiti.createMany({
-        data: items.map((i) => ({ districtId, nameHi: i.nameHi, nameEn: i.nameEn })),
+        data: items.map((i) => ({ districtId, tehsilId: tehsilId || null, nameHi: i.nameHi, nameEn: i.nameEn })),
         skipDuplicates: true,
       });
       const skipped = items.length - result.count;
@@ -313,14 +320,21 @@ export async function updateLocationName(formData: FormData) {
   }
 
   try {
-    if (type === 'tehsil') {
-      await db.tehsil.update({ where: { id }, data: { nameHi, nameEn: nameEn || nameHi } });
+    if (type === 'district') {
+      await db.district.update({ where: { id }, data: { nameHi } });
+    } else if (type === 'tehsil') {
+      await db.tehsil.update({ where: { id }, data: { nameHi, ...(nameEn ? { nameEn } : {}) } });
     } else if (type === 'samiti') {
-      await db.panchayatSamiti.update({ where: { id }, data: { nameHi, nameEn: nameEn || nameHi } });
+      const tehsilId = val(formData, 'tehsilId');
+      if (formData.has('tehsilId') && tehsilId) {
+        const item = await db.panchayatSamiti.findUniqueOrThrow({ where: { id }, select: { districtId: true } });
+        if (!(await db.tehsil.findFirst({ where: { id: tehsilId, districtId: item.districtId } }))) throw new Error('Tehsil mismatch');
+      }
+      await db.panchayatSamiti.update({ where: { id }, data: { nameHi, ...(nameEn ? { nameEn } : {}), ...(formData.has('tehsilId') ? { tehsilId: tehsilId || null } : {}) } });
     } else if (type === 'gp') {
-      await db.gramPanchayat.update({ where: { id }, data: { nameHi, nameEn: nameEn || nameHi } });
+      await db.gramPanchayat.update({ where: { id }, data: { nameHi, ...(nameEn ? { nameEn } : {}) } });
     } else if (type === 'village') {
-      await db.village.update({ where: { id }, data: { nameHi, nameEn: nameEn || nameHi } });
+      await db.village.update({ where: { id }, data: { nameHi, ...(nameEn ? { nameEn } : {}) } });
     } else if (type === 'samitiWard') {
       await db.samitiWard.update({ where: { id }, data: { nameHi } });
     } else if (type === 'zilaWard') {
@@ -350,7 +364,24 @@ export async function deleteLocationItem(formData: FormData) {
   }
 
   try {
-    if (type === 'tehsil') {
+    if (formData.get('confirm') !== 'on') throw new Error('Confirmation required');
+    let references = 0;
+    if (type === 'district') {
+      const item = await db.district.findUniqueOrThrow({ where: { id } });
+      references = await db.tehsil.count({where:{districtId:id}}) + await db.panchayatSamiti.count({where:{districtId:id}}) + await db.gramPanchayat.count({where:{districtId:id}}) + await db.zilaParishadWard.count({where:{districtId:id}}) + await db.assemblyDistrict.count({where:{districtId:id}}) + await db.poll.count({where:{OR:[{districtId:id},{districtName:{in:[item.nameHi,item.nameEn]}}]}});
+    } else if (type === 'tehsil') references = await db.panchayatSamiti.count({where:{tehsilId:id}});
+    else if (type === 'samiti') {
+      const item=await db.panchayatSamiti.findUniqueOrThrow({where:{id}});
+      references=await db.gramPanchayat.count({where:{samitiId:id}})+await db.samitiWard.count({where:{samitiId:id}})+await db.poll.count({where:{OR:[{samitiId:id},{samitiName:{in:[item.nameHi,item.nameEn]}}]}});
+    } else if (type === 'gp') {
+      const item=await db.gramPanchayat.findUniqueOrThrow({where:{id}});
+      references=await db.poll.count({where:{OR:[{gramPanchayatId:id},{gramPanchayatName:{in:[item.nameHi,item.nameEn]}}]}});
+    } else if (type === 'samitiWard') references=await db.poll.count({where:{samitiWardId:id}})+await db.village.count({where:{wardId:id}});
+    else if (type === 'zilaWard') references=await db.poll.count({where:{zilaWardId:id}});
+    if(references>0) throw new Error('Location has linked data');
+    if (type === 'district') {
+      await db.district.delete({where:{id}});
+    } else if (type === 'tehsil') {
       await db.tehsil.delete({ where: { id } });
     } else if (type === 'samiti') {
       await db.panchayatSamiti.delete({ where: { id } });
@@ -371,4 +402,13 @@ export async function deleteLocationItem(formData: FormData) {
   }
 
   finish('loc', message);
+}
+export async function addDistricts(formData: FormData) {
+  if (!(await isAdmin())) throw new Error('Unauthorized');
+  const stateCode=val(formData,'stateCode');
+  if (!getRegionByCode(stateCode)) finish('loc','मान्य राज्य चुनें।');
+  const items=parseNames(val(formData,'items'));
+  let message='जिले नहीं जोड़े जा सके।';
+  try { const result=await db.district.createMany({data:items.map(item=>({...item,stateCode})),skipDuplicates:true});message=`${result.count} जिले जोड़े गए।`; } catch { message='जिला जोड़ने में त्रुटि हुई।'; }
+  finish('loc',message);
 }

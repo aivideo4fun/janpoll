@@ -1,10 +1,9 @@
-import { randomUUID } from 'crypto';
+import { randomUUID, randomBytes } from 'crypto';
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { creatorIdentity } from '@/lib/polls/owner';
 import { z } from 'zod';
 
 import { db } from '@/lib/db';
-import { googleAuthOptions } from '@/lib/google-auth';
 import { getRegionByCode } from '@/lib/regions';
 import { generateSlug } from '@/lib/slugify';
 
@@ -23,6 +22,7 @@ const createSchema = z.object({
 
 type SavedPoll = {
   creatorEmail: string | null;
+  creatorGuestHash: string | null;
   question: string;
   scope: string;
   stateCode: string | null;
@@ -111,15 +111,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const session = await getServerSession(googleAuthOptions);
-    const creatorEmail = session?.user?.email;
-
-    if (!creatorEmail) {
-      return NextResponse.json(
-        { message: 'पोल बनाने के लिए login करें।' },
-        { status: 401 },
-      );
-    }
+    const creator = await creatorIdentity(true);
+    const creatorEmail = creator.email;
 
     let raw: unknown;
 
@@ -167,6 +160,7 @@ export async function POST(request: Request) {
 
     const sameRequest = (poll: SavedPoll) =>
       poll.creatorEmail === creatorEmail &&
+      poll.creatorGuestHash === creator.guestHash &&
       poll.question === input.question &&
       poll.scope === 'STATE' &&
       poll.stateCode === region.code &&
@@ -212,10 +206,12 @@ export async function POST(request: Request) {
         data: {
           id: input.requestId,
           question: input.question,
+          creatorReference: `JP-${randomBytes(10).toString("hex").toUpperCase()}`,
           slug: `${base.slice(0, 450)}-${randomUUID()}`,
 
           creatorName: null,
           creatorEmail,
+          creatorGuestHash: creator.guestHash,
 
           scope: 'STATE',
           stateCode: region.code,

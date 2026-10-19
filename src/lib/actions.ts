@@ -10,7 +10,6 @@ import { googleAuthOptions } from '@/lib/google-auth';
 import { isPollOpen } from '@/lib/poll-utils';
 import {
   DEVICE_COOKIE,
-  DUPLICATE_WINDOW_HOURS,
   getVoterIdentity,
 } from '@/lib/voter';
 
@@ -90,6 +89,11 @@ export async function castVote(
 
     const result = await db.$transaction(
       async (tx): Promise<VoteResult> => {
+        if (!user && identity.ipHash) {
+          await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtextextended(${identity.ipHash}, 0))`;
+          const recentVotes = await tx.vote.count({ where: { ipAddress: identity.ipHash, createdAt: { gte: new Date(Date.now() - 60000) } } });
+          if (recentVotes >= 30) return { success: false, code: 'AUTH_REQUIRED', message: 'इस network से बहुत तेजी से votes आए हैं। Sign-in करें या कुछ देर बाद प्रयास करें।' };
+        }
         // इसी poll पर आने वाले voting requests को क्रम में चलाएँ।
         await tx.$queryRaw`
           SELECT "id"
@@ -137,6 +141,10 @@ export async function castVote(
           };
         }
 
+        if (!user && (!deviceSig || !identity.ipHash)) {
+          return { success: false, code: 'AUTH_REQUIRED', message: 'Guest सुरक्षा जाँच उपलब्ध नहीं है। Sign-in करके वोट दें।' };
+        }
+
         const previousVote = await tx.vote.findFirst({
           where: {
             pollId,
@@ -162,17 +170,11 @@ export async function castVote(
           identity.ipHash &&
           deviceSig
         ) {
-          const since = new Date(
-            Date.now() -
-              DUPLICATE_WINDOW_HOURS * 60 * 60 * 1000,
-          );
-
           const repeatedDevice = await tx.vote.findFirst({
             where: {
               pollId,
               ipAddress: identity.ipHash,
               deviceSig,
-              createdAt: { gte: since },
             },
             select: { id: true },
           });

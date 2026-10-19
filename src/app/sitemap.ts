@@ -2,6 +2,8 @@ import { MetadataRoute } from 'next';
 import { unstable_noStore as noStore } from 'next/cache';
 import { db } from '@/lib/db';
 
+import { REGIONS, regionHref } from '@/lib/regions';
+
 export const dynamic = 'force-dynamic';
 
 const baseUrl = 'https://janpoll.in';
@@ -49,7 +51,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // जिलों के पेज
   try {
-    const districts = await db.district.findMany({ select: { nameEn: true } });
+    const districts = await db.district.findMany({ where: { OR: [{ stateCode: 'RJ' }, { stateCode: null }] }, select: { nameEn: true } });
     districtUrls = districts.map((district) => ({
       url: `${baseUrl}/rajasthan/${encodeURIComponent(district.nameEn.toLowerCase())}`,
       lastModified: now,
@@ -79,5 +81,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('sitemap: पोल लोड करने में त्रुटि:', error);
   }
 
-  return [...staticUrls, ...districtUrls, ...pollUrls];
+  const articles = await db.article.findMany({ where: { published: true }, select: { slug: true, updatedAt: true } }).catch(() => []);
+  return [...staticUrls, ...REGIONS.map(region => ({ url: baseUrl + regionHref(region) })), { url: baseUrl + '/articles' }, ...articles.map(article => ({ url: baseUrl + '/articles/' + article.slug, lastModified: article.updatedAt })), ...districtUrls, ...pollUrls];
 }

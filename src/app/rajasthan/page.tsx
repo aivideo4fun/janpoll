@@ -1,38 +1,76 @@
+import Link from 'next/link';
 import type { Metadata } from 'next';
-
-import StatePollBrowser, {
-  type BrowserSearch,
-} from '@/components/StatePollBrowser';
-
-import { getRegionByCode } from '@/lib/regions';
-
-export const dynamic = 'force-dynamic';
+import { db } from '@/lib/db';
+import SmartBackLink from '@/components/SmartBackLink';
 
 export const metadata: Metadata = {
-  title: 'राजस्थान के पोल और स्थानीय जनमत | JanPoll India',
-  description:
-    'राजस्थान में चुनाव, राजनीति, सामाजिक मुद्दों और खेल के पोल देखें। अपना जिला, विधानसभा या पंचायत क्षेत्र चुनें।',
-  alternates: {
-    canonical: 'https://janpoll.in/rajasthan',
+  title: 'राजस्थान जिला चयन और पंचायत राज चुनाव ओपिनियन पोल | JanPoll',
+  description: 'राजस्थान के सभी जिलों, तहसीलों, और ग्राम पंचायतों के लाइव पंचायत राज चुनाव ओपिनियन पोल देखें और अपनी राय साझा करें।',
+  keywords: ['rajasthan districts poll', 'rajasthan election 2026', 'sarpanch chunav rajasthan', 'janpoll rajasthan'],
+  openGraph: {
+    title: 'राजस्थान जिला चयन और पंचायत राज चुनाव ओपिनियन पोल | JanPoll',
+    description: 'अपने जिले और ग्राम पंचायत के चुनाव पर ऑनलाइन वोटिंग करें।',
+    url: 'https://janpoll.in/rajasthan',
+    siteName: 'JanPoll',
+    locale: 'hi_IN',
+    type: 'website',
   },
 };
 
-export default function RajasthanPage({
-  searchParams,
-}: {
-  searchParams?: BrowserSearch;
-}) {
-  const region = getRegionByCode('RJ');
+export default async function RajasthanStatePage() {
+  let districts: { id: string; nameEn: string; nameHi: string }[] = [];
 
-  if (!region) {
-    throw new Error('Rajasthan region configuration missing.');
+  try {
+    districts = await db.district.findMany({
+      where: { OR: [{ stateCode: 'RJ' }, { stateCode: null }] },
+      orderBy: { nameHi: 'asc' },
+    });
+  } catch (error) {
+    console.error('Error fetching districts:', error);
   }
 
   return (
-    <StatePollBrowser
-      region={region}
-      basePath="/rajasthan"
-      searchParams={searchParams}
-    />
+    <div className="max-w-4xl mx-auto px-4 py-8 text-gray-800">
+      <div className="mb-6">
+        <SmartBackLink fallbackHref="/" className="inline-flex items-center gap-2 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-4 py-2 rounded-xl text-sm font-bold transition">
+          ← पिछले पेज पर वापस जाएं
+        </SmartBackLink>
+      </div>
+
+      <div className="bg-gradient-to-r from-emerald-800 to-green-700 text-white rounded-3xl p-6 md:p-8 mb-8 text-center shadow-md">
+        <h1 className="text-2xl md:text-3xl font-black mb-2">
+          📍 राजस्थान जिला चयन (District Selection)
+        </h1>
+        <p className="text-emerald-100 text-xs md:text-sm">
+          अपनी स्थानीय पंचायत और निकाय चुनावों के रुझान देखने के लिए अपने जिले का चयन करें।
+        </p>
+      </div>
+
+      {districts.length === 0 ? (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 p-6 rounded-2xl text-center">
+          डेटाबेस में अभी जिलों की सूची लोड नहीं की गई है। कृपया थोड़ी देर बाद प्रयास करें।
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {districts.map((district) => (
+            <Link
+              key={district.id}
+              href={`/rajasthan/${district.nameEn.toLowerCase()}`}
+              className="bg-white hover:bg-emerald-50/60 p-5 rounded-2xl border border-emerald-100 shadow-sm hover:shadow transition flex items-center justify-between group"
+            >
+              <div>
+                <h3 className="text-base font-bold text-emerald-900 group-hover:text-emerald-700">
+                  {district.nameHi}
+                </h3>
+                <span className="text-xs text-gray-400 font-medium">{district.nameEn}</span>
+              </div>
+              <span className="text-emerald-600 font-bold text-sm bg-emerald-50 px-3 py-1.5 rounded-xl group-hover:bg-emerald-700 group-hover:text-white transition">
+                चुनें →
+              </span>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

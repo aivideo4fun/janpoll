@@ -1,10 +1,9 @@
-import { randomUUID } from 'crypto';
+import { randomUUID, randomBytes } from 'crypto';
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { creatorIdentity } from '@/lib/polls/owner';
 import { z } from 'zod';
 
 import { db } from '@/lib/db';
-import { googleAuthOptions } from '@/lib/google-auth';
 import { generateSlug } from '@/lib/slugify';
 
 export const dynamic = 'force-dynamic';
@@ -53,14 +52,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const session = await getServerSession(googleAuthOptions);
-
-    if (!session?.user?.email) {
-      return NextResponse.json(
-        { message: 'पोल बनाने के लिए पहले sign-in करें।' },
-        { status: 401 },
-      );
-    }
+    const creator = await creatorIdentity(true);
 
     let body: unknown;
 
@@ -102,7 +94,7 @@ export async function POST(request: Request) {
     const district = await db.district.findFirst({
       where: {
         id: input.districtId,
-        stateCode: 'RJ',
+        OR: [{ stateCode: 'RJ' }, { stateCode: null }],
       },
       select: {
         id: true,
@@ -249,11 +241,13 @@ export async function POST(request: Request) {
     const poll = await db.poll.create({
       data: {
         question: input.question,
+          creatorReference: `JP-${randomBytes(10).toString("hex").toUpperCase()}`,
         slug: `${slugBase.slice(0, 450)}-${randomUUID()}`,
 
         // पहचान browser के payload से नहीं ली जाएगी।
-        creatorName: session.user.name ?? null,
-        creatorEmail: session.user.email,
+        creatorName: null,
+        creatorEmail: creator.email,
+        creatorGuestHash: creator.guestHash,
 
         scope: 'STATE',
         stateCode: 'RJ',

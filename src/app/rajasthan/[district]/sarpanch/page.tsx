@@ -22,6 +22,7 @@ export default async function DistrictSarpanchPage({ params }: Props) {
     districtData = await db.district.findFirst({
       where: { nameEn: { equals: district, mode: 'insensitive' } },
       include: {
+        panchayatSamitis: { orderBy: { nameHi: 'asc' } },
         tehsils: {
           include: {
             panchayatSamitis: {
@@ -38,9 +39,8 @@ export default async function DistrictSarpanchPage({ params }: Props) {
   const displayNameHi = districtData ? districtData.nameHi : district;
   
   // सभी तहसीलों की पंचायत समितियों को एक सूची में एकत्र करना ताकि UI साफ और व्यवस्थित दिखे
-  const allSamitis = districtData?.tehsils
-    ? districtData.tehsils.flatMap((t) => t.panchayatSamitis)
-    : [];
+  const allSamitis = districtData?.panchayatSamitis || [];
+  const tehsilNames = new Map((districtData?.tehsils || []).map(tehsil => [tehsil.id, tehsil.nameHi]));
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 text-gray-800">
@@ -69,7 +69,7 @@ export default async function DistrictSarpanchPage({ params }: Props) {
         <div className="bg-amber-50 border border-amber-200 text-amber-800 p-6 rounded-2xl text-center">
           इस जिले के लिए अभी पंचायत समिति का डेटा उपलब्ध नहीं है। आप चाहें तो अपना नया पोल बना सकते हैं!
           <div className="mt-4">
-            <Link href="/create" className="bg-amber-600 text-white font-bold px-4 py-2 rounded-xl text-xs inline-block">
+            <Link href={`/create/rajasthan?districtId=${districtData?.id || ''}`} className="bg-amber-600 text-white font-bold px-4 py-2 rounded-xl text-xs inline-block">
               ＋ नया पोल बनाएँ
             </Link>
           </div>
@@ -85,6 +85,7 @@ export default async function DistrictSarpanchPage({ params }: Props) {
                 <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded uppercase">
                   पंचायत समिति
                 </span>
+                <p className="mt-2 text-xs leading-6 text-slate-500">तहसील: {samiti.tehsilId ? tehsilNames.get(samiti.tehsilId) || 'उपलब्ध नहीं' : 'Mapping उपलब्ध नहीं'}</p>
                 <h3 className="text-lg font-bold text-emerald-900 mt-2">{samiti.nameHi}</h3>
                 <p className="text-xs text-gray-400">{samiti.nameEn}</p>
               </div>

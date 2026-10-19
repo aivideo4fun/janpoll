@@ -32,7 +32,7 @@ export async function GET(request: Request) {
   try {
     if (kind === 'district') {
       const items = await db.district.findMany({
-        where: { stateCode },
+        where: stateCode === 'RJ' ? { OR: [{ stateCode: 'RJ' }, { stateCode: null }] } : { stateCode },
         select: {
           id: true,
           nameHi: true,
@@ -54,7 +54,7 @@ export async function GET(request: Request) {
     const district = await db.district.findFirst({
       where: {
         id: districtId,
-        stateCode,
+        ...(stateCode === 'RJ' ? { OR: [{ stateCode: 'RJ' }, { stateCode: null }] } : { stateCode }),
       },
       select: { id: true },
     });

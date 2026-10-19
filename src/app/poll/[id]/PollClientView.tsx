@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { signIn } from 'next-auth/react';
 
 import {
   useEffect,
@@ -336,6 +337,10 @@ export default function PollClientView({
         router.refresh();
       } else {
         setMessage(response.message);
+        if (response.code === 'AUTH_REQUIRED') {
+          await signIn(undefined, { callbackUrl: window.location.href });
+          return;
+        }
 
         if (response.code === 'ALREADY_VOTED') {
           setHasVoted(true);
@@ -624,6 +629,7 @@ export default function PollClientView({
             </div>
           </section>
 
+          <section className="rounded-2xl border border-emerald-100 bg-emerald-50 p-5 print:hidden"><h2 className="font-semibold text-emerald-950">इस पोल में सहायता चाहिए?</h2><p className="mt-2 text-sm leading-7 text-slate-600">तकनीकी समस्या, गलत सामग्री या voting संबंधी शिकायत भेजें।</p><a href={`mailto:support@janpoll.in?subject=${encodeURIComponent('Poll support')}&body=${encodeURIComponent(poll.question + '\nhttps://janpoll.in/poll/' + poll.id + '\n\nसमस्या: ')}`} className="mt-3 inline-flex min-h-11 items-center rounded-xl bg-emerald-800 px-5 text-sm text-white">Support / शिकायत भेजें</a></section>
           {/* Advertisement last */}
           <section
             aria-label="विज्ञापन"

@@ -166,6 +166,8 @@ export default function Navbar() {
                 { href: '/', label: 'होम' },
                 { href: '/states', label: 'पोल देखें' },
                 { href: createHref, label: '＋ पोल बनाएँ' },
+                { href: '/my-polls', label: 'मेरे पोल / Reference IDs' },
+                { href: '/articles', label: 'लेख और विश्लेषण' },
                 { href: '/profile', label: 'मेरी प्रोफाइल / Login' },
               ].map((item) => (
                 <Link

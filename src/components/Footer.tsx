@@ -48,15 +48,15 @@ async function FooterContent() {
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-baseline gap-2">
               <span className="text-2xl sm:text-3xl font-black tracking-tight text-white">JANPOLL</span>
-              <span className="text-xs sm:text-sm font-bold text-emerald-400 bg-emerald-900/60 px-2 py-0.5 rounded-md">राजस्थान</span>
+              <span className="text-xs sm:text-sm font-bold text-emerald-400 bg-emerald-900/60 px-2 py-0.5 rounded-md">INDIA</span>
             </div>
             
             <p className="text-xs sm:text-sm text-emerald-100/80 font-medium">
-              राजस्थान की जनता की राय, एक जगह।
+              भारत की जनता की राय, एक जगह।
             </p>
 
             <p className="text-xs text-gray-300 leading-relaxed max-w-md">
-              JanPoll.in एक स्वतंत्र जनमत मंच है जहाँ आप राजस्थान के स्थानीय मुद्दों, ग्राम पंचायत, पंचायत समिति और जिला परिषद पर अपनी राय साझा कर सकते हैं।
+              JanPoll.in एक स्वतंत्र जनमत मंच है जहाँ आप अपने राज्य और स्थानीय मुद्दों पर अपनी राय साझा कर सकते हैं। राजस्थान की पंचायत और निकाय hierarchy भी उपलब्ध है.
             </p>
 
             <div className="pt-2 flex flex-wrap gap-2">
@@ -74,6 +74,7 @@ async function FooterContent() {
             </h3>
             <ul className="space-y-2.5 text-xs text-gray-300 font-medium">
               <li><Link href="/" className="hover:text-emerald-400 transition flex items-center gap-1.5">› होम पेज</Link></li>
+              <li><Link href="/articles" className="hover:text-emerald-400 transition">› लेख और विश्लेषण</Link></li>
               <li><Link href="/create" className="hover:text-emerald-400 transition flex items-center gap-1.5">› पोल बनाएं</Link></li>
               <li><Link href="/rajasthan" className="hover:text-emerald-400 transition flex items-center gap-1.5">› लोकप्रिय पोल</Link></li>
               <li><Link href="/privacy-policy" className="hover:text-emerald-400 transition flex items-center gap-1.5">› गोपनीयता नीति</Link></li>

@@ -6,8 +6,7 @@ import { getServerSession } from 'next-auth';
 import { googleAuthOptions } from '@/lib/google-auth';
 export const DEVICE_COOKIE = 'jp_device';
 
-// एक ही नेटवर्क + एक ही डिवाइस से, एक पोल में इतने घंटों के भीतर दोबारा वोट नहीं।
-// बढ़ाने पर सख्ती बढ़ेगी, पर एक ही वाई-फाई पर एक जैसे दो फ़ोन वालों के रुकने का खतरा भी।
+// Legacy exported constant retained for compatibility. Current duplicate checks cover the full poll lifetime.
 export const DUPLICATE_WINDOW_HOURS = 6;
 
 function normalizeIp(raw: string): string {
@@ -33,7 +32,14 @@ function normalizeIp(raw: string): string {
 // तय न हो तो IP का उपयोग बंद रहता है, ताकि गलत IP से असली लोग न रुकें।
 async function getClientIp(): Promise<string | null> {
   const headerName = process.env.TRUSTED_IP_HEADER?.trim().toLowerCase();
-  if (!headerName) return null;
+  if (!headerName) {
+    if (process.env.NODE_ENV === 'development') {
+      const requestHeaders = await headers();
+      const host = requestHeaders.get('host') || '';
+      if (/^(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/.test(host)) return '127.0.0.1';
+    }
+    return null;
+  }
 
   const h = await headers();
   const value = h.get(headerName);
@@ -66,7 +72,7 @@ export async function getVoterIdentity() {
   };
 }
 
-/** दूसरे ब्राउज़र/इनकॉग्निटो से दोहराया वोट: उसी पोल में, वही नेटवर्क + वही डिवाइस-हस्ताक्षर, हाल ही में */
+/** दूसरे ब्राउज़र/इनकॉग्निटो से दोहराया वोट: उसी पोल में, वही नेटवर्क + वही डिवाइस-हस्ताक्षर, पूरी poll अवधि में */
 export async function isRepeatVote(
   pollId: string,
   ipHash: string | null,
@@ -74,10 +80,8 @@ export async function isRepeatVote(
 ) {
   if (!ipHash || !deviceSig) return false;
 
-  const since = new Date(Date.now() - DUPLICATE_WINDOW_HOURS * 60 * 60 * 1000);
-
   const vote = await db.vote.findFirst({
-    where: { pollId, ipAddress: ipHash, deviceSig, createdAt: { gte: since } },
+    where: { pollId, ipAddress: ipHash, deviceSig },
     select: { id: true },
   });
 

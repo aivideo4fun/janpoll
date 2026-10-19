@@ -53,6 +53,7 @@ export default async function MandalIndexPage({ params }: Props) {
       const polls = await db.poll.findMany({
         where: {
           active: true,
+          electionType: 'samiti',
           OR: [
             { samitiId: { in: mandals.map((m) => m.id) } },
             {

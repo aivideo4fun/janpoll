@@ -26,7 +26,7 @@ export async function GET(request: Request) {
     if (type === 'samiti' && districtId) {
       const items = await db.panchayatSamiti.findMany({
         where: { districtId },
-        select: { id: true, nameHi: true, nameEn: true },
+        select: { id: true, nameHi: true, nameEn: true, tehsilId: true },
         orderBy: { nameHi: 'asc' },
       });
       return NextResponse.json({ items });

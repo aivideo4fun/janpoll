@@ -1,8 +1,9 @@
+import { matchesGramPanchayat } from '@/lib/polls/location-match';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
 import { db } from '@/lib/db';
-import { normalizeName, safeDecode } from '@/lib/location';
+import { safeDecode } from '@/lib/location';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,26 +71,10 @@ export default async function PanchayatPollingPage({ params }: Props) {
       // 🛠️ उन्नत और लचीली मैचिंग लॉजिक (Smart Matching)
       panchayatsWithPolls = panchayats.map((gp) => {
         const matchedPolls = polls.filter((p) => {
-          // 1. यदि gramPanchayatId सीधे मैच हो जाए
-          if (p.gramPanchayatId && Number(p.gramPanchayatId) === Number(gp.id)) {
-            return true;
-          }
-
-          if (!p.gramPanchayatName) return false;
-
-          const dbName = normalizeName(p.gramPanchayatName);
-          const hiName = normalizeName(gp.nameHi);
-          const enName = normalizeName(gp.nameEn);
-
-          // 2. यदि जिला या समिति नाम से भी संबंधित हो या नाम आपस में मेल खाते हों
-          return (
-            dbName === hiName ||
-            dbName === enName ||
-            dbName.includes(hiName) ||
-            hiName.includes(dbName) ||
-            dbName.includes(enName) ||
-            enName.includes(dbName)
-          );
+          return matchesGramPanchayat(p, gp, samitiRecord, {
+            id: samitiRecord.districtId,
+            ...samitiRecord.district,
+          });
         });
 
         return { ...gp, polls: matchedPolls };

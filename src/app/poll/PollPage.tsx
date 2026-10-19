@@ -106,6 +106,7 @@ export default async function PollPage({ params }: Props) {
       districtId: true,
       districtName: true,
       samitiId: true,
+      samitiName: true,
       gramPanchayatId: true,
       gramPanchayatName: true,
       samitiWardId: true,
@@ -130,10 +131,11 @@ export default async function PollPage({ params }: Props) {
     notFound();
   }
 
-  const region = getRegionByCode(poll.stateCode);
+  const legacyRajasthan = !poll.stateCode && Boolean(poll.districtId || poll.districtName || poll.gramPanchayatId);
+  const region = getRegionByCode(poll.stateCode) || (legacyRajasthan ? getRegionByCode('RJ') : undefined);
 
   const locationLabel =
-    poll.scope === 'NATIONAL'
+    poll.scope === 'NATIONAL' && !legacyRajasthan
       ? 'राष्ट्रीय जनमत'
       : [
           region?.name,
@@ -235,11 +237,25 @@ export default async function PollPage({ params }: Props) {
     createHref = `/create/public?${query.toString()}`;
   }
 
+  if (legacyRajasthan) {
+    const legacyQuery = new URLSearchParams({ state: 'rajasthan' });
+    if (poll.districtId) legacyQuery.set('districtId', poll.districtId);
+    if (poll.districtName) legacyQuery.set('district', poll.districtName);
+    if (poll.samitiId) legacyQuery.set('samitiId', poll.samitiId);
+    if (poll.samitiName) legacyQuery.set('samiti', poll.samitiName);
+    if (poll.gramPanchayatId) legacyQuery.set('gpId', poll.gramPanchayatId);
+    if (poll.gramPanchayatName) legacyQuery.set('gp', poll.gramPanchayatName);
+    if (poll.samitiWardId) legacyQuery.set('samitiWardId', poll.samitiWardId);
+    if (poll.zilaWardId) legacyQuery.set('zilaWardId', poll.zilaWardId);
+    if (poll.electionType) legacyQuery.set('electionType', poll.electionType);
+    createHref = '/create/rajasthan?' + legacyQuery.toString();
+  }
+
   const alreadyVoted = await hasAlreadyVoted(poll.id);
   const isOpen = isPollOpen(poll);
 
   const fallbackHref =
-    region && poll.scope === 'STATE'
+    region && (poll.scope === 'STATE' || legacyRajasthan)
       ? region.code === 'RJ'
         ? '/rajasthan'
         : `/state/${region.slug}`

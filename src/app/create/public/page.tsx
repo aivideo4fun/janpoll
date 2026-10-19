@@ -88,11 +88,6 @@ function CreateForm() {
 
     setError('');
 
-    if (status !== 'authenticated') {
-      setError('पहले login करें।');
-      return;
-    }
-
     if (!region) {
       setError('अपना राज्य चुनें।');
       return;
@@ -182,7 +177,7 @@ function CreateForm() {
       }
 
       completed = true;
-      router.push(`/poll/${encodeURIComponent(data.pollId)}`);
+      router.push(`/poll-created/${encodeURIComponent(data.pollId)}`);
     } catch (caught) {
       setError(
         caught instanceof Error
@@ -265,30 +260,7 @@ function CreateForm() {
           )}
         </section>
 
-        {status === 'loading' ? (
-          <p role="status" className="mt-6 text-sm leading-7">
-            Session जाँचा जा रहा है…
-          </p>
-        ) : status !== 'authenticated' ? (
-          <section className="mt-5 rounded-3xl border border-emerald-100 bg-white p-5 sm:p-7">
-            <h2 className="text-xl font-semibold leading-9 text-emerald-950">
-              पोल बनाने के लिए login करें
-            </h2>
-
-            <p className="mt-2 text-sm leading-7 text-slate-500">
-              Login के बाद सवाल और विकल्प भर सकते हैं।
-            </p>
-
-            <button
-              type="button"
-              onClick={login}
-              disabled={loginBusy || !region}
-              className={`${button} mt-5`}
-            >
-              {loginBusy ? 'खुल रहा है…' : 'Login / Continue →'}
-            </button>
-          </section>
-        ) : (
+        {status !== 'authenticated' && <section className="my-5 rounded-2xl border border-emerald-100 bg-white p-5"><p className="text-sm leading-7">बिना login भी poll बनाएँ। Guest poll इसी browser से manage होगा; site data हटने पर access खो सकता है।</p><button type="button" onClick={login} disabled={loginBusy || !region} className={`${button} mt-3`}>Sign in करके बनाएँ</button></section>}
           <form
             onSubmit={publish}
             className="mt-5 rounded-3xl border border-emerald-100 bg-white p-5 shadow-sm sm:p-7"
@@ -475,7 +447,6 @@ function CreateForm() {
               </p>
             </fieldset>
           </form>
-        )}
       </div>
     </main>
   );

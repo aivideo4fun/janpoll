@@ -45,7 +45,7 @@ type AdminSearchParams = {
   msg?: string;
 };
 
-type DistrictItem = { id: string; nameHi: string; nameEn: string };
+type DistrictItem = { id: string; nameHi: string; nameEn: string; stateCode?: string | null };
 
 export default async function AdminDashboard(props: {
   searchParams?: Promise<AdminSearchParams>;
@@ -74,7 +74,7 @@ export default async function AdminDashboard(props: {
     }
   }
 
-  const pollWhere = searchQuery ? { question: { contains: searchQuery } } : {};
+  const pollWhere = searchQuery ? { OR: [{ question: { contains: searchQuery } }, { creatorReference: searchQuery }, { id: searchQuery }] } : {};
 
   const [polls, totalPolls, messages, subscribers, totalSubscribers, voteSum, districts, coverage] =
     await Promise.all([
@@ -107,7 +107,7 @@ export default async function AdminDashboard(props: {
         'जिले',
         () =>
           db.district.findMany({
-            select: { id: true, nameHi: true, nameEn: true },
+            select: { id: true, nameHi: true, nameEn: true, stateCode: true },
             orderBy: { nameEn: 'asc' },
           }),
         [] as DistrictItem[]
@@ -137,6 +137,7 @@ export default async function AdminDashboard(props: {
         logoutAction={handleLogout}
       />
 
+      <nav className="mx-auto mt-6 grid max-w-7xl gap-3 px-4 sm:grid-cols-3"><Link href="/admin/polls" className="rounded-2xl border border-emerald-100 bg-white p-5 font-semibold text-emerald-900">State Poll Manager →</Link><Link href="/admin/locations" className="rounded-2xl border border-emerald-100 bg-white p-5 font-semibold text-emerald-900">Location Manager →</Link><Link href="/admin/content" className="rounded-2xl border border-emerald-100 bg-white p-5 font-semibold text-emerald-900">Articles & Updates →</Link></nav>
       <div className="mx-auto mt-8 max-w-7xl space-y-4 px-4 sm:px-6 lg:px-8">
         {flashMessage && (
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-semibold text-emerald-800">
@@ -278,7 +279,8 @@ export default async function AdminDashboard(props: {
             )}
           </form>
 
-          <PollsList
+          <Link href="/admin/poll-locations" className="my-4 inline-block rounded-xl bg-emerald-800 px-5 py-3 text-white">राजस्थान: Poll location audit →</Link>
+      <PollsList
             polls={polls}
             totalPolls={totalPolls}
             searchQuery={searchQuery}

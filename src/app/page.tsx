@@ -1,3 +1,4 @@
+import HomeContent from '@/components/HomeContent';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { db } from '@/lib/db';
@@ -472,6 +473,7 @@ export default async function HomePage() {
         </dl>
       </section>
 
+      <HomeContent kind="updates" />
       {/* BLOCK 2 — ABOUT + HOW IT WORKS */}
       <section
         className="jp-section jp-wrap jp-about"
@@ -552,7 +554,7 @@ export default async function HomePage() {
             </div>
 
             <Link
-              href="/polls"
+              href="/#live-polls"
               className="jp-text-link"
             >
               सभी पोल देखें
@@ -574,7 +576,7 @@ export default async function HomePage() {
 
             <Link
               className="jp-chip"
-              href="/archive"
+              href="/closed-polls"
             >
               <span aria-hidden="true">▤</span>
               पुराने परिणाम
@@ -596,7 +598,7 @@ export default async function HomePage() {
                 href={
                   category.slug === 'all'
                     ? '/#live-polls'
-                    : `/polls?category=${category.slug}`
+                    : '/#live-polls'
                 }
               >
                 <span aria-hidden="true">
@@ -760,6 +762,7 @@ export default async function HomePage() {
           </Link>
         </div>
       </section>
+      <HomeContent kind="articles" />
     </main>
   );
 }

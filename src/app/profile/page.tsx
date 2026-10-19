@@ -193,7 +193,8 @@ export default async function ProfilePage() {
               यहाँ अपना नाम अपडेट कर सकते हैं।
             </p>
 
-            <ProfileNameForm initialName={user.name ?? ''} />
+            <Link href="/my-polls" className="my-4 inline-flex min-h-11 items-center rounded-xl bg-emerald-800 px-5 text-white">मेरे पोल और Reference IDs →</Link>
+          <ProfileNameForm initialName={user.name ?? ''} />
 
             <div className="mt-7 border-t border-slate-100 pt-5">
               <p className="text-sm font-medium leading-7 text-slate-700">

@@ -6,8 +6,8 @@ import Providers from './providers';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://janpoll.in'),
-  title: 'JanPoll — राजस्थान की सबसे भरोसेमंद पब्लिक पोलिंग वेबसाइट',
-  description: 'राजस्थान के मुद्दों और चुनावों पर अपनी राय दें। Rajasthan public opinion poll, political surveys, and secure voting platform.',
+  title: 'JanPoll India — आपकी राय, जनता की आवाज़',
+  description: 'अपने राज्य और स्थानीय मुद्दों पर राय दें। JanPoll India एक स्वतंत्र public opinion मंच है।',
   keywords: [
     'Rajasthan public opinion poll',
     'Rajasthan political survey online',
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'JanPoll — आपकी राय, जनता की आवाज़',
-    description: 'राजस्थान के लोगों की राय जानिए और अपनी राय दें।',
+    description: 'भारत के राज्यों और स्थानीय मुद्दों पर लोगों की राय जानिए।',
     url: 'https://janpoll.in',
     siteName: 'JanPoll',
     locale: 'hi_IN',

@@ -133,7 +133,7 @@ export async function editPoll(formData: FormData) {
       }
     });
 
-    revalidatePath('/admin');
+    revalidatePath('/admin', 'layout');
     revalidatePath('/');
     revalidatePath('/closed-polls');
     revalidatePath(`/poll/${pollId}`);
@@ -149,7 +149,7 @@ export async function deletePoll(formData: FormData) {
 
   try {
     await db.poll.delete({ where: { id: pollId } });
-    revalidatePath('/admin');
+    revalidatePath('/admin', 'layout');
     revalidatePath('/');
   } catch (error) {
     console.error('पोल हटाने में त्रुटि:', error);
@@ -167,7 +167,7 @@ export async function addPollOption(formData: FormData) {
     await db.pollOption.create({
       data: { pollId, text: optionText, voteCount: 0 },
     });
-    revalidatePath('/admin');
+    revalidatePath('/admin', 'layout');
     revalidatePath(`/poll/${pollId}`);
   } catch (error) {
     console.error('विकल्प जोड़ने में त्रुटि:', error);
@@ -181,7 +181,7 @@ export async function deleteMessage(formData: FormData) {
 
   try {
     await db.contactMessage.delete({ where: { id: msgId } });
-    revalidatePath('/admin');
+    revalidatePath('/admin', 'layout');
   } catch (error) {
     console.error('संदेश हटाने में त्रुटि:', error);
   }

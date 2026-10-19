@@ -66,6 +66,8 @@ export default function PollsList({
                 <div className="flex flex-col gap-5">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0">
+                      {poll.creatorReference && <p className="mb-2 break-all text-xs font-mono text-emerald-800">Creator reference: {poll.creatorReference}</p>}
+                      {poll.deletionStatus === "REQUESTED" && <p className="mb-2 text-sm text-amber-800">Deletion requested · payment verification pending</p>}
                       <div className="mb-2 flex flex-wrap items-center gap-2">
                         <span
                           className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${
