@@ -2,7 +2,8 @@ import 'server-only';
 import { createHash } from 'crypto';
 import { cookies, headers } from 'next/headers';
 import { db } from '@/lib/db';
-
+import { getServerSession } from 'next-auth';
+import { googleAuthOptions } from '@/lib/google-auth';
 export const DEVICE_COOKIE = 'jp_device';
 
 // एक ही नेटवर्क + एक ही डिवाइस से, एक पोल में इतने घंटों के भीतर दोबारा वोट नहीं।
@@ -86,10 +87,34 @@ export async function isRepeatVote(
 /** पोल पेज पर: क्या इसी ब्राउज़र (कुकी) ने इस पोल में वोट दिया है? (IP से किसी को नहीं रोकते) */
 export async function hasAlreadyVoted(pollId: string) {
   const deviceId = await getDeviceId();
-  if (!deviceId) return false;
+  const session = await getServerSession(googleAuthOptions);
 
-  const vote = await db.vote.findUnique({
-    where: { pollId_anonymousUserId: { pollId, anonymousUserId: deviceId } },
+  const email = session?.user?.email;
+
+  const user = email
+    ? await db.user.findUnique({
+        where: { email },
+        select: { id: true },
+      })
+    : null;
+
+  if (!deviceId && !user) return false;
+
+  const vote = await db.vote.findFirst({
+    where: {
+      pollId,
+      OR: [
+        ...(deviceId
+          ? [{ anonymousUserId: deviceId }]
+          : []),
+        ...(user
+          ? [
+              { userId: user.id },
+              { anonymousUserId: `user:${user.id}` },
+            ]
+          : []),
+      ],
+    },
     select: { id: true },
   });
 

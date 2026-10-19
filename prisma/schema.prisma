@@ -1,49 +1,74 @@
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  // Connection pool/timeout DATABASE_URL me configure karo (e.g. ?connection_limit=10&pool_timeout=20)
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 generator client {
   provider = "prisma-client-js"
 }
 
+enum PollScope {
+  NATIONAL
+  STATE
+}
+
 model Poll {
-  id                String   @id @default(uuid())
-  slug              String?  @db.VarChar(500)
-  question          String   @db.VarChar(500)
-  creatorName       String?  @db.VarChar(100)
-  creatorEmail      String?  @db.VarChar(255)
-  isVerified        Boolean  @default(false)
-  creatorIp         String?  @db.VarChar(45)
-  deadlineDays      Int      @default(3)
-  active            Boolean  @default(true)
+  id           String  @id @default(uuid())
+  slug         String? @unique @db.VarChar(500)
+  question     String  @db.VarChar(500)
+  creatorName  String? @db.VarChar(100)
+  creatorEmail String? @db.VarChar(255)
+  creatorIp    String? @db.VarChar(45)
 
-  // Location (purane fields: jaise the waise, sarpanch isi par chalta hai)
-  districtName      String?  @db.VarChar(100)
-  samitiName        String?  @db.VarChar(100)
-  gramPanchayatName String?  @db.VarChar(100)
+  isVerified   Boolean @default(false)
+  deadlineDays Int     @default(3)
+  active       Boolean @default(true)
+
+  scope     PollScope @default(NATIONAL)
+  stateCode String?   @db.VarChar(10)
+  shareCode String?   @unique @db.VarChar(16)
+
+  categoryType  String  @default("non-political")
+  requiresLogin Boolean @default(false)
+  topic         String? @db.VarChar(30)
+
+  termsAgreed     Boolean   @default(false)
+  termsVersion    String?   @db.VarChar(30)
+  termsAcceptedAt DateTime?
+
+  districtName      String? @db.VarChar(100)
+  samitiName        String? @db.VarChar(100)
+  gramPanchayatName String? @db.VarChar(100)
   gramPanchayatId   String?
-  electionType      String?  @default("sarpanch") @db.VarChar(50) // 'sarpanch' | 'samiti' | 'zila'
 
-  // Location (NAYE: asli relations, mandal aur zila ke liye)
-  districtId        String?
-  district          District?          @relation(fields: [districtId], references: [id], onDelete: SetNull)
-  samitiId          String?
-  samiti            PanchayatSamiti?   @relation(fields: [samitiId], references: [id], onDelete: SetNull)
-  samitiWardId      String?
-  samitiWard        SamitiWard?        @relation(fields: [samitiWardId], references: [id], onDelete: SetNull)
-  zilaWardId        String?
-  zilaWard          ZilaParishadWard?  @relation(fields: [zilaWardId], references: [id], onDelete: SetNull)
+  // assembly | sarpanch | samiti | zila
+  electionType String? @default("sarpanch") @db.VarChar(50)
 
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  districtId String?
+  district   District? @relation(fields: [districtId], references: [id], onDelete: SetNull)
 
-  options           PollOption[]
-  votes             Vote[]
+  samitiId String?
+  samiti   PanchayatSamiti? @relation(fields: [samitiId], references: [id], onDelete: SetNull)
+
+  samitiWardId String?
+  samitiWard   SamitiWard? @relation(fields: [samitiWardId], references: [id], onDelete: SetNull)
+
+  zilaWardId String?
+  zilaWard   ZilaParishadWard? @relation(fields: [zilaWardId], references: [id], onDelete: SetNull)
+
+  assemblyId String?
+  assembly   AssemblyConstituency? @relation(fields: [assemblyId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  options PollOption[]
+  votes   Vote[]
 
   @@index([active])
+  @@index([scope, stateCode, active, createdAt])
   @@index([createdAt])
+  @@index([categoryType])
   @@index([districtName])
   @@index([samitiName])
   @@index([gramPanchayatName])
@@ -53,6 +78,8 @@ model Poll {
   @@index([samitiId])
   @@index([samitiWardId])
   @@index([zilaWardId])
+  @@index([requiresLogin])
+  @@index([assemblyId])
 }
 
 model PollOption {
@@ -70,13 +97,17 @@ model PollOption {
 }
 
 model Vote {
-  id              String   @id @default(uuid())
+  id              String  @id @default(uuid())
   pollId          String
   optionId        String
-  anonymousUserId String   @db.VarChar(100)
-  ipAddress       String?  @db.VarChar(45)
-  deviceSig       String?  @db.VarChar(64)
-  createdAt       DateTime @default(now())
+  anonymousUserId String  @db.VarChar(100)
+  ipAddress       String? @db.VarChar(45)
+  deviceSig       String? @db.VarChar(64)
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
 
   poll   Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
   option PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
@@ -88,6 +119,7 @@ model Vote {
   @@index([anonymousUserId])
   @@index([createdAt])
   @@index([pollId, createdAt])
+  @@index([userId])
 }
 
 model ContactMessage {
@@ -101,41 +133,94 @@ model ContactMessage {
   @@index([createdAt])
 }
 
-// ---------------------------------------------------------
-// RAJASTHAN LOCAL BODY HIERARCHY MODELS
-// ---------------------------------------------------------
+// Authentication
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+
+  accounts Account[]
+  sessions Session[]
+  votes    Vote[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Administrative locations
 
 model District {
-  id               String             @id @default(cuid())
-  nameEn           String             @unique
-  nameHi           String
+  id        String   @id @default(cuid())
+  nameEn    String   @unique
+  nameHi    String
+  stateCode String?  @db.VarChar(10)
+  createdAt DateTime @default(now())
+
   tehsils          Tehsil[]
   panchayatSamitis PanchayatSamiti[]
   gramPanchayats   GramPanchayat[]
   zilaWards        ZilaParishadWard[]
   polls            Poll[]
-  createdAt        DateTime           @default(now())
+  assemblyMappings AssemblyDistrict[]
 
   @@index([nameEn])
 }
 
 model ZilaParishadWard {
-  id         String   @id @default(cuid())
+  id         String @id @default(cuid())
   wardNo     Int
   nameHi     String
   districtId String
-  district   District @relation(fields: [districtId], references: [id], onDelete: Cascade)
-  polls      Poll[]
+
+  district District @relation(fields: [districtId], references: [id], onDelete: Cascade)
+  polls    Poll[]
 
   @@unique([districtId, wardNo])
   @@index([districtId])
 }
 
 model Tehsil {
-  id               String            @id @default(cuid())
-  nameEn           String
-  nameHi           String
-  districtId       String
+  id         String @id @default(cuid())
+  nameEn     String
+  nameHi     String
+  districtId String
+
   district         District          @relation(fields: [districtId], references: [id], onDelete: Cascade)
   panchayatSamitis PanchayatSamiti[]
 
@@ -144,13 +229,15 @@ model Tehsil {
 }
 
 model PanchayatSamiti {
-  id             String          @id @default(cuid())
-  nameEn         String
-  nameHi         String
-  districtId     String
-  district       District        @relation(fields: [districtId], references: [id], onDelete: Cascade)
-  tehsilId       String?
-  tehsil         Tehsil?         @relation(fields: [tehsilId], references: [id], onDelete: SetNull)
+  id         String  @id @default(cuid())
+  nameEn     String
+  nameHi     String
+  districtId String
+  tehsilId   String?
+
+  district District @relation(fields: [districtId], references: [id], onDelete: Cascade)
+  tehsil   Tehsil?  @relation(fields: [tehsilId], references: [id], onDelete: SetNull)
+
   samitiWards    SamitiWard[]
   gramPanchayats GramPanchayat[]
   polls          Poll[]
@@ -161,43 +248,74 @@ model PanchayatSamiti {
 }
 
 model SamitiWard {
-  id        String          @id @default(cuid())
+  id        String   @id @default(cuid())
   wardNo    Int
   nameHi    String
   samitiId  String
-  samiti    PanchayatSamiti @relation(fields: [samitiId], references: [id], onDelete: Cascade)
-  villages  Village[]
-  polls     Poll[]
-  createdAt DateTime        @default(now())
+  createdAt DateTime @default(now())
+
+  samiti   PanchayatSamiti @relation(fields: [samitiId], references: [id], onDelete: Cascade)
+  villages Village[]
+  polls    Poll[]
 
   @@unique([samitiId, wardNo])
   @@index([samitiId])
 }
 
 model Village {
-  id     String     @id @default(cuid())
+  id     String @id @default(cuid())
   nameEn String
   nameHi String
   wardId String
-  ward   SamitiWard @relation(fields: [wardId], references: [id], onDelete: Cascade)
+
+  ward SamitiWard @relation(fields: [wardId], references: [id], onDelete: Cascade)
 
   @@unique([wardId, nameEn])
   @@index([wardId])
 }
 
 model GramPanchayat {
-  id         String          @id @default(cuid())
+  id         String   @id @default(cuid())
   nameEn     String
   nameHi     String
   districtId String
-  district   District        @relation(fields: [districtId], references: [id], onDelete: Cascade)
   samitiId   String
-  samiti     PanchayatSamiti @relation(fields: [samitiId], references: [id], onDelete: Cascade)
-  createdAt  DateTime        @default(now())
+  createdAt  DateTime @default(now())
+
+  district District        @relation(fields: [districtId], references: [id], onDelete: Cascade)
+  samiti   PanchayatSamiti @relation(fields: [samitiId], references: [id], onDelete: Cascade)
 
   @@unique([samitiId, nameEn])
   @@index([districtId])
   @@index([samitiId])
+}
+
+// Assembly constituencies and district mappings
+
+model AssemblyConstituency {
+  id         String   @id @default(cuid())
+  stateCode  String   @db.VarChar(10)
+  seatNumber Int
+  nameHi     String   @db.VarChar(150)
+  nameEn     String?  @db.VarChar(150)
+  createdAt  DateTime @default(now())
+
+  districts AssemblyDistrict[]
+  polls     Poll[]
+
+  @@unique([stateCode, seatNumber])
+  @@index([stateCode, nameHi])
+}
+
+model AssemblyDistrict {
+  assemblyId String
+  districtId String
+
+  assembly AssemblyConstituency @relation(fields: [assemblyId], references: [id], onDelete: Cascade)
+  district District             @relation(fields: [districtId], references: [id], onDelete: Restrict)
+
+  @@id([assemblyId, districtId])
+  @@index([districtId])
 }
 
 model NewsletterSubscriber {

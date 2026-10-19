@@ -1,0 +1,63 @@
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+
+import StatePollBrowser, {
+  type BrowserSearch,
+} from '@/components/StatePollBrowser';
+
+import { getRegionBySlug } from '@/lib/regions';
+
+export const dynamic = 'force-dynamic';
+
+type Props = {
+  params: {
+    state: string;
+    slug: string;
+  };
+  searchParams?: BrowserSearch;
+};
+
+export function generateMetadata({ params }: Props): Metadata {
+  if (params.state !== 'state') return {};
+
+  const region = getRegionBySlug(params.slug);
+
+  if (!region) return {};
+
+  const canonical =
+    region.code === 'RJ'
+      ? '/rajasthan'
+      : `/state/${region.slug}`;
+
+  return {
+    title: `${region.name} के पोल और जनमत | JanPoll India`,
+    description:
+      `${region.name} में चुनाव, राजनीति, सामाजिक मुद्दों और खेल के पोल देखें। अपने क्षेत्र में नया पोल बनाएँ।`,
+    alternates: {
+      canonical: `https://janpoll.in${canonical}`,
+    },
+  };
+}
+
+export default function StatePage({
+  params,
+  searchParams,
+}: Props) {
+  if (params.state !== 'state') {
+    notFound();
+  }
+
+  const region = getRegionBySlug(params.slug);
+
+  if (!region) {
+    notFound();
+  }
+
+  return (
+    <StatePollBrowser
+      region={region}
+      basePath={`/state/${region.slug}`}
+      searchParams={searchParams}
+    />
+  );
+}

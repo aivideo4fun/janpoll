@@ -2,181 +2,212 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { usePathname } from 'next/navigation';
 
-const WHATSAPP_CHANNEL_URL = 'https://whatsapp.com/channel/0029VbEDUaJ5Ui2OzmpEYI3D';
+import { getRegionBySlug } from '@/lib/regions';
+
+const SOCIALS = [
+  {
+    name: 'WhatsApp चैनल',
+    href: 'https://whatsapp.com/channel/0029VbEDUaJ5Ui2OzmpEYI3D',
+    icon: '/images/whatsapp.png',
+  },
+  {
+    name: 'Instagram',
+    href: 'https://instagram.com/janpoll.in',
+    icon: '/images/instagram.png',
+  },
+  {
+    name: 'Facebook',
+    href: 'https://www.facebook.com/profile.php?id=61595121995283',
+    icon: '/images/facebook.png',
+  },
+  {
+    name: 'X / Twitter',
+    href: 'https://twitter.com/janpollindia',
+    icon: '/images/x.png',
+  },
+];
 
 export default function Navbar() {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const [showSocials, setShowSocials] = useState(false);
-  const socialRef = useRef<HTMLDivElement>(null);
+
+  const menuRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+
+  const segments = pathname.split('/').filter(Boolean);
+
+  const region = getRegionBySlug(
+    segments[0] === 'state' || segments[0] === 'states'
+      ? segments[1]
+      : segments[0],
+  );
+
+  const createHref = region
+    ? `/create?state=${encodeURIComponent(region.slug)}`
+    : '/create';
 
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (socialRef.current && !socialRef.current.contains(event.target as Node)) {
-        setShowSocials(false);
+    setIsOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleOutside = (event: PointerEvent) => {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
       }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+        menuButtonRef.current?.focus();
+      }
+    };
+
+    document.addEventListener('pointerdown', handleOutside);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('pointerdown', handleOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen]);
+
+  const closeMenu = () => setIsOpen(false);
 
   return (
-    <header className="bg-white border-b border-emerald-100 shadow-sm sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-        
-        {/* लोगो और ब्रांड नेम */}
-        <Link href="/" className="flex items-center gap-2.5 group">
-          <Image 
-            src="/logo.png" 
-            alt="JanPoll Logo" 
-            width={38} 
-            height={38} 
-            className="object-contain group-hover:scale-105 transition"
+    <header className="sticky top-0 z-50 border-b border-emerald-100 bg-white">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 sm:py-4">
+        {/* Logo, brand name and tagline */}
+        <Link
+          href="/"
+          aria-label="JanPoll — Voice   of   India — Home"
+          className="group inline-flex min-w-0 items-center gap-2.5 rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-700 sm:gap-3"
+        >
+          <Image
+            src="/logo.png"
+            alt=""
+            width={72}
+            height={72}
+            priority
+            sizes="(max-width: 639px) 56px, 72px"
+            className="h-14 w-14 shrink-0 object-contain transition-transform duration-200 group-hover:scale-105 motion-reduce:transform-none sm:h-[72px] sm:w-[72px]"
           />
-          <div className="flex items-center gap-1.5">
-            <span className="text-xl font-black tracking-tight text-emerald-900">
+
+          <span className="inline-flex min-w-0 flex-col items-start justify-center">
+            <span
+              className="whitespace-nowrap text-[25px] font-extrabold leading-none tracking-[0.015em] text-[#064E3B] sm:text-[30px]"
+              style={{
+                fontFamily: 'Arial, Helvetica, sans-serif',
+              }}
+            >
               JANPOLL
             </span>
-            <span className="rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-bold px-1.5 py-0.5">
-              राजस्थान
+
+            <span
+              className="mt-2 whitespace-nowrap text-[9px] font-semibold leading-none tracking-[0.18em] text-emerald-700 sm:text-[10px]"
+              style={{
+                fontFamily: 'Arial, Helvetica, sans-serif',
+              }}
+            >
+              VOICE   OF   INDIA
             </span>
-          </div>
+          </span>
         </Link>
 
-        {/* राइट साइड: सोशल मीडिया ड्रॉपडाउन (डेस्कटॉप) */}
-        <div className="hidden md:flex items-center gap-3">
-          <div className="relative" ref={socialRef}>
-            <button
-              onClick={() => setShowSocials(!showSocials)}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold rounded-xl border border-emerald-200 transition shadow-sm focus:outline-none"
-            >
-              <span>🌐</span> हमसे जुड़ें ▾
-            </button>
-
-            {showSocials && (
-              <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-emerald-100 p-2 z-50 space-y-1 animate-fadeIn">
-                <a
-                  href={WHATSAPP_CHANNEL_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold text-green-900 bg-green-50 hover:bg-green-100 transition border border-green-200"
-                >
-                  <Image src="/images/whatsapp.png" alt="WhatsApp" width={20} height={20} className="object-contain" />
-                  <span>व्हाट्सएप चैनल जॉइन करें</span>
-                </a>
-                <a
-                  href="https://instagram.com/janpoll.in"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-gray-700 hover:bg-pink-50 hover:text-pink-700 transition"
-                >
-                  <Image src="/images/instagram.png" alt="Instagram" width={20} height={20} className="object-contain" />
-                  <span>इंस्टाग्राम</span>
-                </a>
-                <a
-                  href="https://www.facebook.com/profile.php?id=61595121995283"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition"
-                >
-                  <Image src="/images/facebook.png" alt="Facebook" width={20} height={20} className="object-contain" />
-                  <span>फेसबुक</span>
-                </a>
-                <a
-                  href="https://twitter.com/janpollindia"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-gray-700 hover:bg-gray-100 hover:text-black transition"
-                >
-                  <Image src="/images/x.png" alt="X" width={20} height={20} className="object-contain" />
-                  <span>X (ट्विटर)</span>
-                </a>
-                <a
-                  href="https://whatsapp.com/channel/0029VbEDUaJ5Ui2OzmpEYI3D/113"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-gray-700 hover:bg-red-50 hover:text-red-700 transition"
-                >
-                  <Image src="/images/youtube.png" alt="YouTube" width={20} height={20} className="object-contain" />
-                  <span>यूट्यूब</span>
-                </a>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* मोबाइल सोशल मीडिया बटन */}
-        <div className="flex md:hidden items-center gap-2">
+        {/* Only the menu button remains outside */}
+        <div ref={menuRef} className="relative shrink-0">
           <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-800 hover:bg-emerald-100 transition focus:outline-none flex items-center gap-1.5 text-xs font-bold shadow-sm"
-            aria-label="सोशल मीडिया मेनू"
+            ref={menuButtonRef}
+            type="button"
+            aria-label={isOpen ? 'मेनू बंद करें' : 'मेनू खोलें'}
+            aria-expanded={isOpen}
+            aria-controls="janpoll-main-menu"
+            onClick={() => setIsOpen((current) => !current)}
+            className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-200 bg-white text-emerald-900 transition-colors hover:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-700 sm:h-[52px] sm:w-[52px]"
           >
-            <span>🌐</span> हमसे जुड़ें
+            <svg
+              width="25"
+              height="25"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              aria-hidden="true"
+            >
+              {isOpen ? (
+                <path d="m6 6 12 12M18 6 6 18" />
+              ) : (
+                <path d="M4 6h16M4 12h16M4 18h16" />
+              )}
+            </svg>
           </button>
-        </div>
 
+          {isOpen && (
+            <nav
+              id="janpoll-main-menu"
+              aria-label="मुख्य नेविगेशन"
+              className="absolute right-0 top-full mt-3 max-h-[70dvh] w-72 max-w-[calc(100vw-2rem)] overflow-y-auto overscroll-contain rounded-2xl border border-emerald-100 bg-white p-3 shadow-xl shadow-emerald-950/10"
+            >
+              <p className="px-3 py-2 font-sans text-[10px] font-semibold tracking-[0.16em] text-slate-400">
+                EXPLORE JANPOLL
+              </p>
+
+              {[
+                { href: '/', label: 'होम' },
+                { href: '/states', label: 'पोल देखें' },
+                { href: createHref, label: '＋ पोल बनाएँ' },
+                { href: '/profile', label: 'मेरी प्रोफाइल / Login' },
+              ].map((item) => (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  onClick={closeMenu}
+                  className="flex min-h-12 items-center rounded-xl px-3 py-2 text-sm font-medium leading-7 text-emerald-950 transition-colors hover:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600"
+                >
+                  {item.label}
+                </Link>
+              ))}
+
+              <div className="my-3 border-t border-slate-100" />
+
+              <p className="px-3 py-2 text-xs font-medium leading-7 text-slate-400">
+                हमसे जुड़ें
+              </p>
+
+              {SOCIALS.map((social) => (
+                <a
+                  key={social.name}
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={closeMenu}
+                  className="flex min-h-12 items-center gap-3 rounded-xl px-3 py-2 text-sm leading-7 text-slate-600 transition-colors hover:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600"
+                >
+                  <Image
+                    src={social.icon}
+                    alt=""
+                    width={20}
+                    height={20}
+                    className="shrink-0 object-contain"
+                  />
+
+                  <span>{social.name}</span>
+                </a>
+              ))}
+            </nav>
+          )}
+        </div>
       </div>
-
-      {/* मोबाइल ड्रॉपडाउन मेनू */}
-      {isOpen && (
-        <div className="md:hidden border-t border-emerald-100 bg-white px-4 py-4 shadow-lg space-y-2">
-          <p className="text-xs font-bold text-gray-400 mb-1">सोशल मीडिया पर फॉलो करें:</p>
-          <div className="grid grid-cols-2 gap-2">
-            <a
-              href={WHATSAPP_CHANNEL_URL}
-              target="_blank"
-              rel="noreferrer"
-              onClick={() => setIsOpen(false)}
-              className="col-span-2 flex items-center gap-2 p-2.5 bg-green-50 text-green-900 text-xs font-bold rounded-xl border border-green-200 justify-center shadow-sm"
-            >
-              <Image src="/images/whatsapp.png" alt="WhatsApp" width={18} height={18} className="object-contain" />
-              <span>व्हाट्सएप चैनल जॉइन करें</span>
-            </a>
-            <a
-              href="https://instagram.com/janpoll.in"
-              target="_blank"
-              rel="noreferrer"
-              onClick={() => setIsOpen(false)}
-              className="flex items-center gap-2 p-2.5 bg-pink-50 text-pink-700 text-xs font-bold rounded-xl border border-pink-200 justify-center"
-            >
-              <Image src="/images/instagram.png" alt="Instagram" width={18} height={18} className="object-contain" />
-              <span>इंस्टाग्राम</span>
-            </a>
-            <a
-              href="https://www.facebook.com/profile.php?id=61595121995283"
-              target="_blank"
-              rel="noreferrer"
-              onClick={() => setIsOpen(false)}
-              className="flex items-center gap-2 p-2.5 bg-blue-50 text-blue-700 text-xs font-bold rounded-xl border border-blue-200 justify-center"
-            >
-              <Image src="/images/facebook.png" alt="Facebook" width={18} height={18} className="object-contain" />
-              <span>फेसबुक</span>
-            </a>
-            <a
-              href="https://twitter.com/janpollindia"
-              target="_blank"
-              rel="noreferrer"
-              onClick={() => setIsOpen(false)}
-              className="flex items-center gap-2 p-2.5 bg-gray-50 text-black text-xs font-bold rounded-xl border border-gray-200 justify-center"
-            >
-              <Image src="/images/x.png" alt="X" width={18} height={18} className="object-contain" />
-              <span>X (ट्विटर)</span>
-            </a>
-            <a
-              href="https://whatsapp.com/channel/0029VbEDUaJ5Ui2OzmpEYI3D/113"
-              target="_blank"
-              rel="noreferrer"
-              onClick={() => setIsOpen(false)}
-              className="flex items-center gap-2 p-2.5 bg-red-50 text-red-700 text-xs font-bold rounded-xl border border-red-200 justify-center"
-            >
-              <Image src="/images/youtube.png" alt="YouTube" width={18} height={18} className="object-contain" />
-              <span>यूट्यूब</span>
-            </a>
-          </div>
-        </div>
-      )}
     </header>
   );
 }

@@ -1,12 +1,20 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+
+import type { FormEvent } from 'react';
+import { useRouter } from 'next/navigation';
+
 import {
   Cell,
-  Legend,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -17,83 +25,69 @@ import { castVote } from '@/lib/actions';
 import { getDeadline } from '@/lib/poll-utils';
 import Ad728x90 from '@/components/Ad728x90';
 
+type Poll = {
+  id: string;
+  locationLabel?: string;
+  createHref?: string;
+  question: string;
+  deadlineDays: number | null;
+  createdAt: string | Date;
+  options: {
+    id: string;
+    text: string;
+    voteCount: number;
+  }[];
+};
+
 const COLORS = [
-  '#10B981', // हरा
-  '#F59E0B', // केसरिया
-  '#3B82F6', // नीला
-  '#EF4444', // लाल
-  '#8B5CF6', // बैंगनी
-  '#EC4899', // गुलाबी
-  '#14B8A6', // टील
-  '#F97316', // नारंगी
-  '#6366F1', // इंडिगो
-  '#84CC16', // लाइम
-  '#06B6D4', // सियान
-  '#D946EF', // फुकशिया
-  '#EAB308', // पीला
-  '#14532D', // गहरा हरा
-  '#1E3A8A', // गहरा नीला
+  '#059669',
+  '#D97706',
+  '#2563EB',
+  '#DC2626',
+  '#7C3AED',
+  '#DB2777',
+  '#0D9488',
+  '#EA580C',
 ];
 
-const SOCIAL_LINKS = [
+const SOCIALS = [
   {
-    name: 'व्हाट्सएप चैनल',
+    name: 'WhatsApp',
     href: 'https://whatsapp.com/channel/0029VbEDUaJ5Ui2OzmpEYI3D',
     icon: '/images/whatsapp.png',
   },
   {
-    name: 'इंस्टाग्राम',
+    name: 'Instagram',
     href: 'https://instagram.com/janpoll.in',
     icon: '/images/instagram.png',
   },
   {
-    name: 'फेसबुक',
+    name: 'Facebook',
     href: 'https://www.facebook.com/profile.php?id=61595121995283',
     icon: '/images/facebook.png',
   },
   {
-    name: 'X (ट्विटर)',
+    name: 'X',
     href: 'https://twitter.com/janpollindia',
     icon: '/images/x.png',
   },
-  {
-    name: 'यूट्यूब',
-    href: 'https://whatsapp.com/channel/0029VbEDUaJ5Ui2OzmpEYI3D/113',
-    icon: '/images/youtube.png',
-  },
 ];
 
-type PollOption = {
-  id: string;
-  text: string;
-  voteCount: number;
-};
-
-type Poll = {
-  id: string;
-  question: string;
-  deadlineDays: number | null;
-  createdAt: string | Date;
-  options: PollOption[];
-};
-
-type PollClientViewProps = {
-  poll: Poll;
-  alreadyVoted: boolean;
-  isOpen: boolean;
-};
-
-type ChartDataItem = {
-  name: string;
-  votes: number;
-  percentage: number;
-};
+const primary =
+  'inline-flex min-h-12 items-center justify-center rounded-xl ' +
+  'bg-emerald-800 px-4 py-3 text-sm font-semibold leading-7 ' +
+  'text-white transition hover:bg-emerald-900 ' +
+  'disabled:cursor-not-allowed disabled:opacity-50';
 
 async function getDeviceSig(): Promise<string | undefined> {
   try {
     const ratio = window.devicePixelRatio || 1;
-    const physical = [window.screen.width, window.screen.height]
-      .map((v) => Math.round((v * ratio) / 10) * 10)
+
+    const physical = [
+      window.screen.width,
+      window.screen.height,
+    ]
+      .map((value) => Math.round((value * ratio) / 10) * 10)
       .sort((a, b) => a - b);
 
     const traits = [
@@ -105,9 +99,13 @@ async function getDeviceSig(): Promise<string | undefined> {
       Intl.DateTimeFormat().resolvedOptions().timeZone ?? '',
     ].join('|');
 
-    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(traits));
+    const digest = await crypto.subtle.digest(
+      'SHA-256',
+      new TextEncoder().encode(traits),
+    );
+
     return Array.from(new Uint8Array(digest))
-      .map((b) => b.toString(16).padStart(2, '0'))
+      .map((value) => value.toString(16).padStart(2, '0'))
       .join('')
       .slice(0, 32);
   } catch {
@@ -115,525 +113,530 @@ async function getDeviceSig(): Promise<string | undefined> {
   }
 }
 
-function LiveCountdown({ createdAt, deadlineDays, isOpen }: { createdAt: string | Date; deadlineDays: number | null; isOpen: boolean }) {
-  const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null);
+function Countdown({
+  createdAt,
+  deadlineDays,
+  isOpen,
+}: {
+  createdAt: string | Date;
+  deadlineDays: number | null;
+  isOpen: boolean;
+}) {
+  const [label, setLabel] = useState('समय सीमा जाँची जा रही है…');
 
   useEffect(() => {
     if (!isOpen) return;
-    const deadlineDate = getDeadline(new Date(createdAt), deadlineDays).getTime();
 
-    const updateTimer = () => {
-      const now = new Date().getTime();
-      const difference = deadlineDate - now;
+    const deadline = getDeadline(
+      new Date(createdAt),
+      deadlineDays,
+    ).getTime();
 
-      if (difference <= 0) {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+    const update = () => {
+      const remaining = Math.max(0, deadline - Date.now());
+
+      if (!remaining) {
+        setLabel('पोल समाप्त');
         return;
       }
 
-      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+      const seconds = Math.floor(remaining / 1000);
+      const days = Math.floor(seconds / 86400);
+      const hours = Math.floor((seconds % 86400) / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const lastSeconds = seconds % 60;
 
-      setTimeLeft({ days, hours, minutes, seconds });
+      setLabel(
+        `${days} दिन · ` +
+        `${String(hours).padStart(2, '0')}:` +
+        `${String(minutes).padStart(2, '0')}:` +
+        `${String(lastSeconds).padStart(2, '0')}`,
+      );
     };
 
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
-    return () => clearInterval(interval);
+    update();
+
+    const timer = window.setInterval(update, 1000);
+
+    return () => window.clearInterval(timer);
   }, [createdAt, deadlineDays, isOpen]);
 
-  if (!isOpen) {
-    return <span>पोल बंद हो चुका है</span>;
-  }
-
-  if (!timeLeft) {
-    const defaultDays = deadlineDays ?? 3;
-    return <span>समय सीमा: {defaultDays} दिन</span>;
-  }
-
-  if (timeLeft.days === 0 && timeLeft.hours === 0 && timeLeft.minutes === 0 && timeLeft.seconds === 0) {
-    return <span className="text-red-600 font-bold">पोल समाप्त</span>;
-  }
-
-  return (
-    <span className="font-mono font-bold text-emerald-900">
-      शेष: {timeLeft.days} दिन {String(timeLeft.hours).padStart(2, '0')}:{String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
-    </span>
-  );
+  return <span>{isOpen ? label : 'पोल बंद है'}</span>;
 }
 
 export default function PollClientView({
   poll,
   alreadyVoted,
   isOpen,
-}: PollClientViewProps) {
+}: {
+  poll: Poll;
+  alreadyVoted: boolean;
+  isOpen: boolean;
+}) {
   const router = useRouter();
 
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [selectedOption, setSelectedOption] = useState('');
   const [hasVoted, setHasVoted] = useState(alreadyVoted);
-  const [loading, setLoading] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [message, setMessage] = useState(
-    alreadyVoted ? 'आप इस पोल में पहले ही वोट दे चुके हैं।' : '',
-  );
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState('');
 
-  // 🎯 Adsterra Vignette Ad integration for Poll View only
-  useEffect(() => {
-    try {
-      const script = document.createElement('script');
-      script.innerHTML = `(function(s){s.dataset.zone='12021752',s.src='https://n6wxm.com/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))`;
-      document.body.appendChild(script);
-    } catch (e) {
-      console.error('Adsterra script error:', e);
-    }
-  }, []);
+  const [shareUrl, setShareUrl] = useState('');
+  const [shareMessage, setShareMessage] = useState('');
+  const [shareLoading, setShareLoading] = useState(true);
+
+  const voteLock = useRef(false);
 
   useEffect(() => {
-    setHasVoted(alreadyVoted);
-    setMessage(alreadyVoted ? 'आप इस पोल में पहले ही वोट दे चुके हैं।' : '');
-    setSelectedOption(null);
-  }, [poll.id, alreadyVoted]);
+    const controller = new AbortController();
 
-  const showResults = hasVoted || !isOpen;
-  const isClosedPoll = !isOpen; // 👈 केवल बंद (Closed) पोल्स की पहचान
+    setShareUrl('');
+    setShareMessage('');
+    setShareLoading(true);
+
+    const prepareLink = async () => {
+      try {
+        const response = await fetch('/api/public-share', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pollId: poll.id }),
+          signal: controller.signal,
+          cache: 'no-store',
+        });
+
+        const data = await response.json();
+
+        if (
+          !response.ok ||
+          typeof data.sharePath !== 'string' ||
+          !/^\/s\/[A-Za-z0-9_-]{8}$/.test(data.sharePath)
+        ) {
+          throw new Error(
+            data.message || 'Share link तैयार नहीं हो सका।',
+          );
+        }
+
+        if (!controller.signal.aborted) {
+          setShareUrl(
+            new URL(data.sharePath, window.location.origin).href,
+          );
+        }
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          setShareMessage(
+            error instanceof Error
+              ? error.message
+              : 'Share link तैयार नहीं हो सका।',
+          );
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setShareLoading(false);
+        }
+      }
+    };
+
+    void prepareLink();
+
+    return () => controller.abort();
+  }, [poll.id]);
+
+  useEffect(() => {
+    if (alreadyVoted) setHasVoted(true);
+  }, [alreadyVoted]);
 
   const totalVotes = useMemo(
-    () => poll.options.reduce((total, option) => total + option.voteCount, 0),
+    () =>
+      poll.options.reduce(
+        (total, option) => total + option.voteCount,
+        0,
+      ),
     [poll.options],
   );
 
-  const chartData = useMemo<ChartDataItem[]>(
+  const results = useMemo(
     () =>
       poll.options.map((option) => ({
-        name: option.text,
-        votes: option.voteCount,
+        ...option,
         percentage:
           totalVotes > 0
-            ? Number(((option.voteCount / totalVotes) * 100).toFixed(1))
+            ? Number(
+                ((option.voteCount / totalVotes) * 100).toFixed(1),
+              )
             : 0,
       })),
     [poll.options, totalVotes],
   );
 
-  const showPieChart = chartData.length <= 6;
+  const showResults = hasVoted || alreadyVoted || !isOpen;
 
-  const handleVoteSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const shareLink = async () => {
+    if (!shareUrl) return;
+
+    setShareMessage('');
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: poll.question,
+          text: `इस JanPoll पर अपनी राय दें:\n${poll.question}`,
+          url: shareUrl,
+        });
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+        setShareMessage('Share link कॉपी हो गया।');
+      }
+    } catch (error) {
+      if (
+        !(error instanceof Error) ||
+        error.name !== 'AbortError'
+      ) {
+        setShareMessage('Share नहीं हो सका। दोबारा कोशिश करें।');
+      }
+    }
+  };
+
+  const shareWhatsApp = () => {
+    if (!shareUrl) return;
+
+    const text = `${poll.question}\n\nअपनी राय दें:\n${shareUrl}`;
+
+    window.open(
+      `https://wa.me/?text=${encodeURIComponent(text)}`,
+      '_blank',
+      'noopener,noreferrer',
+    );
+  };
+
+  const vote = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    if (voteLock.current || hasVoted || !isOpen) return;
+
     if (!selectedOption) {
-      setMessage('कृपया पहले कोई एक विकल्प चुनें।');
+      setMessage('पहले एक विकल्प चुनें।');
       return;
     }
 
-    setLoading(true);
+    voteLock.current = true;
+    setBusy(true);
     setMessage('');
 
     try {
       const deviceSig = await getDeviceSig();
-      const response = await castVote(poll.id, selectedOption, deviceSig);
+
+      const response = await castVote(
+        poll.id,
+        selectedOption,
+        deviceSig,
+      );
 
       if (response.success) {
         setHasVoted(true);
-        setMessage('आपका वोट सफलतापूर्वक दर्ज हो गया।');
+        setMessage('आपका वोट दर्ज हो गया है।');
         router.refresh();
-        return;
-      }
+      } else {
+        setMessage(response.message);
 
-      setMessage(response.message);
-
-      if (response.code === 'ALREADY_VOTED') {
-        setHasVoted(true);
-        router.refresh();
+        if (response.code === 'ALREADY_VOTED') {
+          setHasVoted(true);
+          router.refresh();
+        }
       }
     } catch (error) {
-      console.error('Vote submission error:', error);
-      setMessage('वोट दर्ज करते समय समस्या आई। कृपया थोड़ी देर बाद दोबारा प्रयास करें।');
+      console.error('Vote submission failed', error);
+
+      setMessage(
+        'वोट की पुष्टि नहीं हो सकी। दोबारा प्रयास करने से पहले page refresh करें।',
+      );
     } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleShare = async () => {
-    const shareData = {
-      title: poll.question,
-      text: `🗳️ इस JanPoll पर अपनी राय दें:\n\n${poll.question}`,
-      url: window.location.href,
-    };
-
-    try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-        return;
-      }
-      await handleCopyLink();
-    } catch (error) {
-      if ((error as DOMException)?.name !== 'AbortError') {
-        setMessage('पोल शेयर नहीं हो सका। कृपया दोबारा प्रयास करें।');
-      }
-    }
-  };
-
-  const handleWhatsAppShare = () => {
-    const text = `🗳️ ${poll.question}\nअपनी राय यहाँ दें: ${window.location.href}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
-  };
-
-  const handleCopyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    } catch {
-      setMessage('लिंक कॉपी नहीं हो सका। कृपया ऐड्रेस बार से कॉपी करें।');
+      voteLock.current = false;
+      setBusy(false);
     }
   };
 
   return (
     <section className="mx-auto w-full max-w-2xl">
-      <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-100 bg-gradient-to-br from-emerald-50 via-white to-white px-5 py-6 sm:px-8">
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-3 py-1.5 text-xs font-bold text-emerald-800 shadow-sm">
-              <span aria-hidden="true">📍</span>
-              राजस्थान पब्लिक पोल
+      <article className="overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm">
+        <header className="border-b border-emerald-100 bg-emerald-50/50 p-5 sm:p-8">
+          <div className="flex flex-wrap items-center justify-between gap-3 text-xs leading-7">
+            <span className="rounded-full border border-emerald-200 bg-white px-3 py-1 text-emerald-800">
+              {poll.locationLabel || 'JanPoll India'}
             </span>
 
-            <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm">
-              <span aria-hidden="true">⏳</span>
-              <LiveCountdown createdAt={poll.createdAt} deadlineDays={poll.deadlineDays} isOpen={isOpen} />
+            <span className="text-slate-500">
+              <Countdown
+                createdAt={poll.createdAt}
+                deadlineDays={poll.deadlineDays}
+                isOpen={isOpen}
+              />
             </span>
           </div>
 
-          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-emerald-700">
+          <p className="mt-5 text-xs font-semibold tracking-wider text-emerald-700">
             आपकी राय महत्वपूर्ण है
           </p>
 
-          <h1 className="text-2xl font-black leading-tight tracking-tight text-slate-900 sm:text-3xl">
+          <h1 className="mt-3 break-words text-2xl font-semibold leading-normal text-emerald-950 sm:text-3xl">
             {poll.question}
           </h1>
-        </div>
+        </header>
 
-        <div className="px-5 py-6 sm:px-8 sm:py-8">
+        <div className="space-y-6 p-5 sm:p-8">
           {message && (
-            <div
+            <p
               role="status"
-              aria-live="polite"
-              className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-center text-sm font-semibold text-emerald-800"
+              className="rounded-xl bg-emerald-50 p-4 text-sm leading-7 text-emerald-900"
             >
               {message}
-            </div>
+            </p>
+          )}
+
+          {alreadyVoted && !message && (
+            <p className="text-sm leading-7 text-emerald-800">
+              आप इस पोल में पहले ही वोट दे चुके हैं।
+            </p>
           )}
 
           {!showResults ? (
-            <form onSubmit={handleVoteSubmit} className="space-y-5">
-              <fieldset disabled={loading}>
-                <legend className="mb-3 text-sm font-bold text-slate-700">
-                  नीचे दिए गए विकल्पों में से एक चुनें ({poll.options.length} उम्मीदवार/विकल्प)
+            <form onSubmit={vote} className="space-y-5">
+              <fieldset disabled={busy}>
+                <legend className="mb-3 text-sm font-semibold leading-7 text-slate-700">
+                  एक विकल्प चुनें
                 </legend>
 
-                <div className="max-h-[450px] space-y-3 overflow-y-auto pr-1">
-                  {poll.options.map((option) => {
-                    const isSelected = selectedOption === option.id;
+                <div className="space-y-3">
+                  {poll.options.map((option) => (
+                    <label
+                      key={option.id}
+                      className={[
+                        'flex min-h-14 cursor-pointer items-start',
+                        'gap-3 rounded-2xl border p-4',
+                        'focus-within:ring-2 focus-within:ring-emerald-600',
+                        selectedOption === option.id
+                          ? 'border-emerald-600 bg-emerald-50'
+                          : 'border-slate-200 hover:bg-slate-50',
+                      ].join(' ')}
+                    >
+                      <input
+                        type="radio"
+                        name="poll-option"
+                        value={option.id}
+                        checked={selectedOption === option.id}
+                        onChange={() => {
+                          setSelectedOption(option.id);
+                          setMessage('');
+                        }}
+                        className="mt-1 h-5 w-5 shrink-0 accent-emerald-700"
+                      />
 
-                    return (
-                      <label
-                        key={option.id}
-                        className={[
-                          'flex cursor-pointer items-center gap-3 rounded-2xl border p-4 transition-all',
-                          'focus-within:ring-2 focus-within:ring-emerald-500 focus-within:ring-offset-2',
-                          isSelected
-                            ? 'border-emerald-600 bg-emerald-50 shadow-sm'
-                            : 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/40',
-                        ].join(' ')}
-                      >
-                        <input
-                          type="radio"
-                          name="poll-option"
-                          value={option.id}
-                          checked={isSelected}
-                          onChange={() => {
-                            setSelectedOption(option.id);
-                            setMessage('');
-                          }}
-                          className="h-5 w-5 border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                        />
-
-                        <span
-                          className={[
-                            'text-base',
-                            isSelected
-                              ? 'font-bold text-emerald-900'
-                              : 'font-medium text-slate-700',
-                          ].join(' ')}
-                        >
-                          {option.text}
-                        </span>
-                      </label>
-                    );
-                  })}
+                      <span className="min-w-0 break-words text-sm leading-7 text-slate-800">
+                        {option.text}
+                      </span>
+                    </label>
+                  ))}
                 </div>
               </fieldset>
 
               <button
                 type="submit"
-                disabled={loading || !selectedOption}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-700 px-5 py-3.5 text-base font-bold text-white shadow-sm transition-colors hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={busy || !selectedOption}
+                className={`${primary} w-full`}
               >
-                {loading ? (
-                  <>
-                    <span
-                      aria-hidden="true"
-                      className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white"
-                    />
-                    वोट सबमिट हो रहा है...
-                  </>
-                ) : (
-                  'वोट सबमिट करें'
-                )}
+                {busy ? 'वोट दर्ज हो रहा है…' : 'वोट सबमिट करें'}
               </button>
             </form>
           ) : (
-            <div className="space-y-7">
-              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-center">
-                <p className="font-bold text-emerald-900">✅ परिणाम और आंकड़े</p>
-                <p className="mt-1 text-sm text-emerald-700">
-                  अब तक कुल {totalVotes.toLocaleString('en-IN')} वोट ({poll.options.length} उम्मीदवार)
+            <section id="printable-result" className="space-y-5">
+              <div className="rounded-2xl bg-emerald-50 p-4">
+                <h2 className="text-lg font-semibold leading-8 text-emerald-950">
+                  {isOpen ? 'अब तक के परिणाम' : 'समाप्त पोल के परिणाम'}
+                </h2>
+
+                <p className="mt-2 text-sm leading-7 text-emerald-800">
+                  कुल {totalVotes.toLocaleString('en-IN')} वोट
                 </p>
               </div>
 
-              {/* 🖨️ केवल बंद (Closed) पोल्स के लिए प्रोफेशनल प्रिंटेबल कार्ड */}
-              {isClosedPoll && (
-                <div id="printable-result" className="rounded-3xl bg-gradient-to-br from-emerald-900 to-emerald-950 p-6 text-white shadow-2xl print:m-0 print:rounded-none">
-                  <div className="mb-4 flex items-center justify-between border-b border-emerald-800 pb-3">
-                    <span className="rounded-full bg-emerald-800/60 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-emerald-300">
-                      🏛️ JanPoll Official Result (समाप्त पोल)
-                    </span>
-                    <span className="font-mono text-xs text-emerald-300">कुल मत: {totalVotes.toLocaleString('en-IN')}</span>
-                  </div>
-
-                  <h3 className="mb-5 text-lg font-black leading-snug text-white">
-                    {poll.question}
-                  </h3>
-
-                  <div className="space-y-3 mb-6">
-                    {chartData.map((item, index) => (
-                      <div key={index} className="rounded-xl border border-emerald-700/50 bg-emerald-900/40 p-3">
-                        <div className="mb-1 flex justify-between text-xs font-bold">
-                          <span className="text-emerald-100">{index + 1}. {item.name}</span>
-                          <span className="font-mono text-emerald-300">{item.percentage}% ({item.votes} वोट)</span>
-                        </div>
-                        <div className="h-2 w-full overflow-hidden rounded-full bg-emerald-950 border border-emerald-800">
-                          <div className="h-full rounded-full bg-emerald-400" style={{ width: `${item.percentage}%` }} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* 🌐 सोशल हैंडल्स के साथ प्रोफेशनल फुटर */}
-                  <div className="border-t border-emerald-800/80 pt-4 text-center">
-                    <p className="mb-2 text-[11px] font-semibold text-emerald-300">हमारे सोशल मीडिया हैंडल्स से जुड़ें:</p>
-                    <div className="flex flex-wrap items-center justify-center gap-2 mb-3">
-                      {SOCIAL_LINKS.map((s) => (
-                        <div key={s.name} className="flex items-center gap-1.5 rounded-lg bg-emerald-950/80 px-2.5 py-1 text-[10px] font-bold text-emerald-200 border border-emerald-700/60">
-                          <Image src={s.icon} alt={s.name} width={14} height={14} className="object-contain" />
-                          <span>{s.name}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="flex justify-between items-center text-[10px] text-emerald-400 border-t border-emerald-800/40 pt-2">
-                      <span>WhatsApp और सोशल मीडिया पर परिणाम देखें</span>
-                      <span className="font-bold text-white tracking-widest">JanPoll.in</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* प्रिंट बटन (केवल क्लोज्ड पोल पर स्क्रीन पर दिखेगा) */}
-              {isClosedPoll && (
-                <div className="text-center print:hidden">
-                  <button
-                    type="button"
-                    onClick={() => window.print()}
-                    className="mx-auto flex items-center gap-2 rounded-2xl bg-emerald-700 px-6 py-3 text-sm font-bold text-white shadow transition hover:bg-emerald-800"
-                  >
-                    <span>🖨️</span> परिणाम कार्ड प्रिंट / डाउनलोड करें (PDF)
-                  </button>
-                </div>
-              )}
-
-              {totalVotes > 0 ? (
-                <>
-                  {showPieChart && (
-                    <div className="h-72 w-full" aria-label="पोल परिणामों का पाई चार्ट">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={chartData}
-                            dataKey="votes"
-                            nameKey="name"
-                            cx="50%"
-                            cy="45%"
-                            innerRadius={45}
-                            outerRadius={88}
-                            paddingAngle={2}
-                            label={({ percentage }) => `${percentage}%`}
-                            labelLine={false}
-                          >
-                            {chartData.map((entry, index) => (
-                              <Cell
-                                key={`${entry.name}-${index}`}
-                                fill={COLORS[index % COLORS.length]}
-                              />
-                            ))}
-                          </Pie>
-
-                          <Tooltip formatter={(value, name) => [`${value} वोट`, name]} />
-
-                          <Legend
-                            verticalAlign="bottom"
-                            height={36}
-                            wrapperStyle={{ fontSize: '12px' }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                  )}
-
-                  <div className="space-y-3">
-                    {chartData.map((item, index) => (
-                      <div
-                        key={`${item.name}-${index}`}
-                        className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+              {totalVotes > 0 && results.length <= 6 && (
+                <div className="h-64 w-full" aria-label="परिणामों का chart">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={results}
+                        dataKey="voteCount"
+                        nameKey="text"
+                        innerRadius={45}
+                        outerRadius={85}
+                        paddingAngle={2}
+                        isAnimationActive={false}
                       >
-                        <div className="mb-2 flex items-start justify-between gap-4 text-sm">
-                          <span className="font-semibold text-slate-700">
-                            {index + 1}. {item.name}
-                          </span>
-                          <span className="shrink-0 font-bold text-emerald-800">
-                            {item.votes} वोट ({item.percentage}%)
-                          </span>
-                        </div>
-
-                        <div
-                          className="h-2.5 overflow-hidden rounded-full bg-slate-200"
-                          role="progressbar"
-                          aria-valuenow={item.percentage}
-                          aria-valuemin={0}
-                          aria-valuemax={100}
-                          aria-label={`${item.name}: ${item.percentage}%`}
-                        >
-                          <div
-                            className="h-full rounded-full transition-all duration-700"
-                            style={{
-                              width: `${item.percentage}%`,
-                              backgroundColor: COLORS[index % COLORS.length],
-                            }}
+                        {results.map((option, index) => (
+                          <Cell
+                            key={option.id}
+                            fill={COLORS[index % COLORS.length]}
                           />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <div className="rounded-2xl border border-dashed border-slate-300 px-5 py-10 text-center">
-                  <p className="text-sm font-semibold text-slate-600">
-                    अभी तक कोई वोट दर्ज नहीं हुआ है।
-                  </p>
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
               )}
 
-              {/* 📲 शेयर सेक्शन */}
-              <div className="rounded-2xl border-2 border-emerald-300 bg-gradient-to-br from-emerald-50 to-white p-4 shadow-sm sm:p-5">
-                <p className="mb-1 text-center text-sm font-black text-emerald-900 sm:text-base">
-                  📣 इस पोल को दोस्तों और गाँव के ग्रुप में शेयर करें
-                </p>
-                <p className="mb-4 text-center text-xs text-slate-500">
-                  जितने ज़्यादा लोग जुड़ेंगे, उतनी ज़्यादा आवाज़ें सुनी जाएँगी।
-                </p>
+              {results.map((option, index) => (
+                <div
+                  key={option.id}
+                  className="rounded-2xl border border-slate-200 p-4"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <p className="min-w-0 break-words text-sm font-medium leading-7 text-slate-700">
+                      {option.text}
+                    </p>
 
+                    <p className="text-sm font-semibold leading-7 text-emerald-800">
+                      {option.voteCount.toLocaleString('en-IN')} वोट
+                      {' '}({option.percentage}%)
+                    </p>
+                  </div>
+
+                  <div
+                    role="progressbar"
+                    aria-label={option.text}
+                    aria-valuenow={option.percentage}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100"
+                  >
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${option.percentage}%`,
+                        backgroundColor: COLORS[index % COLORS.length],
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+
+              {totalVotes === 0 && (
+                <p className="text-center text-sm leading-7 text-slate-500">
+                  इस पोल में कोई वोट दर्ज नहीं हुआ है।
+                </p>
+              )}
+
+              {!isOpen && (
                 <button
                   type="button"
-                  onClick={handleShare}
-                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-700 px-5 py-4 text-lg font-black text-white shadow-md transition-colors hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+                  onClick={() => window.print()}
+                  className={`${primary} print:hidden`}
                 >
-                  <span aria-hidden="true">📲</span>
-                  पोल शेयर करें
+                  परिणाम Print / Save as PDF
                 </button>
-
-                <div className="mt-3 grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={handleWhatsAppShare}
-                    className="flex items-center justify-center gap-2 rounded-xl bg-green-600 px-3 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-green-700"
-                  >
-                    <Image src="/images/whatsapp.png" alt="" width={18} height={18} className="object-contain" />
-                    WhatsApp पर भेजें
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleCopyLink}
-                    className="flex items-center justify-center gap-2 rounded-xl border border-emerald-300 bg-white px-3 py-3 text-sm font-bold text-emerald-900 shadow-sm transition hover:bg-emerald-50"
-                  >
-                    {copied ? '✓ लिंक कॉपी हुआ' : '🔗 लिंक कॉपी करें'}
-                  </button>
-                </div>
-              </div>
-
-              {/* Google AdSense Ad (सुरक्षित है, इसे हटाया नहीं गया है) */}
-              <div className="my-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                <Ad728x90 />
-              </div>
-
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <Link
-                  href="/"
-                  className="flex items-center justify-center gap-2 rounded-2xl bg-amber-500 hover:bg-amber-600 text-gray-900 px-4 py-3 text-sm font-bold shadow-sm transition"
-                >
-                  <span>🔥</span> अन्य ट्रेंडिंग पोल्स देखें
-                </Link>
-
-                <Link
-                  href="/create"
-                  className="flex items-center justify-center gap-2 rounded-2xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 px-4 py-3 text-sm font-bold shadow-sm transition"
-                >
-                  <span>＋</span> नया पोल बनाएँ
-                </Link>
-              </div>
-
-              <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                <p className="mb-3 text-center text-xs font-bold text-slate-600">🌐 हमसे जुड़ें</p>
-                <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-                  {SOCIAL_LINKS.map((social) => (
-                    <a
-                      key={social.name}
-                      href={social.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex flex-col items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2 py-3 text-center text-[11px] font-semibold text-slate-700 transition hover:border-emerald-300 hover:bg-emerald-50"
-                    >
-                      <Image
-                        src={social.icon}
-                        alt={social.name}
-                        width={24}
-                        height={24}
-                        className="object-contain"
-                      />
-                      <span>{social.name}</span>
-                    </a>
-                  ))}
-                </div>
-              </div>
-            </div>
+              )}
+            </section>
           )}
-        </div>
-      </div>
 
-      <aside className="mt-6 rounded-2xl border border-slate-200 bg-white px-4 py-4 text-center text-xs leading-relaxed text-slate-500 shadow-sm">
-        JanPoll के सभी पोल्स केवल जनता की राय जानने के लिए हैं। यह किसी सरकारी संस्था या आधिकारिक चुनावी मतदान प्रणाली का हिस्सा नहीं है।
-      </aside>
+          <div className="grid gap-3 sm:grid-cols-2 print:hidden">
+            <Link
+              href="/states"
+              className="rounded-xl border border-slate-200 px-4 py-3 text-center text-sm leading-7 text-slate-700 hover:bg-slate-50"
+            >
+              अन्य पोल देखें
+            </Link>
+
+            <Link
+              href={poll.createHref || '/create'}
+              className={primary}
+            >
+              ＋ नया पोल बनाएँ
+            </Link>
+          </div>
+
+          {/* Only two sharing options */}
+          <section className="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-4 sm:p-5 print:hidden">
+            <h2 className="text-center text-base font-semibold leading-8 text-emerald-950">
+              अपनी आवाज़ आगे पहुँचाएँ
+            </h2>
+
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={shareLink}
+                disabled={!shareUrl || shareLoading}
+                className={primary}
+              >
+                Share Link
+              </button>
+
+              <button
+                type="button"
+                onClick={shareWhatsApp}
+                disabled={!shareUrl || shareLoading}
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-green-700 px-4 py-3 text-sm font-semibold leading-7 text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Image
+                  src="/images/whatsapp.png"
+                  alt=""
+                  width={19}
+                  height={19}
+                />
+                WhatsApp
+              </button>
+            </div>
+
+            {shareLoading && (
+              <p role="status" className="mt-3 text-center text-xs leading-7 text-slate-500">
+                Share link तैयार हो रहा है…
+              </p>
+            )}
+
+            {shareMessage && (
+              <p role="status" className="mt-3 text-center text-sm leading-7 text-emerald-800">
+                {shareMessage}
+              </p>
+            )}
+          </section>
+
+          {/* Social media below sharing */}
+          <section className="rounded-2xl border border-slate-200 p-4 print:hidden">
+            <h2 className="text-center text-sm font-semibold leading-7 text-slate-700">
+              JanPoll से जुड़ें
+            </h2>
+
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {SOCIALS.map((social) => (
+                <a
+                  key={social.name}
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-100 bg-slate-50 px-2 py-3 text-xs leading-7 text-slate-700 hover:bg-emerald-50"
+                >
+                  <Image
+                    src={social.icon}
+                    alt=""
+                    width={20}
+                    height={20}
+                  />
+                  <span>{social.name}</span>
+                </a>
+              ))}
+            </div>
+          </section>
+
+          {/* Advertisement last */}
+          <section
+            aria-label="विज्ञापन"
+            className="overflow-hidden rounded-2xl border border-slate-100 p-3 print:hidden"
+          >
+            <Ad728x90 />
+          </section>
+        </div>
+      </article>
+
+      <p className="mt-5 text-center text-xs leading-7 text-slate-500">
+        JanPoll सार्वजनिक राय का मंच है। ये आधिकारिक चुनाव परिणाम नहीं हैं।
+      </p>
     </section>
   );
 }

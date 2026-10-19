@@ -1,379 +1,765 @@
 import Link from 'next/link';
-import React from 'react';
 import type { Metadata } from 'next';
 import { db } from '@/lib/db';
-import { getDeadline, isPollOpen } from '@/lib/poll-utils';
-import Ad728x90 from '@/components/Ad728x90';
+import { REGIONS } from '@/lib/regions';
+import {
+  CountUp,
+  RegionPicker,
+} from '@/components/JanPollHomeClient';
+
+import './janpoll-home.css';
 
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'JanPoll Rajasthan - राजस्थान की जनता की राय और ऑनलाइन पोल',
-  description: 'राजस्थान के स्थानीय मुद्दों, ग्राम पंचायत, सरपंच चुनाव और राजनीतिक विषयों पर ऑनलाइन वोटिंग करें और जनता की राय जानें।',
-  keywords: ['rajasthan poll', 'sarpanch poll', 'vote poll', 'create poll', 'rajasthan public poll', 'janpoll'],
+  title: 'JanPoll India — आपकी राय, जनता की आवाज़',
+  description:
+    'गाँव की चौपाल से देश की राजधानी तक। स्थानीय और राष्ट्रीय मुद्दों पर अपनी राय साझा करें, पोल बनाएँ और जनमत जानें।',
+  alternates: {
+    canonical: 'https://janpoll.in/',
+  },
   openGraph: {
-    title: 'JanPoll - राजस्थान पब्लिक पोल',
-    description: 'अपने स्थानीय मुद्दों पर अपनी राय दें और देखें जनता क्या सोचती है।',
-    url: 'https://janpoll.in',
-    siteName: 'JanPoll',
+    title: 'JanPoll India — आपकी राय, जनता की आवाज़',
+    description:
+      'स्थानीय और राष्ट्रीय मुद्दों पर अपनी राय साझा करें।',
+    url: 'https://janpoll.in/',
+    siteName: 'JanPoll India',
     locale: 'hi_IN',
     type: 'website',
   },
 };
 
-type HomePoll = {
-  id: string;
-  slug: string | null;
-  question: string;
-  createdAt: Date;
-  deadlineDays: number | null;
-  options: { id: string; text: string; voteCount: number }[];
-  totalVotes: number;
-  districtName: string | null;
-  samitiName: string | null;
-  gramPanchayatName: string | null;
-};
+const CATEGORIES = [
+  { slug: 'all', label: 'सभी', icon: '◉' },
+  { slug: 'politics', label: 'राजनीति', icon: '⚑' },
+  { slug: 'elections', label: 'चुनाव', icon: '☑' },
+  { slug: 'national', label: 'राष्ट्रीय मुद्दे', icon: '◎' },
+  { slug: 'local', label: 'स्थानीय मुद्दे', icon: '⌖' },
+  { slug: 'sports', label: 'खेल', icon: '◈' },
+  { slug: 'entertainment', label: 'मनोरंजन', icon: '✧' },
+];
 
-function daysLeft(poll: HomePoll) {
-  const ms = getDeadline(poll.createdAt, poll.deadlineDays).getTime() - Date.now();
-  return Math.max(1, Math.ceil(ms / (24 * 60 * 60 * 1000)));
+const STEPS = [
+  {
+    number: '01',
+    title: 'अपना सवाल रखें',
+    description:
+      'एक स्पष्ट सवाल और संतुलित विकल्पों के साथ पोल बनाएँ।',
+  },
+  {
+    number: '02',
+    title: 'लोगों को जोड़ें',
+    description:
+      'पोल का लिंक साझा करें और लोगों को अपनी राय रखने दें।',
+  },
+  {
+    number: '03',
+    title: 'जनमत समझें',
+    description:
+      'दर्ज वोटों के आधार पर परिणाम देखें और चर्चा आगे बढ़ाएँ।',
+  },
+];
+
+const numbers = new Intl.NumberFormat('en-IN');
+
+async function getHomeData() {
+  const results = await Promise.allSettled([
+    db.poll.count({
+      where: { active: true },
+    }),
+
+    db.pollOption.aggregate({
+      _sum: { voteCount: true },
+    }),
+
+    db.user.count(),
+
+    db.poll.findMany({
+      where: { active: true },
+      include: { options: true },
+      orderBy: { createdAt: 'desc' },
+      take: 4,
+    }),
+
+    db.poll.groupBy({
+      by: ['stateCode'],
+      where: { active: true },
+      _count: { _all: true },
+    }),
+  ] as const);
+
+  results.forEach((result, index) => {
+    if (result.status === 'rejected') {
+      console.error(
+        `JanPoll homepage query ${index} failed`,
+        result.reason,
+      );
+    }
+  });
+
+  const [
+    pollCountResult,
+    voteCountResult,
+    userCountResult,
+    pollsResult,
+    statesResult,
+  ] = results;
+
+  const stateCounts = new Map<string, number>(
+    statesResult.status === 'fulfilled'
+      ? statesResult.value
+          .filter((state) => state.stateCode)
+          .map(
+            (state) =>
+              [
+                state.stateCode as string,
+                state._count._all,
+              ] as [string, number],
+          )
+      : [],
+  );
+
+  return {
+    pollCount:
+      pollCountResult.status === 'fulfilled'
+        ? pollCountResult.value
+        : null,
+
+    voteCount:
+      voteCountResult.status === 'fulfilled'
+        ? voteCountResult.value._sum.voteCount ?? 0
+        : null,
+
+    userCount:
+      userCountResult.status === 'fulfilled'
+        ? userCountResult.value
+        : null,
+
+    polls:
+      pollsResult.status === 'fulfilled'
+        ? pollsResult.value
+        : [],
+
+    pollsFailed: pollsResult.status === 'rejected',
+
+    stateCounts,
+
+    statesLoaded: statesResult.status === 'fulfilled',
+  };
 }
 
-type HomeProps = {
-  searchParams: Promise<{ q?: string; page?: string }>;
-};
+type Poll = Awaited<
+  ReturnType<typeof getHomeData>
+>['polls'][number];
 
-export default async function Home({ searchParams }: HomeProps) {
-  const resolvedSearchParams = await searchParams;
-  const q = resolvedSearchParams?.q ?? '';
-  const pageParam = resolvedSearchParams?.page ?? '1';
-  
-  const searchQuery = q.trim().toLowerCase();
-  const currentPage = Math.max(1, parseInt(pageParam, 10));
-  const pollsPerPage = 15;
+type PollOption = Poll['options'][number];
 
-  let polls: HomePoll[] = [];
-  let totalVotesCount = 0;
-  let totalRunningPollsCount = 0;
-  let totalPages = 1;
-  let dbError = false;
+function getPollHref(poll: Poll) {
+  const path = `/poll/${encodeURIComponent(String(poll.id))}`;
 
-  try {
-    const [allPolls, voteSum] = await Promise.all([
-      db.poll.findMany({
-        where: { active: true },
-        select: {
-          id: true,
-          slug: true,
-          question: true,
-          districtName: true,
-          samitiName: true,
-          gramPanchayatName: true,
-          active: true,
-          createdAt: true,
-          deadlineDays: true,
-          options: {
-            select: { id: true, text: true, voteCount: true },
-            orderBy: { createdAt: 'asc' },
-          },
-        },
-      }),
-      db.pollOption.aggregate({ _sum: { voteCount: true } }),
-    ]);
+  return poll.slug
+    ? `${path}/${encodeURIComponent(poll.slug)}`
+    : path;
+}
 
-    const activePolls = allPolls.filter(isPollOpen);
-    totalRunningPollsCount = activePolls.length;
+function getVoteCount(poll: Poll) {
+  return poll.options.reduce(
+    (total, option) =>
+      total + Math.max(0, option.voteCount ?? 0),
+    0,
+  );
+}
 
-    let pollsWithVotes = activePolls.map((poll) => {
-      const totalVotes = poll.options.reduce((sum, opt) => sum + opt.voteCount, 0);
-      return { ...poll, totalVotes };
-    });
+function getOptionLabel(
+  option: PollOption,
+  index: number,
+) {
+  const record = option as unknown as Record<
+    string,
+    unknown
+  >;
 
-    pollsWithVotes.sort((a, b) => b.totalVotes - a.totalVotes);
+  for (const field of [
+    'text',
+    'label',
+    'name',
+    'optionText',
+    'title',
+  ]) {
+    const value = record[field];
 
-    if (searchQuery) {
-      pollsWithVotes = pollsWithVotes.filter((p: any) => {
-        const qText = p.question.toLowerCase();
-        const dist = ((p.districtName as string) ?? '').toLowerCase();
-        const samiti = ((p.samitiName as string) ?? '').toLowerCase();
-        const gp = ((p.gramPanchayatName as string) ?? '').toLowerCase();
-
-        return (
-          qText.includes(searchQuery) ||
-          dist.includes(searchQuery) ||
-          samiti.includes(searchQuery) ||
-          gp.includes(searchQuery)
-        );
-      });
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
     }
-
-    totalPages = Math.max(1, Math.ceil(pollsWithVotes.length / pollsPerPage));
-    const validPage = Math.min(currentPage, totalPages);
-    const startIndex = (validPage - 1) * pollsPerPage;
-    
-    polls = pollsWithVotes.slice(startIndex, startIndex + pollsPerPage);
-    totalVotesCount = voteSum._sum.voteCount ?? 0;
-  } catch (error) {
-    console.error('Home poll load error:', error);
-    dbError = true;
   }
 
+  return `विकल्प ${index + 1}`;
+}
+
+function PollCard({ poll }: { poll: Poll }) {
+  const totalVotes = getVoteCount(poll);
+
+  const region = REGIONS.find(
+    (item) => item.code === poll.stateCode,
+  );
+
+  // केवल dedicated admin-controlled approval field से बैज दिखाएँ।
+  const approved =
+    (
+      poll as unknown as {
+        approvalStatus?: string;
+      }
+    ).approvalStatus === 'APPROVED';
+
+  const location =
+    poll.districtName ||
+    region?.name ||
+    (poll.scope === 'NATIONAL'
+      ? 'अखिल भारतीय'
+      : 'क्षेत्रीय पोल');
+
   return (
-    <div className="w-full max-w-4xl mx-auto px-3 sm:px-4 py-6 text-gray-800 overflow-x-hidden box-border">
-      
-      {/* Top Bar - Cleaned up to show only Rajasthan No 1 badge */}
-      <div className="flex flex-wrap justify-between items-center gap-2 mb-4">
-        <span className="text-xs font-semibold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-          📍 राजस्थान का नंबर 1 ओपिनियन पोल प्लेटफॉर्म
+    <article className="jp-poll-card">
+      <div className="jp-card-tags">
+        <span className="jp-tag">
+          {poll.scope === 'NATIONAL'
+            ? 'राष्ट्रीय मुद्दे'
+            : 'स्थानीय मुद्दे'}
+        </span>
+
+        <span className="jp-tag jp-tag-outline">
+          {location}
+        </span>
+
+        <span className="jp-live">
+          <i aria-hidden="true" />
+          LIVE
         </span>
       </div>
 
-      {/* Main Banner */}
-      <div className="bg-gradient-to-r from-emerald-800 to-green-700 text-white rounded-2xl p-6 md:p-10 mb-6 text-center shadow-md">
-        <span className="bg-white/20 text-emerald-100 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider backdrop-blur-sm">
-          राजस्थान की जनता की राय, एक मंच पर
-        </span>
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-black mt-3 mb-2 tracking-tight">
-          आपकी राय, जनता की आवाज़।
-        </h1>
-        <p className="text-emerald-100 text-xs sm:text-sm md:text-base max-w-lg mx-auto mb-6">
-          राजस्थान के स्थानीय मुद्दों, ग्राम पंचायत और सरपंच चुनाव पर अपनी राय दें और देखें कि जनता क्या सोचती है।
-        </p>
-        <div className="flex flex-wrap justify-center gap-3">
-          <Link
-            href="/rajasthan"
-            className="bg-amber-400 hover:bg-amber-500 text-gray-900 font-bold px-5 py-2.5 rounded-xl shadow transition text-xs sm:text-sm inline-block"
-          >
-            📍 राजस्थान चुनाव / जिला चयन →
-          </Link>
-          <Link
-            href="/create"
-            className="bg-white hover:bg-emerald-50 text-emerald-900 font-bold px-5 py-2.5 rounded-xl shadow transition text-xs sm:text-sm inline-block"
-          >
-            ＋ नया पोल बनाएँ
-          </Link>
-        </div>
-      </div>
-
-      {/* Search Bar */}
-      <div className="mb-6 bg-white p-3 sm:p-4 rounded-2xl border border-emerald-100 shadow-sm">
-        <form method="GET" action="/" className="flex flex-col sm:flex-row gap-2">
-          <input
-            type="text"
-            name="q"
-            defaultValue={searchQuery}
-            placeholder="अपनी ग्राम पंचायत, जिला या सवाल से पोल खोजें..."
-            className="flex-1 px-4 py-2.5 border border-emerald-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-emerald-50/20 w-full"
-          />
-          <div className="flex gap-2">
-            <button
-              type="submit"
-              className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-5 py-2.5 rounded-xl text-xs sm:text-sm transition shadow-sm flex-1 sm:flex-none"
-            >
-              खोजें 🔍
-            </button>
-            {searchQuery && (
-              <Link
-                href="/"
-                className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm transition flex items-center justify-center"
-              >
-                रीसेट
-              </Link>
-            )}
-          </div>
-        </form>
-      </div>
-
-      {/* Election Update Box */}
-      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 sm:p-5 md:p-6 mb-8 shadow-sm">
-        <div className="flex items-start gap-3">
-          <span className="text-xl sm:text-2xl">📢</span>
-          <div>
-            <h2 className="text-sm sm:text-base font-bold text-amber-900 mb-1">
-              राजस्थान पंचायती राज आम चुनाव, 2026 विशेष अपडेट
-            </h2>
-            <p className="text-xs md:text-sm text-amber-800 leading-relaxed mb-3">
-              राज्य निर्वाचन आयोग, राजस्थान द्वारा पंचायतीराज संस्थाओं के आम चुनाव कुल <strong>4 चरणों</strong> में घोषित कर दिए गए हैं।
-            </p>
-            <Link
-              href="/rajasthan-election-2026"
-              className="inline-flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition shadow-sm"
-            >
-              👉 चुनाव का पूरा चरणवार कार्यक्रम यहाँ देखें →
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Live Stats */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-6">
-        <div className="bg-white p-3 sm:p-4 rounded-xl border border-emerald-100 text-center shadow-sm">
-          <div className="text-xl sm:text-2xl md:text-3xl font-black text-emerald-800">
-            {totalRunningPollsCount.toLocaleString('en-IN')}
-          </div>
-          <div className="text-[11px] sm:text-xs text-gray-500 font-medium mt-1">🗳 चल रहे पोल</div>
-        </div>
-        <div className="bg-white p-3 sm:p-4 rounded-xl border border-emerald-100 text-center shadow-sm">
-          <div className="text-xl sm:text-2xl md:text-3xl font-black text-emerald-800">
-            {totalVotesCount.toLocaleString('en-IN')}
-          </div>
-          <div className="text-[11px] sm:text-xs text-gray-500 font-medium mt-1">👥 कुल वोट</div>
-        </div>
-        <div className="bg-white p-3 sm:p-4 rounded-xl border border-emerald-100 text-center shadow-sm">
-          <div className="text-xl sm:text-2xl md:text-3xl font-black text-emerald-800">राजस्थान</div>
-          <div className="text-[11px] sm:text-xs text-gray-500 font-medium mt-1">📍 कवरेज</div>
-        </div>
-      </div>
-
-      {/* Closed Polls Link */}
-      <div className="mb-8 text-center">
-        <Link
-          href="/closed-polls"
-          className="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 font-semibold px-4 sm:px-5 py-2.5 rounded-xl text-xs md:text-sm transition shadow-sm"
+      {approved && (
+        <span
+          className="jp-approved"
+          title="JanPoll टीम द्वारा समीक्षा की गई; परिणाम की गारंटी नहीं"
         >
-          <span>📁</span> समाप्त हो चुके पोल्स और पुराना इतिहास देखें →
+          ✓ टीम द्वारा समीक्षित
+        </span>
+      )}
+
+      <h3>
+        <Link href={getPollHref(poll)}>
+          {poll.question}
+        </Link>
+      </h3>
+
+      <div className="jp-options">
+        {poll.options.slice(0, 2).map((option, index) => {
+          const optionVotes = Math.max(
+            0,
+            option.voteCount ?? 0,
+          );
+
+          const percentage =
+            totalVotes > 0
+              ? (optionVotes / totalVotes) * 100
+              : 0;
+
+          const optionLabel = getOptionLabel(
+            option,
+            index,
+          );
+
+          return (
+            <div key={index}>
+              <div className="jp-option-label">
+                <span>{optionLabel}</span>
+                <strong>
+                  {percentage.toFixed(1)}%
+                </strong>
+              </div>
+
+              <div
+                className="jp-progress"
+                role="progressbar"
+                aria-label={optionLabel}
+                aria-valuenow={Number(
+                  percentage.toFixed(1),
+                )}
+                aria-valuemin={0}
+                aria-valuemax={100}
+              >
+                <span
+                  style={{
+                    width: `${percentage}%`,
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {totalVotes === 0 && (
+        <p className="jp-zero">
+          अभी कोई वोट नहीं • पहली राय आपकी हो सकती है
+        </p>
+      )}
+
+      <div className="jp-card-bottom">
+        <span>
+          {numbers.format(totalVotes)} कुल वोट
+          {poll.options.length > 2 &&
+            ` · ${poll.options.length} विकल्प`}
+        </span>
+
+        <Link
+          className="jp-card-action"
+          href={getPollHref(poll)}
+          aria-label={`पोल खोलें: ${poll.question}`}
+        >
+          राय दें
+          <span aria-hidden="true">↗</span>
         </Link>
       </div>
+    </article>
+  );
+}
 
-      <div className="my-6 bg-white p-3 rounded-2xl border border-emerald-100 shadow-sm">
-        <Ad728x90 />
-      </div>
+export default async function HomePage() {
+  const data = await getHomeData();
 
-      {/* Active Polls List */}
-      <div id="recent-polls" className="mb-10">
-        <h2 className="text-xl sm:text-2xl font-bold text-emerald-900 mb-2 flex items-center gap-2">
-          🔥 सक्रिय पोल्स की सूची {searchQuery ? `(खोज परिणाम: "${searchQuery}")` : ''}
-        </h2>
-        <p className="mb-6 text-xs text-gray-500">
-          पृष्ठ {currentPage} / {totalPages} (कुल सक्रिय पोल: {totalRunningPollsCount})
-        </p>
+  const regions = REGIONS.map((region) => ({
+    code: region.code,
+    name: region.name,
+    href: `/states?state=${encodeURIComponent(
+      region.code,
+    )}`,
+    count: data.statesLoaded
+      ? data.stateCounts.get(region.code) ?? 0
+      : null,
+  }));
 
-        {dbError ? (
-          <div className="bg-amber-50 border border-amber-200 text-amber-800 p-6 rounded-xl text-center text-xs sm:text-sm">
-            डेटाबेस से कनेक्ट नहीं हो पाया। कृपया थोड़ी देर बाद पुनः प्रयास करें।
-          </div>
-        ) : polls.length === 0 ? (
-          <div className="bg-white rounded-xl p-8 text-center border border-emerald-100 text-gray-500 shadow-sm">
-            {searchQuery ? 'आपके खोज शब्द से मिलता-जुलता कोई पोल नहीं मिला।' : 'अभी कोई पोल चालू नहीं है। सबसे पहला पोल आप बनाएँ!'}
-            <div className="mt-4">
-              <Link href="/create" className="text-emerald-700 font-bold underline hover:text-emerald-800 text-xs sm:text-sm">
-                नया पोल बनाएँ
+  const featuredRegions = [...regions]
+    .sort((a, b) => {
+      if (a.code === b.code) return 0;
+      if (a.code === 'RJ') return -1;
+      if (b.code === 'RJ') return 1;
+
+      return (b.count ?? 0) - (a.count ?? 0);
+    })
+    .slice(0, 4);
+
+  const stats = [
+    {
+      value: data.voteCount,
+      label: 'अब तक दर्ज वोट',
+    },
+    {
+      value: data.pollCount,
+      label: 'सक्रिय पोल',
+    },
+    {
+      value: data.statesLoaded
+        ? data.stateCounts.size
+        : null,
+      label: 'राज्य / UT में सक्रिय पोल',
+    },
+    {
+      value: data.userCount,
+      label: 'पंजीकृत उपयोगकर्ता',
+    },
+  ];
+
+  return (
+    <main className="jp-home" lang="hi">
+      {/* BLOCK 1 — HERO */}
+      <section
+        className="jp-hero"
+        aria-labelledby="home-title"
+      >
+        <div className="jp-wrap jp-hero-grid">
+          <div>
+            <p className="jp-eyebrow">
+              <span
+                className="jp-dot"
+                aria-hidden="true"
+              />
+              INDIA’S INDEPENDENT OPINION PLATFORM
+            </p>
+
+            <h1 id="home-title">
+              <span className="jp-headline-line">
+                गाँव की चौपाल से
+              </span>
+
+              <span className="jp-headline-line jp-headline-green">
+                देश की राजधानी तक।
+              </span>
+            </h1>
+
+            <p className="jp-hero-copy">
+              स्थानीय और राष्ट्रीय मुद्दों पर अपनी राय
+              साझा करें। अपना सवाल उठाएँ, लोगों को
+              जोड़ें और जानें कि भाग लेने वाले लोग
+              क्या सोचते हैं।
+            </p>
+
+            <div className="jp-actions">
+              <Link
+                className="jp-btn jp-btn-primary"
+                href="/create"
+              >
+                अपनी आवाज़ उठाएँ
+                <span aria-hidden="true">↗</span>
               </Link>
+
+              <a
+                className="jp-btn jp-btn-light"
+                href="#live-polls"
+              >
+                पोल देखें
+                <span aria-hidden="true">→</span>
+              </a>
             </div>
           </div>
-        ) : (
-          <div className="space-y-4">
-            {polls.map((poll, index) => {
-              const pollTotalVotes = poll.options.reduce((sum, opt) => sum + opt.voteCount, 0);
-              const pollUrl = poll.slug ? `/poll/${poll.id}/${poll.slug}` : `/poll/${poll.id}`;
-              const showAdAfterThis = index === 4;
-              const location = [poll.gramPanchayatName, poll.samitiName, poll.districtName].filter(Boolean).join(' · ');
 
-              return (
-                <React.Fragment key={poll.id}>
-                  <div className="bg-white rounded-2xl p-4 sm:p-6 border border-emerald-100 shadow-sm hover:shadow-md transition w-full overflow-hidden">
-                    <div className="flex flex-wrap justify-between items-center gap-2 text-xs text-gray-500 mb-3">
-                      <span className="bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-md font-semibold border border-emerald-200">
-                        🗳 कुल वोट: {pollTotalVotes.toLocaleString('en-IN')}
-                      </span>
-                      <span className="flex items-center gap-3">
-                        <span>⏳ {daysLeft(poll)} दिन शेष</span>
-                        <span>{new Date(poll.createdAt).toLocaleDateString('hi-IN')}</span>
-                      </span>
-                    </div>
+          <aside className="jp-voice">
+            <div className="jp-voice-top">
+              <span>PEOPLE. OPINIONS. CHANGE.</span>
+              <span aria-hidden="true">↗</span>
+            </div>
 
-                    {location && <p className="mb-2 text-xs font-semibold text-emerald-700">📍 {location}</p>}
+            <span
+              className="jp-quote"
+              aria-hidden="true"
+            >
+              “
+            </span>
 
-                    <h3 className="text-base sm:text-lg font-bold text-emerald-900 mb-4 break-words">{poll.question}</h3>
+            <h2>
+              मुद्दा आपका है।
+              <br />
+              आवाज़ भी आपकी हो।
+            </h2>
 
-                    <div className="space-y-2 mb-5">
-                      {poll.options.map((opt) => (
-                        <div
-                          key={opt.id}
-                          className="text-xs sm:text-sm font-medium text-gray-700 bg-emerald-50/20 p-3 rounded-xl border border-emerald-100 break-words"
-                        >
-                          <span>{opt.text}</span>
-                        </div>
-                      ))}
-                    </div>
+            <p>
+              पानी, सड़क, शिक्षा या रोज़गार—आपके
+              आसपास क्या बदलना चाहिए? सवाल उठाइए,
+              जनमत जुटाइए।
+            </p>
 
-                    <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100">
-                      <a
-                        href={`https://wa.me/?text=${encodeURIComponent(`🗳️ ${poll.question}\nअपनी राय यहाँ दें: https://janpoll.in${pollUrl}`)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 bg-green-50 hover:bg-green-100 text-green-800 border border-green-200 font-bold px-3.5 py-2 rounded-xl text-xs transition"
-                      >
-                        <span>💬</span> WhatsApp पर शेयर करें
-                      </a>
+            <div className="jp-voice-bottom">
+              <span
+                className="jp-dot"
+                aria-hidden="true"
+              />
+              आपकी बात, एक साझा मंच पर
+            </div>
+          </aside>
+        </div>
 
-                      <Link
-                        href={pollUrl}
-                        className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-4 sm:px-5 py-2 rounded-xl text-xs transition shadow ml-auto"
-                      >
-                        वोट दें और परिणाम देखें →
-                      </Link>
-                    </div>
-                  </div>
+        {/* REAL DATABASE STATISTICS */}
+        <dl className="jp-wrap jp-stats">
+          {stats.map((stat) => (
+            <div key={stat.label}>
+              <dt>{stat.label}</dt>
 
-                  {showAdAfterThis && (
-                    <div className="my-6 p-3 bg-emerald-50/50 rounded-2xl border border-emerald-200 overflow-hidden">
-                      <Ad728x90 />
-                    </div>
-                  )}
-                </React.Fragment>
-              );
-            })}
+              <dd>
+                <CountUp value={stat.value} />
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </section>
 
-            {totalPages > 1 && (
-              <div className="flex flex-wrap justify-center items-center gap-2 sm:gap-3 pt-6 pb-2">
-                {currentPage > 1 ? (
-                  <Link
-                    href={`/?page=${currentPage - 1}${searchQuery ? `&q=${searchQuery}` : ''}`}
-                    className="px-3.5 py-2 bg-white border border-emerald-200 rounded-xl text-xs font-bold text-emerald-900 hover:bg-emerald-50 transition shadow-sm"
-                  >
-                    &larr; पिछला पेज
-                  </Link>
-                ) : (
-                  <span className="px-3.5 py-2 bg-gray-100 border border-gray-200 rounded-xl text-xs font-bold text-gray-400 cursor-not-allowed">
-                    &larr; पिछला पेज
-                  </span>
-                )}
+      {/* BLOCK 2 — ABOUT + HOW IT WORKS */}
+      <section
+        className="jp-section jp-wrap jp-about"
+        aria-labelledby="about-title"
+      >
+        <div>
+          <p className="jp-eyebrow">
+            JANPOLL क्या है?
+          </p>
 
-                <span className="text-xs font-semibold text-gray-600">
-                  पेज {currentPage} / {totalPages}
-                </span>
+          <h2 id="about-title">
+            एक सवाल से शुरू हो
+            <br />
+            <span>बदलाव की बातचीत।</span>
+          </h2>
 
-                {currentPage < totalPages ? (
-                  <Link
-                    href={`/?page=${currentPage + 1}${searchQuery ? `&q=${searchQuery}` : ''}`}
-                    className="px-3.5 py-2 bg-white border border-emerald-200 rounded-xl text-xs font-bold text-emerald-900 hover:bg-emerald-50 transition shadow-sm"
-                  >
-                    अगला पेज &rarr;
-                  </Link>
-                ) : (
-                  <span className="px-3.5 py-2 bg-gray-100 border border-gray-200 rounded-xl text-xs font-bold text-gray-400 cursor-not-allowed">
-                    अगला पेज &rarr;
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+          <p>
+            JanPoll एक स्वतंत्र सार्वजनिक राय मंच
+            है। यहाँ आप अपने गाँव, वार्ड, शहर,
+            राज्य और देश से जुड़े विषयों पर पोल
+            बना सकते हैं और भाग लेने वाले लोगों
+            की राय जान सकते हैं।
+          </p>
 
-      <div className="bg-gradient-to-r from-emerald-900 to-emerald-800 text-white rounded-3xl p-6 sm:p-8 text-center shadow-lg my-10">
-        <h2 className="text-xl sm:text-2xl font-black mb-2">क्या आप अपनी पंचायत या वार्ड का पोल बनाना चाहते हैं?</h2>
-        <p className="text-emerald-100 text-xs md:text-sm max-w-md mx-auto mb-6">
-          अपने गाँव, सरपंच पद या वार्ड सदस्य के लिए तुरंत डिजिटल ओपिनियन पोल शुरू करें और जनता की राय जानें।
-        </p>
-        <Link
-          href="/create"
-          className="bg-white hover:bg-emerald-50 text-emerald-900 font-bold px-6 sm:px-8 py-3 rounded-2xl shadow transition text-sm sm:text-base inline-block"
+          <p>
+            क्या आपकी बात अनसुनी रह जाती है?
+            पोल बनाकर उसे सामने लाइए। हमारी टीम
+            महत्वपूर्ण जनहित के मुद्दों की समीक्षा
+            कर उन्हें मंच पर फ़ीचर करने और व्यापक
+            चर्चा तक पहुँचाने का प्रयास करेगी।
+          </p>
+
+          <Link
+            href="/create"
+            className="jp-text-link"
+          >
+            पोल बनाएँ, बदलाव की मुहिम से जुड़ें
+            <span aria-hidden="true">↗</span>
+          </Link>
+        </div>
+
+        <div
+          className="jp-steps"
+          aria-label="JanPoll कैसे काम करता है"
         >
-          ＋ नया पोल बनाएँ
-        </Link>
-      </div>
-    </div>
+          {STEPS.map((step) => (
+            <div
+              className="jp-step"
+              key={step.number}
+            >
+              <span>{step.number}</span>
+
+              <div>
+                <h3>{step.title}</h3>
+                <p>{step.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* BLOCK 3 — CATEGORIES + FOUR REAL POLLS */}
+      <section
+        className="jp-feed-section"
+        id="live-polls"
+        aria-labelledby="polls-title"
+      >
+        <div className="jp-wrap">
+          <div className="jp-section-heading">
+            <div>
+              <p className="jp-eyebrow">
+                EXPLORE PUBLIC OPINION
+              </p>
+
+              <h2 id="polls-title">
+                मुद्दे जो मायने रखते हैं
+              </h2>
+            </div>
+
+            <Link
+              href="/polls"
+              className="jp-text-link"
+            >
+              सभी पोल देखें
+              <span aria-hidden="true">↗</span>
+            </Link>
+          </div>
+
+          <nav
+            className="jp-categories"
+            aria-label="पोल श्रेणियाँ"
+          >
+            <Link
+              className="jp-chip jp-chip-dark"
+              href="/#live-polls"
+            >
+              <span aria-hidden="true">◉</span>
+              लाइव पोल
+            </Link>
+
+            <Link
+              className="jp-chip"
+              href="/archive"
+            >
+              <span aria-hidden="true">▤</span>
+              पुराने परिणाम
+            </Link>
+
+            <span
+              className="jp-category-divider"
+              aria-hidden="true"
+            />
+
+            {CATEGORIES.map((category) => (
+              <Link
+                key={category.slug}
+                className={`jp-chip ${
+                  category.slug === 'all'
+                    ? 'jp-chip-selected'
+                    : ''
+                }`}
+                href={
+                  category.slug === 'all'
+                    ? '/#live-polls'
+                    : `/polls?category=${category.slug}`
+                }
+              >
+                <span aria-hidden="true">
+                  {category.icon}
+                </span>
+                {category.label}
+              </Link>
+            ))}
+          </nav>
+
+          {data.polls.length > 0 ? (
+            <div className="jp-poll-grid">
+              {data.polls.map((poll) => (
+                <PollCard
+                  key={poll.id}
+                  poll={poll}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="jp-empty">
+              <h3>
+                {data.pollsFailed
+                  ? 'पोल लोड नहीं हो सके'
+                  : 'अपने मुद्दे पर पहला सवाल उठाएँ'}
+              </h3>
+
+              <p>
+                {data.pollsFailed
+                  ? 'कुछ देर बाद दोबारा कोशिश करें।'
+                  : 'पानी, सड़क, शिक्षा या रोज़गार पर पोल बनाकर चर्चा शुरू करें।'}
+              </p>
+
+              <Link
+                className="jp-btn jp-btn-primary"
+                href="/create"
+              >
+                ＋ पोल बनाएँ
+              </Link>
+            </div>
+          )}
+
+          {/* MODERATION INFORMATION */}
+          <div className="jp-review-note">
+            <span
+              className="jp-review-icon"
+              aria-hidden="true"
+            >
+              ✓
+            </span>
+
+            <div>
+              <h3>
+                समीक्षा, स्पष्ट पहचान और
+                ज़िम्मेदार चर्चा
+              </h3>
+
+              <p>
+                राष्ट्रीय स्तर के पोल की हमारी
+                टीम समीक्षा करेगी। स्वीकृत पोल
+                पर समीक्षा का बैज दिखाई देगा।
+                समीक्षा लंबित होने पर भी पोल का
+                लिंक साझा किया जा सकता है।
+                बैज विषय की समीक्षा बताता है,
+                परिणामों की सत्यता की गारंटी नहीं।
+                हिंसक, आपत्तिजनक या नियम-विरुद्ध
+                पोल हटाने का अधिकार प्रशासन के
+                पास सुरक्षित है।
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* BLOCK 4 — STATE / UT SELECTION */}
+      <section
+        className="jp-section jp-wrap"
+        id="regions"
+        aria-labelledby="regions-title"
+      >
+        <div className="jp-section-heading">
+          <div>
+            <p className="jp-eyebrow">
+              STATES &amp; UNION TERRITORIES
+            </p>
+
+            <h2 id="regions-title">
+              अपने आसपास का जनमत जानें
+            </h2>
+          </div>
+
+          <span className="jp-region-total">
+            {REGIONS.length} राज्य व केंद्र
+            शासित प्रदेश
+          </span>
+        </div>
+
+        <p className="jp-section-copy">
+          राज्य चुनें और उससे जुड़े स्थानीय व
+          क्षेत्रीय पोल देखें।
+        </p>
+
+        <div className="jp-featured-regions">
+          {featuredRegions.map((region) => (
+            <Link
+              className="jp-region"
+              key={region.code}
+              href={region.href}
+            >
+              <span className="jp-region-code">
+                {region.code}
+              </span>
+
+              <strong>{region.name}</strong>
+
+              <span>
+                {region.count === null
+                  ? 'आंकड़े उपलब्ध नहीं'
+                  : `${numbers.format(
+                      region.count,
+                    )} सक्रिय पोल`}
+              </span>
+
+              <span
+                className="jp-region-arrow"
+                aria-hidden="true"
+              >
+                ↗
+              </span>
+            </Link>
+          ))}
+        </div>
+
+        <RegionPicker regions={regions} />
+      </section>
+
+      {/* BLOCK 5 — FINAL CALL TO ACTION */}
+      <section className="jp-cta">
+        <div className="jp-wrap">
+          <div>
+            <p className="jp-eyebrow">
+              बात उठेगी, तभी आगे बढ़ेगी।
+            </p>
+
+            <h2>
+              आपकी आवाज़ को मिले एक मंच।
+            </h2>
+
+            <p>
+              सवाल आपका। राय जनता की।
+              शुरुआत आज से।
+            </p>
+          </div>
+
+          <Link
+            href="/create"
+            className="jp-btn jp-btn-primary"
+          >
+            अपना पोल बनाएँ
+            <span aria-hidden="true">↗</span>
+          </Link>
+        </div>
+      </section>
+    </main>
   );
 }

@@ -1,4 +1,10 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'अस्वीकरण (Disclaimer) | JanPoll',
+  description: 'JanPoll पर उपलब्ध डेटा और ओपिनियन पोल के संबंध में अस्वीकरण जानकारी।',
+};
 
 export default function Disclaimer() {
   return (

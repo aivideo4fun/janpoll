@@ -1,5 +1,10 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
 
+export const metadata: Metadata = {
+  title: 'नियम और शर्तें (Terms & Conditions) | JanPoll',
+  description: 'JanPoll प्लेटफॉर्म के उपयोग से संबंधित नियम, शर्तें और नीतियां पढ़ें।',
+};
 export default function TermsAndConditions() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 text-gray-800">
