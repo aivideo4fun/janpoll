@@ -8,8 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "check": "tsc --noEmit",
-    "test:guards": "node scripts/test-location-matching.cjs && node scripts/test-creator-flows.cjs && node scripts/test-vote-flow.cjs && node scripts/test-security-guards.cjs",
-    "test:http": "node scripts/smoke-http.cjs"
+    "test:guards": "node scripts/test-location-matching.cjs && node scripts/test-creator-flows.cjs && node scripts/test-vote-flow.cjs && node scripts/test-security-guards.cjs && node scripts/test-home-ranking.cjs && node scripts/test-local-ui.cjs",
+    "test:http": "node scripts/smoke-http.cjs",
+    "check:home": "node scripts/check-local-home.cjs"
   },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"

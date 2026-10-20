@@ -53,7 +53,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const creator = await creatorIdentity(true);
+    const creator = await creatorIdentity(false);
+    if (!creator.email) {
+      return NextResponse.json({ message: 'पोल बनाने के लिए Google से sign-in करें। Voting mode इससे अलग है।' }, { status: 401 });
+    }
+    if (!creator.name?.trim()) {
+      return NextResponse.json({ message: 'आपके account में नाम उपलब्ध नहीं है। Google से दोबारा sign-in करें।' }, { status: 422 });
+    }
 
     let body: unknown;
 

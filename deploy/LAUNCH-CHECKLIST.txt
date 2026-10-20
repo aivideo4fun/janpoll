@@ -1,3 +1,5 @@
+LATEST LOCAL REVISION 2026-10-20: New poll creation requires authenticated creator name and email in BOTH voting modes. Guest voting remains selectable per poll; guest creation is now blocked. Historical anonymous creators cannot be reconstructed. Previous rollout notes below may describe the earlier optional guest-creation release.
+
 EC2 release gates - do not overwrite the saved production .env with local .env.
 Keep real RDS URL, valid Google credentials and stable existing VOTE_SALT. Add missing production flags:
 NODE_ENV=production

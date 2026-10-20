@@ -51,7 +51,7 @@ export default function TermsAndConditions() {
 
         <section className="space-y-2">
           <h2 className="text-lg font-bold text-emerald-800">5. पोल बनाना और सत्यापन</h2>
-          <p className="text-sm leading-8 text-gray-600">पोल sign-in के साथ या guest के रूप में बनाया जा सकता है; दोनों में इन शर्तों की स्वीकृति आवश्यक है। Guest creator का management access इसी browser की सुरक्षित cookie पर निर्भर है। Browser data हटाने पर access खो सकता है; केवल Reference ID से ownership प्रमाणित नहीं होती। पोल बनाने वाले की जिम्मेदारी है कि सवाल और विकल्प स्पष्ट तथा गैर-भ्रामक हों। Verified badge केवल JanPoll की समीक्षा को दर्शाता है; यह सरकारी प्रमाणन या परिणाम की गारंटी नहीं है।</p>
+          <p className="text-sm leading-8 text-gray-600">नया पोल बनाने के लिए Google sign-in और इन शर्तों की स्वीकृति आवश्यक है। Creator का नाम और email admin को उपलब्ध रहते हैं; public poll पर नहीं दिखाए जाते। Voting का तरीका अलग चुना जाता है: login के बाद या बिना login। पहले बनाए गए guest polls का management access पुरानी सुरक्षित browser cookie पर निर्भर रह सकता है; केवल Reference ID से ownership प्रमाणित नहीं होती। पोल बनाने वाले की जिम्मेदारी है कि सवाल और विकल्प स्पष्ट तथा गैर-भ्रामक हों। Verified badge केवल JanPoll की समीक्षा को दर्शाता है; यह सरकारी प्रमाणन या परिणाम की गारंटी नहीं है।</p>
         </section>
         <section className="space-y-2">
           <h2 className="text-lg font-bold text-emerald-800">6. Deactivation और deletion</h2>

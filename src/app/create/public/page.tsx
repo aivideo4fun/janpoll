@@ -27,7 +27,7 @@ const button =
 function CreateForm() {
   const params = useSearchParams();
   const router = useRouter();
-  const { status } = useSession();
+  const { data: session, status } = useSession();
 
   const rawState = (params.get('state') ?? '').trim();
 
@@ -42,7 +42,7 @@ function CreateForm() {
   const [question, setQuestion] = useState('');
   const [options, setOptions] = useState(['', '']);
   const [deadlineDays, setDeadlineDays] = useState(3);
-  const [requiresLogin, setRequiresLogin] = useState(true);
+  const [requiresLogin, setRequiresLogin] = useState(false);
   const [termsAgreed, setTermsAgreed] = useState(false);
 
   const [busy, setBusy] = useState(false);
@@ -85,6 +85,7 @@ function CreateForm() {
     event.preventDefault();
 
     if (lock.current) return;
+    if (status !== 'authenticated') { setError('पोल बनाने के लिए पहले Google sign-in करें।'); return; }
 
     setError('');
 
@@ -260,12 +261,13 @@ function CreateForm() {
           )}
         </section>
 
-        {status !== 'authenticated' && <section className="my-5 rounded-2xl border border-emerald-100 bg-white p-5"><p className="text-sm leading-7">बिना login भी poll बनाएँ। Guest poll इसी browser से manage होगा; site data हटने पर access खो सकता है।</p><button type="button" onClick={login} disabled={loginBusy || !region} className={`${button} mt-3`}>Sign in करके बनाएँ</button></section>}
+        {status === 'authenticated' && <p className="mt-5 rounded-xl bg-emerald-50 p-4 text-sm leading-7 text-emerald-900">Creator: {session?.user?.name} · {session?.user?.email}. यह जानकारी public poll पर नहीं दिखेगी।</p>}
+        {status !== 'authenticated' && <section className="my-5 rounded-2xl border border-emerald-100 bg-white p-5"><p className="text-sm leading-7">पोल बनाने के लिए Google से sign-in करें। आपका नाम/email केवल admin को उपलब्ध होगा। आप voting बिना login वाली रख सकते हैं।</p><button type="button" onClick={login} disabled={loginBusy || status === 'loading'} className={`${button} mt-3`}>Continue with Google</button></section>}
           <form
             onSubmit={publish}
             className="mt-5 rounded-3xl border border-emerald-100 bg-white p-5 shadow-sm sm:p-7"
           >
-            <fieldset disabled={busy} className="min-w-0 space-y-6">
+            <fieldset disabled={busy || status !== 'authenticated'} className="min-w-0 space-y-6">
               <div>
                 <label
                   htmlFor="poll-question"

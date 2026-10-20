@@ -1,3 +1,6 @@
+# Latest local policy correction (2026-10-20)
+New poll creators must Google sign-in so their server-derived name/email can be shown to authorized admin. Choosing guest voting does not remove creator authentication. Existing anonymous guest records cannot gain an email retroactively. Legacy guest ownership cookies remain supported. Tagline is centered under JANPOLL, social strip is icons only, and daily ranking remains based on IST vote timestamps. Apply locally and test before any EC2 release; do not rebuild a running release directory.
+
 # JanPoll EC2/RDS deployment candidate
 
 This package is based on GitHub branch `india-local-redesign`, commit `23c53f0`, plus the reviewed release changes. No production server or RDS database has been accessed. Do not replace the live directory or run SQL before staging validation.

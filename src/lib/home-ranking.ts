@@ -20,7 +20,7 @@ const loadRanking = unstable_cache(async (start: string, end: string, filter: Pr
     take: 4,
   });
   return ranked.map(row => row.pollId);
-}, ['janpoll-daily-ranking-v1'], { revalidate: 30, tags: ['home-daily-ranking'] });
+}, ['janpoll-daily-ranking-v2'], { revalidate: 30, tags: ['home-daily-ranking'] });
 
 export async function getTodayTopPolls(filter: Prisma.PollWhereInput = {}) {
   const { start, end } = indiaDayBounds();

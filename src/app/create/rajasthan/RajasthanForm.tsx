@@ -12,7 +12,7 @@ function LocationSelect({ label, value, items, onChange }: { label: string; valu
 }
 export default function RajasthanForm({ initial }: { initial: Initial }) {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [type, setType] = useState(initial.type);
   const [district, setDistrict] = useState(initial.districtId);
   const [samiti, setSamiti] = useState(initial.samitiId);
@@ -61,6 +61,7 @@ export default function RajasthanForm({ initial }: { initial: Initial }) {
   }, [district, samiti, type]);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (busy) return;
+    if (status !== 'authenticated') { setError('पोल बनाने के लिए Google से sign-in करें।'); return; }
     setError(''); setBusy(true);
     try {
       const response = await fetch('/api/polls/rajasthan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
@@ -80,8 +81,8 @@ export default function RajasthanForm({ initial }: { initial: Initial }) {
     <Link href="/rajasthan" className="text-sm text-emerald-800">← राजस्थान</Link>
     <h1 className="mt-5 text-2xl font-semibold leading-relaxed text-emerald-950 sm:text-3xl">नया ओपिनियन पोल बनाएँ</h1><p className="mt-2 text-sm leading-7 text-slate-500">राजस्थान · अपने क्षेत्र की राय जानें। यह आधिकारिक जनमत मतदान नहीं है।</p>
     {error && <p role="alert" className="mt-5 rounded-xl bg-red-50 p-4 text-sm leading-7 text-red-800">{error}</p>}
-    {!session && <div className="mt-6 rounded-2xl bg-emerald-50 p-5"><p className="text-sm leading-7">Guest के रूप में poll बना सकते हैं। इसी browser का data सुरक्षित रखें; login से आगे access रखना आसान है।</p><button onClick={() => signIn('google', { callbackUrl: window.location.href })} className="mt-3 rounded-xl border border-emerald-200 bg-white px-5 py-3 text-sm">Sign in करके बनाएँ</button></div>}
-    <form onSubmit={submit} className="mt-6 space-y-6">
+    {!session && <div className="mt-6 rounded-2xl bg-emerald-50 p-5"><p className="text-sm leading-7">पोल बनाने के लिए Google से sign-in करें। नाम/email केवल admin को उपलब्ध होगा। Voting का तरीका आप अलग चुनेंगे।</p><button onClick={() => signIn('google', { callbackUrl: window.location.href })} className="mt-3 rounded-xl border border-emerald-200 bg-white px-5 py-3 text-sm">Continue with Google</button></div>}
+    <form onSubmit={submit} className="mt-6"><fieldset disabled={busy || status !== 'authenticated'} className="space-y-6">
       <label className="block text-sm">पोल का प्रकार<select value={type} onChange={e => { setType(e.target.value); setGp(''); setWard(''); setZila(''); setChildren([]); }} className={field}><option value="sarpanch">सरपंच जनमत</option><option value="samiti">पंचायत समिति वार्ड</option><option value="zila">जिला परिषद वार्ड</option></select></label>
       <div className="grid gap-4 sm:grid-cols-2"><LocationSelect label="जिला" value={district} items={districts} onChange={value => { setDistrict(value); setTehsil(''); setTehsils([]); setSamiti(''); setGp(''); setWard(''); setZila(''); setSamitis([]); setChildren([]); }} />
       {type !== 'zila' && tehsils.length > 0 && <label className="block text-sm leading-7">तहसील (वैकल्पिक)<select value={tehsil} onChange={e => setTehsil(e.target.value)} className={field}><option value="">सभी तहसीलें</option>{tehsils.map(item => <option key={item.id} value={item.id}>{item.nameHi}</option>)}</select><span className="text-xs text-slate-500">पंचायत समितियाँ जिले के अनुसार दिखाई गई हैं।</span></label>}
@@ -90,9 +91,9 @@ export default function RajasthanForm({ initial }: { initial: Initial }) {
       <label className="block text-sm">आपका सवाल<textarea required minLength={5} maxLength={500} value={question} onChange={e => setQuestion(e.target.value)} className={field} rows={3} /></label>
       <fieldset><legend className="text-sm">विकल्प</legend>{options.map((value, index) => <div key={index} className="flex items-center gap-2"><input aria-label={`विकल्प ${index + 1}`} required maxLength={255} value={value} onChange={e => setOptions(options.map((old, i) => i === index ? e.target.value : old))} className={field} />{options.length > 2 && <button type="button" aria-label={`विकल्प ${index + 1} हटाएँ`} onClick={() => setOptions(options.filter((_, i) => i !== index))} className="min-h-11 px-3">×</button>}</div>)}{options.length < 15 && <button type="button" onClick={() => setOptions([...options, ''])} className="mt-3 min-h-11 text-sm text-emerald-800">＋ विकल्प जोड़ें</button>}</fieldset>
       <label className="block text-sm">अवधि (दिन)<input type="number" required min={1} max={60} value={days} onChange={e => setDays(Number(e.target.value))} className={field} /></label>
-      <label className="flex items-start gap-3 text-sm leading-7"><input type="checkbox" checked={login} onChange={e => setLogin(e.target.checked)} className="mt-2 h-4 w-4" />वोट देने के लिए sign-in आवश्यक रखें।</label>
+      <label className="flex items-start gap-3 text-sm leading-7"><input type="checkbox" checked={login} onChange={e => setLogin(e.target.checked)} className="mt-2 h-4 w-4" />वोट देने के लिए sign-in आवश्यक रखें। इसे बंद रखने पर लोग बिना login वोट दे सकते हैं।</label>
       <label className="flex items-start gap-3 text-sm leading-7"><input required type="checkbox" checked={terms} onChange={e => setTerms(e.target.checked)} className="mt-2 h-4 w-4" /><span>मैं JanPoll के <Link href="/terms" target="_blank" className="text-emerald-800 underline">नियम और शर्तों</Link> से सहमत हूँ।</span></label>
       <button disabled={busy} className="min-h-12 w-full rounded-xl bg-emerald-800 px-5 py-3 font-semibold text-white disabled:opacity-60">{busy ? 'प्रकाशित हो रहा है…' : 'पोल प्रकाशित करें'}</button><p className="text-xs leading-6 text-slate-500">Verified badge केवल admin review के बाद मिलता है।</p>
-    </form>
+    </fieldset></form>
   </section></main>;
 }

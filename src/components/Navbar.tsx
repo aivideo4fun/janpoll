@@ -114,12 +114,12 @@ export default function Navbar() {
             </span>
 
             <span
-              className="mt-2 flex w-full items-center justify-between gap-1 whitespace-nowrap text-[9px] font-semibold leading-none tracking-[0.1em] text-emerald-700 sm:text-[10px]"
+              className="mt-2 block w-full whitespace-nowrap text-center text-[9px] font-semibold leading-none tracking-[0.12em] text-emerald-700 sm:text-[10px]"
               style={{
                 fontFamily: 'Arial, Helvetica, sans-serif',
               }}
             >
-              <span>VOICE</span><span>OF</span><span>PEOPLE</span>
+              VOICE OF PEOPLE
             </span>
           </span>
         </Link>
