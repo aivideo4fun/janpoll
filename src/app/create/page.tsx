@@ -1,8 +1,9 @@
 import { redirect } from 'next/navigation';
 import { getRegionByCode, getRegionBySlug } from '@/lib/regions';
-export default function CreatePage({ searchParams = {} }: {
-  searchParams?: Record<string, string | string[] | undefined>;
+export default async function CreatePage({ searchParams: queryPromise = Promise.resolve({}) }: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  const searchParams = await queryPromise;
   const query = new URLSearchParams();
   Object.entries(searchParams).forEach(([key, value]) => {
     const item = Array.isArray(value) ? value[0] : value;

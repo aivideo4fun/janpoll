@@ -18,7 +18,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { district } = await params;
   const decodedDistrict = safeDecode(district);
   return {
-    title: `${decodedDistrict.toUpperCase()} जिला परिषद सदस्य चुनाव और लाइव पोल्स | JanPoll`,
+    alternates: { canonical: `/rajasthan/${encodeURIComponent(district)}/zila-parishad` },
+    keywords: [district, 'Rajasthan public opinion', 'JanPoll India'],
+    title: `${decodedDistrict.toUpperCase()} जिला परिषद सदस्य जनमत और लाइव पोल्स | JanPoll`,
     description: 'जिला परिषद वार्डवार उम्मीदवारों और राजनीतिक दलों के लाइव ओपिनियन पोल देखें।',
   };
 }
@@ -79,10 +81,10 @@ export default async function ZilaParishadIndexPage({ params }: Props) {
 
       <div className="bg-gradient-to-r from-amber-800 to-orange-700 text-white rounded-3xl p-6 md:p-8 mb-8 text-center shadow-md">
         <h1 className="text-2xl md:text-3xl font-black mb-2">
-          🟠 जिला परिषद सदस्य चुनाव - {districtNameHi}
+          🟠 जिला परिषद सदस्य जनमत - {districtNameHi}
         </h1>
         <p className="text-amber-100 text-xs md:text-sm">
-          जिला परिषद वॉर्ड वार चुनाव और जनता के रुझान यहाँ देखे जा सकते हैं।
+          जिला परिषद वॉर्ड वार जनमत और जनता के रुझान यहाँ देखे जा सकते हैं।
         </p>
       </div>
 

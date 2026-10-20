@@ -8,6 +8,7 @@ import { usePathname } from 'next/navigation';
 import { getRegionBySlug } from '@/lib/regions';
 
 const SOCIALS = [
+  { name: 'Telegram', href: 'https://t.me/janpollindia', icon: '/images/telegram.svg' },
   {
     name: 'WhatsApp चैनल',
     href: 'https://whatsapp.com/channel/0029VbEDUaJ5Ui2OzmpEYI3D',
@@ -89,7 +90,7 @@ export default function Navbar() {
         {/* Logo, brand name and tagline */}
         <Link
           href="/"
-          aria-label="JanPoll — Voice   of   India — Home"
+          aria-label="JanPoll — Voice of People — Home"
           className="group inline-flex min-w-0 items-center gap-2.5 rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-700 sm:gap-3"
         >
           <Image
@@ -118,7 +119,7 @@ export default function Navbar() {
                 fontFamily: 'Arial, Helvetica, sans-serif',
               }}
             >
-              VOICE   OF   INDIA
+              Voice of People
             </span>
           </span>
         </Link>

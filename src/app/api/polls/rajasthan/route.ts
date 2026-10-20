@@ -4,6 +4,7 @@ import { creatorIdentity } from '@/lib/polls/owner';
 import { z } from 'zod';
 
 import { db } from '@/lib/db';
+import { creationGuard } from '@/lib/creation-guard';
 import { generateSlug } from '@/lib/slugify';
 
 export const dynamic = 'force-dynamic';
@@ -236,6 +237,8 @@ export async function POST(request: Request) {
       }
     }
 
+    const limited = await creationGuard(creator);
+    if (limited) return NextResponse.json({ message: limited }, { status: 429 });
     const slugBase = generateSlug(input.question) || 'poll';
 
     const poll = await db.poll.create({

@@ -12,11 +12,13 @@ type Props = {
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { samiti } = await params;
+  const { district, samiti } = await params;
   const decodedSamiti = safeDecode(samiti);
   return {
+    alternates: { canonical: `/rajasthan/${encodeURIComponent(district)}/sarpanch/${encodeURIComponent(samiti)}` },
+    keywords: [decodedSamiti, 'ग्राम पंचायत poll', 'JanPoll Rajasthan'],
     title: `${decodedSamiti} पंचायत समिति - ग्राम पंचायत लिस्ट और लाइव पोल्स | JanPoll`,
-    description: 'अपनी ग्राम पंचायत चुनें और सरपंच चुनाव के लिए लाइव ओपिनियन पोल देखें व वोट दें।',
+    description: 'अपनी ग्राम पंचायत चुनें और सरपंच जनमत के लिए लाइव ओपिनियन पोल देखें व वोट दें।',
   };
 }
 

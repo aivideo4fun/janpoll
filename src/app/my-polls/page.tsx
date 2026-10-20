@@ -5,7 +5,8 @@ import { ownerWhere } from '@/lib/polls/owner';
 import { requestDeletion, deactivateOwnPoll } from './actions';
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'मेरे पोल | JanPoll India', robots: { index: false, follow: false } };
-export default async function MyPolls({ searchParams = {} }: { searchParams?: { page?: string } }) {
+export default async function MyPolls({ searchParams: queryPromise = Promise.resolve({}) }: { searchParams?: Promise<{ page?: string }> }) {
+  const searchParams = await queryPromise;
   const owner = await ownerWhere();
   if (!owner) redirect('/api/auth/signin?callbackUrl=%2Fmy-polls');
   const parsed = Number(searchParams.page || 1);

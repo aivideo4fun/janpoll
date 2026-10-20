@@ -28,22 +28,6 @@ export async function GET(request: Request) {
         orderBy: { nameHi: 'asc' },
       });
 
-      // Fallback: Agar samitiId se direct gram panchayat nahi mili, toh district ke anusaar check karein ya saari bhejein taaki dropdown khali na rahe
-      if (items.length === 0) {
-        const samitiObj = await db.panchayatSamiti.findUnique({
-          where: { id: samitiId },
-          select: { districtId: true }
-        });
-        if (samitiObj) {
-          items = await db.gramPanchayat.findMany({
-            where: { districtId: samitiObj.districtId },
-            select: { id: true, nameHi: true, nameEn: true },
-            take: 100,
-            orderBy: { nameHi: 'asc' },
-          });
-        }
-      }
-
       return NextResponse.json({ items });
     }
 

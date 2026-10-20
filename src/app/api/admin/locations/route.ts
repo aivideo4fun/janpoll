@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { isAdmin } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
+  if (!(await isAdmin())) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   const { searchParams } = new URL(request.url);
   const districtId = searchParams.get('districtId');
   const tehsilId = searchParams.get('tehsilId');

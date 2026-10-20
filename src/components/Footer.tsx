@@ -1,3 +1,4 @@
+import { AnalyticsSettingsButton } from '@/components/AnalyticsConsent';
 import Link from 'next/link';
 import Image from 'next/image';
 import { db } from '@/lib/db';
@@ -38,7 +39,7 @@ async function FooterContent() {
         <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/40 p-4 sm:p-5 flex items-start gap-3 shadow-inner">
           <span className="text-emerald-400 text-xl">ℹ️</span>
           <p className="text-xs sm:text-sm text-emerald-100/90 leading-relaxed font-medium">
-            <strong className="text-white font-bold">महत्वपूर्ण सूचना:</strong> JanPoll पर दिखाए गए पोल्स केवल जनता की राय/जनमत जानने के लिए हैं। ये किसी सरकारी संस्था, निर्वाचन आयोग या आधिकारिक चुनावी मतदान प्रणाली का हिस्सा नहीं हैं।
+            <strong className="text-white font-bold">महत्वपूर्ण सूचना:</strong> JanPoll पर दिखाए गए पोल्स केवल जनता की राय/जनमत जानने के लिए हैं। ये किसी सरकारी संस्था, निर्वाचन आयोग या आधिकारिक मतदान प्रणाली का हिस्सा नहीं हैं।
           </p>
         </div>
 
@@ -79,6 +80,9 @@ async function FooterContent() {
               <li><Link href="/rajasthan" className="hover:text-emerald-400 transition flex items-center gap-1.5">› लोकप्रिय पोल</Link></li>
               <li><Link href="/privacy-policy" className="hover:text-emerald-400 transition flex items-center gap-1.5">› गोपनीयता नीति</Link></li>
               <li><Link href="/terms" className="hover:text-emerald-400 transition flex items-center gap-1.5">› नियम और शर्तें</Link></li>
+              <li><Link href="/advertise" className="hover:text-emerald-400">› विज्ञापन और साझेदारी</Link></li>
+              <li><Link href="/editorial-policy" className="hover:text-emerald-400">› संपादकीय नीति</Link></li>
+              <li><AnalyticsSettingsButton /></li>
               <li><Link href="/contact" className="hover:text-emerald-400 transition flex items-center gap-1.5">› संपर्क करें</Link></li>
             </ul>
           </div>
@@ -104,6 +108,7 @@ async function FooterContent() {
             </h3>
             
             <div className="flex flex-wrap items-center gap-2.5 pt-1">
+              <a href="https://t.me/janpollindia" target="_blank" rel="noopener noreferrer" title="Telegram" className="h-10 w-10 rounded-full bg-white/10 p-2 flex items-center justify-center hover:bg-white/20 transition shadow"><Image src="/images/telegram.svg" alt="Telegram" width={24} height={24} /></a>
               <a href={WHATSAPP_CHANNEL_URL} target="_blank" rel="noreferrer" title="WhatsApp चैनल" className="h-10 w-10 rounded-full bg-white/10 p-2 flex items-center justify-center hover:bg-white/20 transition shadow">
                 <Image src="/images/whatsapp.png" alt="WhatsApp" width={24} height={24} className="object-contain" />
               </a>
@@ -185,7 +190,7 @@ async function FooterContent() {
           <p className="text-xs font-bold text-emerald-300">📢 प्रायोजक एवं विज्ञापन (Sponsored / Ads)</p>
 
           <div className="py-2">
-            <Ad728x90 />
+            <Ad728x90 placement="footer" />
           </div>
         </div>
 

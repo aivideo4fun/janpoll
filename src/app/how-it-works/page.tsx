@@ -1,9 +1,7 @@
+import { pageMetadata } from '@/lib/seo';
 import Link from 'next/link';
 
-export const metadata = {
-  title: 'यह कैसे काम करता है? — JanPoll राजस्थान',
-  description: 'JanPoll पर पोल बनाने और मतदान करने की पूरी प्रक्रिया जानें।',
-};
+export const metadata = pageMetadata("JanPoll कैसे काम करता है","राज्य चुनें, अपना poll बनाएँ, link साझा करें और दर्ज votes के आधार पर राय समझें।","/how-it-works",["how JanPoll works"]);
 
 export default function HowItWorksPage() {
   return (

@@ -114,7 +114,7 @@ export const googleAuthOptions: NextAuthOptions = {
       }
 
       if (user && account?.provider === 'google') {
-        const email = user.email?.trim();
+        const email = user.email?.trim().toLowerCase();
 
         if (!email) {
           throw new Error('Google email unavailable.');

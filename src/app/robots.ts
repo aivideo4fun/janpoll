@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/api/'],
+      disallow: ['/api/', '/admin', '/profile', '/my-polls', '/poll-created/', '/create'],
     },
     sitemap: 'https://janpoll.in/sitemap.xml',
   };

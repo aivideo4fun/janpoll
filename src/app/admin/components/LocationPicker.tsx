@@ -29,7 +29,7 @@ export default function LocationPicker({ districts, depth, partial = false }: Lo
     if (!districtId || depth === 'district') return;
 
     let cancelled = false;
-    fetch(`/api/admin/locations?districtId=${encodeURIComponent(districtId)}`)
+    fetch(`/api/admin/locations?type=samiti&districtId=${encodeURIComponent(districtId)}`)
       .then((r) => r.json())
       .then((d) => {
         if (!cancelled) {
@@ -54,7 +54,7 @@ export default function LocationPicker({ districts, depth, partial = false }: Lo
     if (!samitiId || depth !== 'gp') return;
 
     let cancelled = false;
-    fetch(`/api/admin/locations?samitiId=${encodeURIComponent(samitiId)}`)
+    fetch(`/api/admin/locations?type=gp&samitiId=${encodeURIComponent(samitiId)}`)
       .then((r) => r.json())
       .then((d) => {
         if (!cancelled) setGps(d.items ?? []);

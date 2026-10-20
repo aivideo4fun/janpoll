@@ -22,7 +22,7 @@ export function ProfileLogin() {
     setError('');
 
     try {
-      await signIn(undefined, {
+      await signIn('google', {
         callbackUrl: `${window.location.origin}/profile`,
       });
     } catch {
@@ -40,7 +40,7 @@ export function ProfileLogin() {
         disabled={busy}
         className={`${button} w-full sm:w-auto`}
       >
-        {busy ? 'खुल रहा है…' : 'Login / Continue →'}
+        {busy ? 'खुल रहा है…' : 'Continue with Google →'}
       </button>
 
       {error && (

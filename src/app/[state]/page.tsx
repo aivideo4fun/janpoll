@@ -1,10 +1,12 @@
 import Link from 'next/link';
+import { notFound, redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 
 import { db } from '@/lib/db';
 import {
   REGIONS,
   regionHref,
+  getRegionBySlug,
   type Region,
 } from '@/lib/regions';
 
@@ -20,7 +22,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'राज्यवार जनमत | JanPoll India',
     description:
-      'अपना राज्य चुनें, स्थानीय मुद्दों पर राय जानें और चुनावी जनमत सर्वेक्षण बनाएँ।',
+      'अपना राज्य चुनें, स्थानीय मुद्दों पर राय जानें और जनमत सर्वेक्षण बनाएँ।',
     url: 'https://janpoll.in/states',
     siteName: 'JanPoll India',
     locale: 'hi_IN',
@@ -29,9 +31,10 @@ export const metadata: Metadata = {
 };
 
 type PageProps = {
-  searchParams?: {
+  params: Promise<{ state: string }>;
+  searchParams?: Promise<{
     q?: string | string[];
-  };
+  }>;
 };
 
 const numbers = new Intl.NumberFormat('en-IN');
@@ -268,10 +271,17 @@ function RegionGroup({
 
 export default async function StatesPage({
   searchParams,
+  params,
 }: PageProps) {
+  const { state } = await params;
+  if (state !== 'states') {
+    const region = getRegionBySlug(state);
+    if (region) redirect(regionHref(region));
+    notFound();
+  }
   const { counts, loaded } = await getStateCounts();
 
-  const rawQuery = searchParams?.q;
+  const rawQuery = (await searchParams)?.q;
 
   const query = (
     Array.isArray(rawQuery)
@@ -384,7 +394,7 @@ const totalPolls = Array.from(counts.values()).reduce(
 
           <p className="mt-4 max-w-2xl text-sm leading-8 text-slate-500">
             राज्य या केंद्र शासित प्रदेश के पोल
-            देखें। चुनावी पोल बनाने पर चुना हुआ
+            देखें। जनमत पोल बनाने पर चुना हुआ
             राज्य अगले page पर पहले से भरा मिलेगा।
           </p>
 

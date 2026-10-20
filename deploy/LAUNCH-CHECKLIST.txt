@@ -1,0 +1,19 @@
+EC2 release gates - do not overwrite the saved production .env with local .env.
+Keep real RDS URL, valid Google credentials and stable existing VOTE_SALT. Add missing production flags:
+NODE_ENV=production
+NEXTAUTH_URL=https://janpoll.in
+ENABLE_DEV_LOGIN=false
+REQUIRE_LOGIN_FOR_ALL_VOTES=true
+NEXT_PUBLIC_NETWORK_ADS_ENABLED=true
+NEXT_PUBLIC_ADS_ENABLED=false
+TRUSTED_IP_HEADER must match the reviewed proxy chain; x-forwarded-for is only appropriate with trusted appending proxies and no direct public app-port access.
+If VOTE_SALT is absent, generate a random persistent secret locally on the server; never commit secrets. Do not rotate an existing salt casually.
+Google redirect: https://janpoll.in/api/auth/callback/google
+Back up RDS and uploaded article images, restore a staging database, compare real schema with the review SQL. No reset/migrate dev/db push against live RDS.
+Apply only the reviewed missing additive changes. Source push does not apply database schema.
+Build with production environment available; NEXT_PUBLIC_* variables are embedded during build.
+Run deploy/preflight.cjs with the intended env loaded, then actual guest creation, Google creation, terms rejection, same-account repeated/incognito vote rejection, closed poll and old Rajasthan links on staging only. Use test polls, not real public vote totals.
+Ads need actual device testing and provider fill report; tag presence does not prove revenue.
+Preserve public/uploads/articles on persistent storage across releases.
+Switch live traffic only after validation and keep the old release for rollback. Roll back application code without dropping new additive columns.
+Creation works with or without login when trusted IP hashing/rate-limit schema are configured. Strict production voting requires Google login; anonymous creation is not anonymous voting.

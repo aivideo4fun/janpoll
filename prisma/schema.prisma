@@ -14,7 +14,7 @@ enum PollScope {
 
 model Poll {
   id           String  @id @default(uuid())
-  slug         String? @unique @db.VarChar(500)
+  slug         String? @db.VarChar(500)
   question     String  @db.VarChar(500)
   creatorName  String? @db.VarChar(100)
   creatorEmail String? @db.VarChar(255)
@@ -24,12 +24,12 @@ model Poll {
   deadlineDays Int     @default(3)
   active       Boolean @default(true)
 
-  scope     PollScope @default(NATIONAL)
-  stateCode String?   @db.VarChar(10)
-  shareCode String?   @unique @db.VarChar(16)
-  creatorGuestHash String? @db.VarChar(64)
-  creatorReference String? @unique @db.VarChar(32)
-  deletionStatus String @default("NONE") @db.VarChar(30)
+  scope               PollScope @default(NATIONAL)
+  stateCode           String?   @db.VarChar(10)
+  shareCode           String?   @unique @db.VarChar(16)
+  creatorGuestHash    String?   @db.VarChar(64)
+  creatorReference    String?   @unique @db.VarChar(32)
+  deletionStatus      String    @default("NONE") @db.VarChar(30)
   deletionRequestedAt DateTime?
 
   categoryType  String  @default("non-political")
@@ -69,6 +69,7 @@ model Poll {
   options PollOption[]
   votes   Vote[]
 
+  @@index([slug])
   @@index([active])
   @@index([scope, stateCode, active, createdAt])
   @@index([createdAt])
@@ -331,26 +332,64 @@ model NewsletterSubscriber {
 }
 
 model Article {
-  id String @id @default(cuid())
-  slug String @unique @db.VarChar(160)
-  title String @db.VarChar(250)
-  author String @db.VarChar(120)
-  summary String @db.VarChar(600)
-  content String @db.Text
-  sources String @db.Text
-  published Boolean @default(false)
+  coverImage  String?   @db.VarChar(1000)
+  coverAlt    String?   @db.VarChar(250)
+  id          String    @id @default(cuid())
+  slug        String    @unique @db.VarChar(160)
+  title       String    @db.VarChar(250)
+  author      String    @db.VarChar(120)
+  summary     String    @db.VarChar(600)
+  content     String    @db.Text
+  sources     String    @db.Text
+  published   Boolean   @default(false)
   publishedAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
   @@index([published, publishedAt])
 }
+
 model Announcement {
-  id String @id @default(cuid())
-  title String @db.VarChar(200)
-  body String @db.VarChar(1000)
-  href String? @db.VarChar(500)
-  active Boolean @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  ticker      Boolean  @default(false)
+  tickerOrder Int      @default(0)
+  tickerSpeed Int      @default(45)
+  id          String   @id @default(cuid())
+  title       String   @db.VarChar(200)
+  body        String   @db.VarChar(1000)
+  href        String?  @db.VarChar(500)
+  active      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
   @@index([active, createdAt])
+}
+
+model RateLimitBucket {
+  key       String   @id @db.VarChar(64)
+  count     Int      @default(1)
+  expiresAt DateTime
+
+  @@index([expiresAt])
+}
+
+model VoteAttempt {
+  id        String   @id @default(cuid())
+  pollId    String?  @db.VarChar(100)
+  outcome   String   @db.VarChar(30)
+  createdAt DateTime @default(now())
+
+  @@index([createdAt, outcome])
+  @@index([pollId, createdAt])
+}
+
+model TrafficEvent {
+  id           String   @id @db.VarChar(36)
+  path         String   @db.VarChar(500)
+  referrerHost String?  @db.VarChar(255)
+  deviceType   String   @db.VarChar(20)
+  sessionHash  String   @db.VarChar(64)
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt, path])
+  @@index([sessionHash, createdAt])
 }

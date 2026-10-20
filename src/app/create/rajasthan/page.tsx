@@ -2,9 +2,10 @@ import { db } from '@/lib/db';
 import RajasthanForm from './RajasthanForm';
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'राजस्थान में पोल बनाएँ | JanPoll India' };
-export default async function Page({ searchParams = {} }: {
-  searchParams?: Record<string, string | string[] | undefined>;
+export default async function Page({ searchParams: queryPromise = Promise.resolve({}) }: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  const searchParams = await queryPromise;
   const read = (key: string) => {
     const value = searchParams[key];
     return (Array.isArray(value) ? value[0] : value) || '';

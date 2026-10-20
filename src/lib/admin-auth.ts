@@ -52,8 +52,10 @@ export async function isAdmin() {
   const token = cookieStore.get(COOKIE_NAME)?.value;
   if (!token) return false;
 
-  const [payload, signature] = token.split('.');
-  if (!payload || !signature) return false;
+  const parts = token.split('.');
+  if (parts.length !== 2) return false;
+  const [payload, signature] = parts;
+  if (!/^\d{10,16}$/.test(payload) || !/^[a-f0-9]{64}$/.test(signature)) return false;
 
   const expected = sign(payload);
   if (signature.length !== expected.length) return false;

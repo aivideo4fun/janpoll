@@ -1,0 +1,25 @@
+# Review only. Preserve current config/certificates and run nginx -t before reload.
+server {
+    listen 80;
+    server_name janpoll.in www.janpoll.in;
+    return 301 https://janpoll.in$request_uri;
+}
+server {
+    listen 443 ssl;
+    server_name janpoll.in www.janpoll.in;
+    ssl_certificate /etc/letsencrypt/live/janpoll.in/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/janpoll.in/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+    if ($host = www.janpoll.in) { return 301 https://janpoll.in$request_uri; }
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header x-middleware-subrequest "";
+        proxy_cache off;
+    }
+}

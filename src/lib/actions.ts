@@ -6,6 +6,8 @@ import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 
 import { db } from '@/lib/db';
+import { accountRequiredForVote } from '@/lib/voting-policy';
+import { takeRateLimit } from '@/lib/rate-limit';
 import { googleAuthOptions } from '@/lib/google-auth';
 import { isPollOpen } from '@/lib/poll-utils';
 import {
@@ -32,7 +34,7 @@ const repeatResult: VoteResult = {
   message: 'आप इस पोल में पहले ही वोट दे चुके हैं।',
 };
 
-export async function castVote(
+async function castVoteInner(
   pollId: string,
   optionId: string,
   deviceSigRaw?: string,
@@ -133,7 +135,8 @@ export async function castVote(
           };
         }
 
-        if (poll.requiresLogin && !user) {
+        const accountRequired = accountRequiredForVote(poll);
+        if (accountRequired && !user) {
           return {
             success: false,
             code: 'AUTH_REQUIRED',
@@ -166,7 +169,7 @@ export async function castVote(
         // Guest voting के लिए पुराना network/device check।
         // इसे account verification का विकल्प न मानें।
         if (
-          !poll.requiresLogin &&
+          !accountRequired &&
           identity.ipHash &&
           deviceSig
         ) {
@@ -187,7 +190,7 @@ export async function castVote(
             pollId,
             optionId,
             anonymousUserId:
-              poll.requiresLogin && user
+              accountRequired && user
                 ? `user:${user.id}`
                 : deviceId,
             userId: user?.id ?? null,
@@ -244,4 +247,20 @@ export async function castVote(
         'वोट दर्ज करते समय समस्या आई। कृपया दोबारा प्रयास करें।',
     };
   }
+}
+export async function castVote(pollId: string, optionId: string, deviceSigRaw?: string): Promise<VoteResult> {
+  try {
+    const session=await getServerSession(googleAuthOptions);
+    const identity=await getVoterIdentity();
+    const userId=(session?.user as {id?:string}|undefined)?.id;
+    const actor=userId ? `account:${userId}` : `network:${identity.ipHash || 'unconfigured'}`;
+    const rate=await takeRateLimit('vote-attempt',actor,userId ? 30 : 120);
+    if(!rate.allowed) {
+      if(rate.count===(userId?31:121))await db.voteAttempt.create({data:{pollId:typeof pollId==='string'?pollId.slice(0,100):null,outcome:'RATE_LIMITED'}}).catch(()=>{});
+      return {success:false,code:'ERROR',message:'बहुत अधिक requests आए हैं। एक मिनट बाद प्रयास करें।'};
+    }
+    const result=await castVoteInner(pollId,optionId,deviceSigRaw);
+    await db.voteAttempt.create({data:{pollId:typeof pollId==='string'?pollId.slice(0,100):null,outcome:result.success?'ACCEPTED':result.code}}).catch(()=>{});
+    return result;
+  } catch(error) {console.error('Voting guard unavailable',error);return {success:false,code:'ERROR',message:'वोटिंग अभी उपलब्ध नहीं है। कुछ देर बाद प्रयास करें।'};}
 }

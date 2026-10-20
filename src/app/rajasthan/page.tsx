@@ -1,15 +1,17 @@
+export const dynamic = 'force-dynamic';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { db } from '@/lib/db';
 import SmartBackLink from '@/components/SmartBackLink';
 
 export const metadata: Metadata = {
-  title: 'राजस्थान जिला चयन और पंचायत राज चुनाव ओपिनियन पोल | JanPoll',
-  description: 'राजस्थान के सभी जिलों, तहसीलों, और ग्राम पंचायतों के लाइव पंचायत राज चुनाव ओपिनियन पोल देखें और अपनी राय साझा करें।',
+  alternates: { canonical: '/rajasthan' },
+  title: 'राजस्थान जिला चयन और पंचायत राज जनमत ओपिनियन पोल | JanPoll',
+  description: 'राजस्थान के सभी जिलों, तहसीलों, और ग्राम पंचायतों के लाइव पंचायत राज जनमत ओपिनियन पोल देखें और अपनी राय साझा करें।',
   keywords: ['rajasthan districts poll', 'rajasthan election 2026', 'sarpanch chunav rajasthan', 'janpoll rajasthan'],
   openGraph: {
-    title: 'राजस्थान जिला चयन और पंचायत राज चुनाव ओपिनियन पोल | JanPoll',
-    description: 'अपने जिले और ग्राम पंचायत के चुनाव पर ऑनलाइन वोटिंग करें।',
+    title: 'राजस्थान जिला चयन और पंचायत राज जनमत ओपिनियन पोल | JanPoll',
+    description: 'अपने जिले और ग्राम पंचायत के जनमत पर ऑनलाइन वोटिंग करें।',
     url: 'https://janpoll.in/rajasthan',
     siteName: 'JanPoll',
     locale: 'hi_IN',
@@ -42,7 +44,7 @@ export default async function RajasthanStatePage() {
           📍 राजस्थान जिला चयन (District Selection)
         </h1>
         <p className="text-emerald-100 text-xs md:text-sm">
-          अपनी स्थानीय पंचायत और निकाय चुनावों के रुझान देखने के लिए अपने जिले का चयन करें।
+          अपनी स्थानीय पंचायत और निकाय जनमत के रुझान देखने के लिए अपने जिले का चयन करें।
         </p>
       </div>
 

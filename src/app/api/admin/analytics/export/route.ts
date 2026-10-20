@@ -1,0 +1,6 @@
+import { NextResponse } from 'next/server';
+import { isAdmin } from '@/lib/admin-auth';
+import { analyticsDays,getAnalytics } from '@/lib/analytics';
+export const dynamic='force-dynamic';
+const cell=(value:unknown)=>{let s=String(value??'');if(/^[=+\-@\t\r]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"';};
+export async function GET(request:Request){if(!(await isAdmin()))return new NextResponse('Unauthorized',{status:401});const days=analyticsDays(new URL(request.url).searchParams.get('days')||undefined);const data=await getAnalytics(days);const rows:unknown[][]=[['section','label','count'],['summary','report_days',days],['summary','vote_records',data.votes],['summary','opt_in_page_events',data.traffic],['summary','estimated_tab_sessions',data.sessions],...data.states.flatMap(row=>[['state_polls',row.state,row.polls],['state_stored_votes',row.state,row.votes]]),...data.attempts.map(row=>['vote_outcome',row.outcome,row._count._all]),...data.paths.map(row=>['page_events',row.path,row._count._all]),...data.daily.map(row=>['daily_vote_records',row.day,row.votes])];return new NextResponse('\uFEFF'+rows.map(row=>row.map(cell).join(',')).join('\r\n'),{headers:{'Content-Type':'text/csv; charset=utf-8','Content-Disposition':`attachment; filename="janpoll-analytics-${days}days.csv"`,'Cache-Control':'no-store'}});}

@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import { db } from '@/lib/db';
+import { accountRequiredForVote } from '@/lib/voting-policy';
 import { hasAlreadyVoted } from '@/lib/voter';
 import { isPollOpen } from '@/lib/poll-utils';
 import { getRegionByCode } from '@/lib/regions';
@@ -11,10 +12,10 @@ import SmartBackLink from '@/components/SmartBackLink';
 import PollClientView from './[id]/PollClientView';
 
 type Props = {
-  params: {
+  params: Promise<{
     id: string;
     slug?: string[];
-  };
+  }>;
 };
 
 export async function generateMetadata({
@@ -61,7 +62,7 @@ export async function generateMetadata({
 
   const description =
     `${location} के इस सवाल पर सार्वजनिक राय जानें। ` +
-    'यह opinion poll है, आधिकारिक चुनावी मतदान नहीं।';
+    'यह opinion poll है, आधिकारिक जनमत मतदान नहीं।';
 
   const canonical =
     `https://janpoll.in/poll/${encodeURIComponent(id)}`;
@@ -69,6 +70,7 @@ export async function generateMetadata({
   return {
     title,
     description,
+    keywords: [poll.question, region?.en || 'India', 'JanPoll opinion poll'],
     alternates: {
       canonical,
     },
@@ -95,6 +97,7 @@ export default async function PollPage({ params }: Props) {
       question: true,
       deadlineDays: true,
       active: true,
+      requiresLogin: true,
       createdAt: true,
 
       scope: true,
@@ -290,6 +293,7 @@ export default async function PollPage({ params }: Props) {
           key={poll.id}
           poll={{
             id: poll.id,
+            requiresLogin: accountRequiredForVote(poll),
             locationLabel,
             createHref,
             question: poll.question,

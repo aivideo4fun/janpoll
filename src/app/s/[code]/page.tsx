@@ -5,9 +5,9 @@ import { db } from '@/lib/db';
 export const dynamic = 'force-dynamic';
 
 type Props = {
-  params: {
+  params: Promise<{
     code: string;
-  };
+  }>;
 };
 
 export default async function SharedPollPage({ params }: Props) {

@@ -1,0 +1,3 @@
+const {PrismaClient}=require('@prisma/client');
+const db=new PrismaClient();
+(async()=>{const before=new Date(Date.now()-90*86400000);const [traffic,attempts,buckets]=await db.$transaction([db.trafficEvent.deleteMany({where:{createdAt:{lt:before}}}),db.voteAttempt.deleteMany({where:{createdAt:{lt:before}}}),db.rateLimitBucket.deleteMany({where:{expiresAt:{lt:new Date()}}})]);console.log({removedTrafficEvents:traffic.count,removedAttemptLogs:attempts.count,removedExpiredRateBuckets:buckets.count});})().catch(()=>{console.error('Analytics cleanup failed');process.exitCode=1;}).finally(()=>db.$disconnect());

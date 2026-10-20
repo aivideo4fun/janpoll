@@ -6,7 +6,7 @@ const regions=load('src/lib/regions.ts',{});
 const saved=new Map();
 const db={poll:{findUnique:async({where})=>saved.get(where.id)||null,create:async({data})=>{const poll={...data,options:data.options.create};saved.set(poll.id,poll);return poll;}}};
 process.env.NEXTAUTH_URL='http://127.0.0.1:3000';
-const api=load('src/app/api/polls/public/route.ts',{'@/lib/db':{db},'@/lib/polls/owner':owner,'@/lib/google-auth':{googleAuthOptions:{}},'@/lib/regions':regions,'@/lib/slugify':{generateSlug:()=> 'test-poll'}});
+const api=load('src/app/api/polls/public/route.ts',{'@/lib/db':{db},'@/lib/creation-guard':{creationGuard:async()=>null},'@/lib/polls/owner':owner,'@/lib/google-auth':{googleAuthOptions:{}},'@/lib/regions':regions,'@/lib/slugify':{generateSlug:()=> 'test-poll'}});
 const payload={stateCode:'RJ',question:'A valid question?',options:['Yes','No'],deadlineDays:3,requiresLogin:false,termsAgreed:true,requestId:crypto.randomUUID()};
 const request=(body,origin='http://127.0.0.1:3000')=>new Request('http://127.0.0.1:3000/api/polls/public',{method:'POST',headers:{origin,'content-type':'application/json'},body:JSON.stringify(body)});
 (async()=>{

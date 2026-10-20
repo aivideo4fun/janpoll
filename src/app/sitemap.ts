@@ -38,12 +38,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'weekly',
       priority: 0.4,
     },
-    {
-      url: `${baseUrl}/create`,
-      lastModified: now,
-      changeFrequency: 'monthly',
-      priority: 0.5,
-    },
+
   ];
 
   let districtUrls: MetadataRoute.Sitemap = [];
@@ -72,7 +67,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
 
     pollUrls = polls.map((poll) => ({
-      url: `${baseUrl}/poll/${poll.id}${poll.slug ? `/${safeSegment(poll.slug)}` : ''}`,
+      url: `${baseUrl}/poll/${poll.id}`,
       lastModified: new Date(poll.updatedAt),
       changeFrequency: 'daily' as const,
       priority: 0.8,
@@ -82,5 +77,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   const articles = await db.article.findMany({ where: { published: true }, select: { slug: true, updatedAt: true } }).catch(() => []);
-  return [...staticUrls, ...REGIONS.map(region => ({ url: baseUrl + regionHref(region) })), { url: baseUrl + '/articles' }, ...articles.map(article => ({ url: baseUrl + '/articles/' + article.slug, lastModified: article.updatedAt })), ...districtUrls, ...pollUrls];
+  const urls = [...staticUrls, ...REGIONS.map(region => ({ url: baseUrl + regionHref(region) })), ...['/articles','/advertise','/editorial-policy','/about','/contact','/privacy-policy','/terms','/disclaimer','/faq','/how-it-works'].map(path=>({url:baseUrl+path})), ...articles.map(article => ({ url: baseUrl + '/articles/' + article.slug, lastModified: article.updatedAt })), ...districtUrls, ...pollUrls];
+  return Array.from(new Map(urls.map(item=>[item.url,item])).values());
 }

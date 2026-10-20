@@ -4,3 +4,14 @@ node_modules/
 dist/
 build/
 .DS_Store
+.env.*
+!.env.example
+*.pem
+*.key
+*.db
+*.db-journal
+janpoll-backup*/
+*.zip
+*.tsbuildinfo
+
+/public/uploads/

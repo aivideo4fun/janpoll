@@ -1,6 +1,8 @@
 'use server';
 
 import { db } from '@/lib/db';
+import { getVoterIdentity } from '@/lib/voter';
+import { takeRateLimit } from '@/lib/rate-limit';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { getDeadline } from '@/lib/poll-utils';
@@ -28,6 +30,10 @@ export async function handleLogin(formData: FormData) {
   if (!adminConfigured()) {
     redirect('/admin?error=config');
   }
+
+  if (username.length > 100 || password.length > 256) redirect('/admin?error=invalid');
+  const identity = await getVoterIdentity();
+  if (!(await takeRateLimit('admin-login', identity.ipHash || 'unconfigured', 10, 900)).allowed) redirect('/admin?error=rate');
 
   const adminUser = process.env.ADMIN_USER?.trim() ?? '';
   const adminPass = process.env.ADMIN_PASS ?? '';

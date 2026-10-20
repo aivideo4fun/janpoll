@@ -42,7 +42,7 @@ export default function RajasthanForm({ initial }: { initial: Initial }) {
   useEffect(() => {
     if (!district) return;
     const controller = new AbortController();
-    fetch(`/api/admin/locations?type=tehsil&districtId=${encodeURIComponent(district)}`, { signal: controller.signal }).then(r => r.json()).then(data => setTehsils(data.items || [])).catch(() => {});
+    fetch(`/api/locations/election?stateCode=RJ&kind=tehsil&districtId=${encodeURIComponent(district)}`, { signal: controller.signal }).then(r => r.json()).then(data => setTehsils(data.items || [])).catch(() => {});
     const kind = type === 'zila' ? 'zilaWard' : 'samiti';
     fetch(`/api/locations/election?stateCode=RJ&kind=${kind}&districtId=${encodeURIComponent(district)}`, { signal: controller.signal })
       .then(async r => { const data = await r.json(); if (!r.ok) throw new Error(data.message); return data; })
@@ -78,11 +78,11 @@ export default function RajasthanForm({ initial }: { initial: Initial }) {
   }
   return <main lang="hi" className="min-h-screen bg-slate-50 px-4 py-8"><section className="mx-auto max-w-3xl rounded-3xl border border-emerald-100 bg-white p-5 shadow-sm sm:p-9">
     <Link href="/rajasthan" className="text-sm text-emerald-800">← राजस्थान</Link>
-    <h1 className="mt-5 text-2xl font-semibold leading-relaxed text-emerald-950 sm:text-3xl">नया ओपिनियन पोल बनाएँ</h1><p className="mt-2 text-sm leading-7 text-slate-500">राजस्थान · अपने क्षेत्र की राय जानें। यह आधिकारिक चुनावी मतदान नहीं है।</p>
+    <h1 className="mt-5 text-2xl font-semibold leading-relaxed text-emerald-950 sm:text-3xl">नया ओपिनियन पोल बनाएँ</h1><p className="mt-2 text-sm leading-7 text-slate-500">राजस्थान · अपने क्षेत्र की राय जानें। यह आधिकारिक जनमत मतदान नहीं है।</p>
     {error && <p role="alert" className="mt-5 rounded-xl bg-red-50 p-4 text-sm leading-7 text-red-800">{error}</p>}
-    {!session && <div className="mt-6 rounded-2xl bg-emerald-50 p-5"><p className="text-sm leading-7">Guest के रूप में poll बना सकते हैं। इसी browser का data सुरक्षित रखें; login से आगे access रखना आसान है।</p><button onClick={() => signIn(undefined, { callbackUrl: window.location.href })} className="mt-3 rounded-xl border border-emerald-200 bg-white px-5 py-3 text-sm">Sign in करके बनाएँ</button></div>}
+    {!session && <div className="mt-6 rounded-2xl bg-emerald-50 p-5"><p className="text-sm leading-7">Guest के रूप में poll बना सकते हैं। इसी browser का data सुरक्षित रखें; login से आगे access रखना आसान है।</p><button onClick={() => signIn('google', { callbackUrl: window.location.href })} className="mt-3 rounded-xl border border-emerald-200 bg-white px-5 py-3 text-sm">Sign in करके बनाएँ</button></div>}
     <form onSubmit={submit} className="mt-6 space-y-6">
-      <label className="block text-sm">पोल का प्रकार<select value={type} onChange={e => { setType(e.target.value); setGp(''); setWard(''); setZila(''); setChildren([]); }} className={field}><option value="sarpanch">सरपंच चुनाव</option><option value="samiti">पंचायत समिति वार्ड</option><option value="zila">जिला परिषद वार्ड</option></select></label>
+      <label className="block text-sm">पोल का प्रकार<select value={type} onChange={e => { setType(e.target.value); setGp(''); setWard(''); setZila(''); setChildren([]); }} className={field}><option value="sarpanch">सरपंच जनमत</option><option value="samiti">पंचायत समिति वार्ड</option><option value="zila">जिला परिषद वार्ड</option></select></label>
       <div className="grid gap-4 sm:grid-cols-2"><LocationSelect label="जिला" value={district} items={districts} onChange={value => { setDistrict(value); setTehsil(''); setTehsils([]); setSamiti(''); setGp(''); setWard(''); setZila(''); setSamitis([]); setChildren([]); }} />
       {type !== 'zila' && tehsils.length > 0 && <label className="block text-sm leading-7">तहसील (वैकल्पिक)<select value={tehsil} onChange={e => setTehsil(e.target.value)} className={field}><option value="">सभी तहसीलें</option>{tehsils.map(item => <option key={item.id} value={item.id}>{item.nameHi}</option>)}</select><span className="text-xs text-slate-500">पंचायत समितियाँ जिले के अनुसार दिखाई गई हैं।</span></label>}
       {type !== 'zila' && <LocationSelect label="पंचायत समिति" value={samiti} items={samitis} onChange={value => { setSamiti(value); setGp(''); setWard(''); setChildren([]); }} />}

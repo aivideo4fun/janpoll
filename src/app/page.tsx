@@ -1,6 +1,8 @@
 import HomeContent from '@/components/HomeContent';
 import Link from 'next/link';
+import { isPollOpen } from '@/lib/poll-utils';
 import type { Metadata } from 'next';
+import type { Prisma } from '@prisma/client';
 import { db } from '@/lib/db';
 import { REGIONS } from '@/lib/regions';
 import {
@@ -13,14 +15,14 @@ import './janpoll-home.css';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'JanPoll India — आपकी राय, जनता की आवाज़',
+  title: 'JanPoll India — Voice of People',
   description:
     'गाँव की चौपाल से देश की राजधानी तक। स्थानीय और राष्ट्रीय मुद्दों पर अपनी राय साझा करें, पोल बनाएँ और जनमत जानें।',
   alternates: {
     canonical: 'https://janpoll.in/',
   },
   openGraph: {
-    title: 'JanPoll India — आपकी राय, जनता की आवाज़',
+    title: 'JanPoll India — Voice of People',
     description:
       'स्थानीय और राष्ट्रीय मुद्दों पर अपनी राय साझा करें।',
     url: 'https://janpoll.in/',
@@ -33,7 +35,7 @@ export const metadata: Metadata = {
 const CATEGORIES = [
   { slug: 'all', label: 'सभी', icon: '◉' },
   { slug: 'politics', label: 'राजनीति', icon: '⚑' },
-  { slug: 'elections', label: 'चुनाव', icon: '☑' },
+  { slug: 'elections', label: 'जनमत', icon: '☑' },
   { slug: 'national', label: 'राष्ट्रीय मुद्दे', icon: '◎' },
   { slug: 'local', label: 'स्थानीय मुद्दे', icon: '⌖' },
   { slug: 'sports', label: 'खेल', icon: '◈' },
@@ -63,7 +65,16 @@ const STEPS = [
 
 const numbers = new Intl.NumberFormat('en-IN');
 
-async function getHomeData() {
+async function getHomeData(category: string) {
+  const filters: Record<string, Prisma.PollWhereInput> = {
+    politics: { OR: [{ topic: 'political' }, { categoryType: 'political' }] },
+    elections: { electionType: { in: ['sarpanch', 'samiti', 'zila', 'assembly'] } },
+    national: { scope: 'NATIONAL', stateCode: null, districtId: null, districtName: null },
+    local: { OR: [{ scope: 'STATE' }, { districtId: { not: null } }, { districtName: { not: null } }] },
+    sports: { topic: 'sports' },
+    entertainment: { topic: 'entertainment' },
+  };
+
   const results = await Promise.allSettled([
     db.poll.count({
       where: { active: true },
@@ -76,7 +87,7 @@ async function getHomeData() {
     db.user.count(),
 
     db.poll.findMany({
-      where: { active: true },
+      where: { active: true, ...(filters[category] || {}) },
       include: { options: true },
       orderBy: { createdAt: 'desc' },
       take: 4,
@@ -198,7 +209,7 @@ function getOptionLabel(
 }
 
 function PollCard({ poll }: { poll: Poll }) {
-  const totalVotes = getVoteCount(poll);
+  const open = isPollOpen(poll);
 
   const region = REGIONS.find(
     (item) => item.code === poll.stateCode,
@@ -212,6 +223,7 @@ function PollCard({ poll }: { poll: Poll }) {
       }
     ).approvalStatus === 'APPROVED';
 
+  const national = poll.scope === 'NATIONAL' && !poll.stateCode && !poll.districtId && !poll.districtName;
   const location =
     poll.districtName ||
     region?.name ||
@@ -223,7 +235,7 @@ function PollCard({ poll }: { poll: Poll }) {
     <article className="jp-poll-card">
       <div className="jp-card-tags">
         <span className="jp-tag">
-          {poll.scope === 'NATIONAL'
+          {national
             ? 'राष्ट्रीय मुद्दे'
             : 'स्थानीय मुद्दे'}
         </span>
@@ -234,7 +246,7 @@ function PollCard({ poll }: { poll: Poll }) {
 
         <span className="jp-live">
           <i aria-hidden="true" />
-          LIVE
+          {open ? 'OPEN' : 'अवधि समाप्त'}
         </span>
       </div>
 
@@ -253,72 +265,17 @@ function PollCard({ poll }: { poll: Poll }) {
         </Link>
       </h3>
 
-      <div className="jp-options">
-        {poll.options.slice(0, 2).map((option, index) => {
-          const optionVotes = Math.max(
-            0,
-            option.voteCount ?? 0,
-          );
-
-          const percentage =
-            totalVotes > 0
-              ? (optionVotes / totalVotes) * 100
-              : 0;
-
-          const optionLabel = getOptionLabel(
-            option,
-            index,
-          );
-
-          return (
-            <div key={index}>
-              <div className="jp-option-label">
-                <span>{optionLabel}</span>
-                <strong>
-                  {percentage.toFixed(1)}%
-                </strong>
-              </div>
-
-              <div
-                className="jp-progress"
-                role="progressbar"
-                aria-label={optionLabel}
-                aria-valuenow={Number(
-                  percentage.toFixed(1),
-                )}
-                aria-valuemin={0}
-                aria-valuemax={100}
-              >
-                <span
-                  style={{
-                    width: `${percentage}%`,
-                  }}
-                />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {totalVotes === 0 && (
-        <p className="jp-zero">
-          अभी कोई वोट नहीं • पहली राय आपकी हो सकती है
-        </p>
-      )}
+      <p className="mt-4 text-sm leading-8 text-slate-600">अपनी राय साझा करें। विकल्प और परिणाम देखने के लिए पोल खोलें।</p>
 
       <div className="jp-card-bottom">
-        <span>
-          {numbers.format(totalVotes)} कुल वोट
-          {poll.options.length > 2 &&
-            ` · ${poll.options.length} विकल्प`}
-        </span>
+        <span>{poll.options.length} विकल्प</span>
 
         <Link
           className="jp-card-action"
           href={getPollHref(poll)}
           aria-label={`पोल खोलें: ${poll.question}`}
         >
-          राय दें
+          {open ? 'राय दें' : 'परिणाम देखें'}
           <span aria-hidden="true">↗</span>
         </Link>
       </div>
@@ -326,8 +283,10 @@ function PollCard({ poll }: { poll: Poll }) {
   );
 }
 
-export default async function HomePage() {
-  const data = await getHomeData();
+export default async function HomePage({ searchParams }: { searchParams?: Promise<{ category?: string }> }) {
+  const requested = (await searchParams)?.category || 'all';
+  const selectedCategory = CATEGORIES.some(item => item.slug === requested) ? requested : 'all';
+  const data = await getHomeData(selectedCategory);
 
   const regions = REGIONS.map((region) => ({
     code: region.code,
@@ -591,14 +550,14 @@ export default async function HomePage() {
               <Link
                 key={category.slug}
                 className={`jp-chip ${
-                  category.slug === 'all'
+                  category.slug === selectedCategory
                     ? 'jp-chip-selected'
                     : ''
                 }`}
                 href={
                   category.slug === 'all'
                     ? '/#live-polls'
-                    : '/#live-polls'
+                    : `/?category=${category.slug}#live-polls`
                 }
               >
                 <span aria-hidden="true">

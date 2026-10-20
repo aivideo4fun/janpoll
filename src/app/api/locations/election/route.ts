@@ -20,7 +20,7 @@ export async function GET(request: Request) {
   }
 
   if (
-    !['district', 'samiti', 'gp', 'samitiWard', 'zilaWard']
+    !['district', 'tehsil', 'samiti', 'gp', 'samitiWard', 'zilaWard']
       .includes(kind)
   ) {
     return NextResponse.json(
@@ -64,6 +64,11 @@ export async function GET(request: Request) {
         { message: 'यह जिला चुने राज्य में नहीं है।' },
         { status: 400 },
       );
+    }
+
+    if (kind === 'tehsil') {
+      const items = await db.tehsil.findMany({ where: { districtId }, select: { id: true, nameHi: true, nameEn: true }, orderBy: { nameHi: 'asc' } });
+      return NextResponse.json({ items });
     }
 
     if (kind === 'samiti') {

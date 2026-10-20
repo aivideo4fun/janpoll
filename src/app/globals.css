@@ -9,3 +9,29 @@
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   }
 }
+
+/* Short, consistent motion; all content remains usable without animation. */
+:root{--jp-ease:cubic-bezier(.2,.75,.25,1)}
+a,button,input,select,textarea{transition:color .18s ease,background-color .18s ease,border-color .18s ease,box-shadow .18s ease,transform .2s var(--jp-ease)}
+:where(input,select,textarea):focus-visible{outline:2px solid #10b981;outline-offset:3px;box-shadow:0 0 0 5px #10b98115}
+.jp-article-card{overflow:hidden;transition:transform .25s var(--jp-ease),box-shadow .25s ease,border-color .25s ease}
+.jp-article-cover{aspect-ratio:16/9;overflow:hidden;border-radius:1rem;background:linear-gradient(135deg,#064e3b,#0f766e);margin-bottom:1.25rem}
+.jp-article-cover img{transition:transform .6s var(--jp-ease)}
+@media(hover:hover) and (pointer:fine){
+ button:not(:disabled):hover{transform:translateY(-1px)}
+ a[class*="rounded"]:hover{box-shadow:0 5px 18px #064e3b10}
+ .jp-article-card:hover{transform:translateY(-5px);border-color:#6ee7b7;box-shadow:0 18px 40px #064e3b12}
+ .jp-article-card:hover img{transform:scale(1.045)}
+ main :where(article,[class*="shadow-sm"]):hover{border-color:#a7f3d0}
+}
+.jp-ticker{display:flex;align-items:stretch;background:#064e3b;color:#fff;font-size:.8rem;line-height:1.9;isolation:isolate;border-bottom:1px solid #ffffff20}
+.jp-ticker-label{display:flex;align-items:center;flex-shrink:0;padding:.65rem 1rem;background:#022c22;font-size:.65rem;font-weight:700;letter-spacing:.09em;z-index:1}
+.jp-ticker-window{flex:1;min-width:0;overflow:hidden;display:flex;align-items:center}
+.jp-ticker-track{display:flex;width:max-content;animation:jp-ticker-scroll 45s linear infinite}
+.jp-ticker-group{display:flex;align-items:center;flex-shrink:0;min-width:70vw;justify-content:space-around}
+.jp-ticker-item{display:inline-flex;align-items:center;gap:.75rem;padding:.45rem 2rem;white-space:nowrap}
+.jp-ticker-toggle{min-width:44px;background:#022c22;padding:.5rem .8rem;color:#fff}
+.jp-ticker:hover .jp-ticker-track,.jp-ticker:focus-within .jp-ticker-track,.jp-ticker[data-paused="true"] .jp-ticker-track{animation-play-state:paused}
+@keyframes jp-ticker-scroll{to{transform:translateX(-50%)}}
+@media(max-width:640px){.jp-ticker-label{font-size:.55rem;padding:.6rem .5rem;max-width:78px;white-space:normal}.jp-ticker-item{padding:.5rem 1rem}.jp-ticker{font-size:.75rem}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;scroll-behavior:auto!important;transition:none!important}.jp-ticker-window{overflow-x:auto}.jp-ticker-copy{display:none}.jp-article-card:hover,.jp-article-card:hover img{transform:none}}

@@ -18,8 +18,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { district } = await params;
   const decodedDistrict = safeDecode(district);
   return {
-    title: `${decodedDistrict.toUpperCase()} पंचायत समिति (मंडल) सदस्य चुनाव और लाइव पोल्स | JanPoll`,
-    description: 'अपनी पंचायत समिति चुनें, मंडल सदस्य चुनाव के लाइव ओपिनियन पोल देखें व नए पोल बनाएं।',
+    alternates: { canonical: `/rajasthan/${encodeURIComponent(district)}/mandal` },
+    keywords: [district, 'Rajasthan public opinion', 'JanPoll India'],
+    title: `${decodedDistrict.toUpperCase()} पंचायत समिति (मंडल) सदस्य जनमत और लाइव पोल्स | JanPoll`,
+    description: 'अपनी पंचायत समिति चुनें, मंडल सदस्य जनमत के लाइव ओपिनियन पोल देखें व नए पोल बनाएं।',
   };
 }
 
@@ -93,7 +95,7 @@ export default async function MandalIndexPage({ params }: Props) {
 
       <div className="bg-gradient-to-r from-blue-800 to-indigo-700 text-white rounded-3xl p-6 md:p-8 mb-8 text-center shadow-md">
         <h1 className="text-2xl md:text-3xl font-black mb-2">
-          🔵 पंचायत समिति (मंडल सदस्य) चुनाव - {districtNameHi}
+          🔵 पंचायत समिति (मंडल सदस्य) जनमत - {districtNameHi}
         </h1>
         <p className="text-blue-100 text-xs md:text-sm">
           अपनी पंचायत समिति चुनें, लाइव पोल्स पर वोट दें या अधिकतम {MAX_POLLS} पोल बनाएँ।

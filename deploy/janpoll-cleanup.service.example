@@ -1,0 +1,12 @@
+[Unit]
+Description=JanPoll expired analytics/security-log cleanup
+
+[Service]
+Type=oneshot
+User=janpoll
+WorkingDirectory=/var/www/janpoll/current
+EnvironmentFile=/etc/janpoll/production.env
+ExecStart=/usr/bin/node deploy/cleanup.cjs
+NoNewPrivileges=true
+PrivateTmp=true
+UMask=0077

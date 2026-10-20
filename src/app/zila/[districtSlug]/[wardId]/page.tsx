@@ -106,3 +106,4 @@ export default async function ZilaWardPollsPage({ params }: ZilaWardPageProps) {
     </main>
   );
 }
+export async function generateMetadata({params}:ZilaWardPageProps) { const {districtSlug,wardId}=await params;return {title:'जिला परिषद वार्ड के polls | JanPoll India',description:'जिला परिषद वार्ड में बनाए गए जनमत polls देखें।',keywords:['JanPoll Rajasthan','जिला परिषद वार्ड poll'],alternates:{canonical:'/zila/'+encodeURIComponent(districtSlug)+'/'+encodeURIComponent(wardId)}}; }

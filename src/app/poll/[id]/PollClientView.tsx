@@ -27,6 +27,7 @@ import { getDeadline } from '@/lib/poll-utils';
 import Ad728x90 from '@/components/Ad728x90';
 
 type Poll = {
+  requiresLogin?: boolean;
   id: string;
   locationLabel?: string;
   createHref?: string;
@@ -52,6 +53,7 @@ const COLORS = [
 ];
 
 const SOCIALS = [
+  { name: 'Telegram', href: 'https://t.me/janpollindia', icon: '/images/telegram.svg' },
   {
     name: 'WhatsApp',
     href: 'https://whatsapp.com/channel/0029VbEDUaJ5Ui2OzmpEYI3D',
@@ -338,7 +340,7 @@ export default function PollClientView({
       } else {
         setMessage(response.message);
         if (response.code === 'AUTH_REQUIRED') {
-          await signIn(undefined, { callbackUrl: window.location.href });
+          await signIn('google', { callbackUrl: window.location.href });
           return;
         }
 
@@ -401,6 +403,8 @@ export default function PollClientView({
               आप इस पोल में पहले ही वोट दे चुके हैं।
             </p>
           )}
+
+          {poll.requiresLogin && <p className="rounded-xl bg-emerald-50 p-4 text-sm leading-7 text-emerald-900">इस poll में vote देने के लिए sign-in आवश्यक है। एक account से एक vote स्वीकार किया जाता है।</p>}
 
           {!showResults ? (
             <form onSubmit={vote} className="space-y-5">
@@ -641,7 +645,7 @@ export default function PollClientView({
       </article>
 
       <p className="mt-5 text-center text-xs leading-7 text-slate-500">
-        JanPoll सार्वजनिक राय का मंच है। ये आधिकारिक चुनाव परिणाम नहीं हैं।
+        JanPoll सार्वजनिक राय का मंच है। ये आधिकारिक परिणाम नहीं हैं।
       </p>
     </section>
   );

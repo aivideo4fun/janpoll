@@ -9,7 +9,7 @@ export const runtime = 'nodejs';
 export default async function ShortPollPage({
   params,
 }: {
-  params: { code: string };
+  params: Promise<{ code: string }>;
 }) {
   const { code } = await params;
   const id = decodePublicPollId(code);

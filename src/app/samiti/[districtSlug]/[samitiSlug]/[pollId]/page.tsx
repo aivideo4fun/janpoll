@@ -3,15 +3,15 @@ import { notFound } from 'next/navigation';
 import SmartBackLink from '@/components/SmartBackLink';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     districtSlug: string;
     samitiSlug: string;
     pollId: string;
-  };
+  }>;
 }
 
 export default async function SamitiPollDetailPage({ params }: PageProps) {
-  const { pollId, districtSlug, samitiSlug } = params;
+  const { pollId, districtSlug, samitiSlug } = await params;
 
   // Database se poll aur uske options fetch karein
   const poll = await db.poll.findUnique({
@@ -72,3 +72,4 @@ export default async function SamitiPollDetailPage({ params }: PageProps) {
     </main>
   );
 }
+export async function generateMetadata({params}:PageProps) { const {pollId}=await params; const poll=await db.poll.findUnique({where:{id:pollId},select:{question:true}});return {title:poll?poll.question+' | JanPoll India':'पोल नहीं मिला',description:'जनमत poll के विकल्प और दर्ज परिणाम देखें।',keywords:['JanPoll India','पंचायत समिति poll'],alternates:{canonical:'/poll/'+encodeURIComponent(pollId)}}; }

@@ -73,7 +73,7 @@ function CreateForm() {
         `${window.location.origin}/create/public` +
         (query.size ? `?${query.toString()}` : '');
 
-      await signIn(undefined, { callbackUrl });
+      await signIn('google', { callbackUrl });
     } catch {
       setError('Login शुरू नहीं हो सका। दोबारा कोशिश करें।');
     } finally {

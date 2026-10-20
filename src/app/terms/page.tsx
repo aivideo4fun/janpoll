@@ -1,10 +1,8 @@
+import { pageMetadata } from '@/lib/seo';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
-export const metadata: Metadata = {
-  title: 'नियम और शर्तें (Terms & Conditions) | JanPoll',
-  description: 'JanPoll प्लेटफॉर्म के उपयोग से संबंधित नियम, शर्तें और नीतियां पढ़ें।',
-};
+export const metadata = pageMetadata("नियम और शर्तें | JanPoll India","Poll creation, voting, moderation, free deactivation और ₹199 + लागू GST वाली सामान्य deletion request की शर्तें।","/terms",["JanPoll terms deletion policy"]);
 export default function TermsAndConditions() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 text-gray-800">
@@ -26,7 +24,7 @@ export default function TermsAndConditions() {
         <section className="space-y-2">
           <h2 className="text-lg font-bold text-emerald-800">1. मंच का उद्देश्य</h2>
           <p className="text-sm text-gray-600 leading-relaxed">
-            JanPoll भारत के नागरिकों के लिए एक स्वतंत्र सार्वजनिक राय (Public Opinion) प्लेटफॉर्म है। यह किसी भी सरकारी निकाय, राजनीतिक दल या आधिकारिक चुनावी आयोग से संबंधित नहीं है।
+            JanPoll भारत के नागरिकों के लिए एक स्वतंत्र सार्वजनिक राय (Public Opinion) प्लेटफॉर्म है। यह किसी भी सरकारी निकाय, राजनीतिक दल या आधिकारिक जनमत आयोग से संबंधित नहीं है।
           </p>
         </section>
 

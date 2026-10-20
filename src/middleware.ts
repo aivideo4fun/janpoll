@@ -1,22 +1,22 @@
-// src/middleware.ts
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-
+import { NextResponse, type NextRequest } from 'next/server';
+// Authorization remains in every admin page, route and server action.
+// A cookie's presence is never treated as proof of admin access here.
 export function middleware(request: NextRequest) {
-  const path = request.nextUrl.pathname;
-
-  // Agar user /admin par ja raha hai (login page ko chhod kar ya session check ke liye)
-  if (path.startsWith('/admin')) {
-    const adminSession = request.cookies.get('admin_session')?.value;
-
-    // Agar session cookie nahi hai, toh user ko block karne ki zaroorat nahi hai 
-    // kyunki page khud LoginScreen dikha deta hai, lekin agar aap chahein toh 
-    // yhin se redirect bhi kar sakte hain.
+  if (request.headers.has('x-middleware-subrequest')) {
+    return new NextResponse('Invalid request header', { status: 400 });
   }
-
-  return NextResponse.next();
+  const response = NextResponse.next();
+  const path = request.nextUrl.pathname;
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  response.headers.set('X-Frame-Options', 'SAMEORIGIN');
+  response.headers.set('Content-Security-Policy', "frame-ancestors 'self'; base-uri 'self'; object-src 'none'");
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  if (/^\/(admin|profile|my-polls|poll-created|api)(\/|$)/.test(path)) {
+    response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+    response.headers.set('Cache-Control', 'private, no-store');
+  }
+  if (request.method !== 'GET' && request.method !== 'HEAD') response.headers.set('Cache-Control','no-store');
+  return response;
 }
-
-export const config = {
-  matcher: '/admin/:path*',
-};
+export const config = { matcher: ['/((?!_next/static|_next/image|favicon.ico|images/|logo.png).*)'] };

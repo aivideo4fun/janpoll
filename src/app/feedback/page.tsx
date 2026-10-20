@@ -1,9 +1,7 @@
+import { pageMetadata } from '@/lib/seo';
 import Link from 'next/link';
 
-export const metadata = {
-  title: 'सुझाव या शिकायत — JanPoll',
-  description: 'अपने सुझाव या शिकायतें सीधे JanPoll टीम तक पहुंचाएं।',
-};
+export const metadata = pageMetadata("सुझाव और शिकायत | JanPoll India","JanPoll के लिए सुझाव, तकनीकी समस्या और content संबंधी शिकायत भेजें।","/feedback",["JanPoll feedback"]);
 
 export default function FeedbackPage() {
   return (

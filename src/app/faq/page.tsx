@@ -1,9 +1,7 @@
+import { pageMetadata } from '@/lib/seo';
 import Link from 'next/link';
 
-export const metadata = {
-  title: 'अक्सर पूछे जाने वाले प्रश्न (FAQ) — JanPoll',
-  description: 'JanPoll मंच से जुड़े आपके आम सवालों के जवाब।',
-};
+export const metadata = pageMetadata("अक्सर पूछे जाने वाले सवाल | JanPoll India","Poll creation, voting, sign-in, results और JanPoll की सीमाओं के बारे में जवाब।","/faq",["JanPoll FAQ voting"]);
 
 export default function FaqPage() {
   return (
@@ -34,7 +32,7 @@ export default function FaqPage() {
 
             <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4 space-y-1">
               <h3 className="font-bold text-emerald-950">Q3. क्या यह कोई सरकारी आधिकारिक मतदान प्रणाली है?</h3>
-              <p className="text-xs text-gray-600">नहीं, यह केवल जनता की राय जानने का एक स्वतंत्र डिजिटल जनमत मंच है। इसे सरकारी चुनाव परिणाम न समझा जाए।</p>
+              <p className="text-xs text-gray-600">नहीं, यह केवल जनता की राय जानने का एक स्वतंत्र डिजिटल जनमत मंच है। इसे सरकारी जनमत परिणाम न समझा जाए।</p>
             </div>
           </div>
         </div>

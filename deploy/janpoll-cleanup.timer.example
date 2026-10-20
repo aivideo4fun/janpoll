@@ -1,0 +1,7 @@
+[Unit]
+Description=Daily JanPoll log retention cleanup
+[Timer]
+OnCalendar=daily
+Persistent=true
+[Install]
+WantedBy=timers.target

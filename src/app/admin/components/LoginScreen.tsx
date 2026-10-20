@@ -20,6 +20,8 @@ export default function LoginScreen({ error }: { error?: string }) {
             </div>
           )}
 
+          {error === 'rate' && <p role="alert" className="mb-5 rounded-xl bg-amber-50 p-4 text-sm leading-7 text-amber-800">बहुत अधिक login प्रयास हुए हैं। 15 मिनट बाद प्रयास करें।</p>}
+
           {error === 'config' && (
             <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-xs font-semibold text-amber-800">
               सर्वर पर admin credentials सेट नहीं हैं।

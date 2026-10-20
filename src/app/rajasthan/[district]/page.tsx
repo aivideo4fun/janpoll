@@ -9,8 +9,10 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { district } = await params;
   return {
-    title: `${district.toUpperCase()} जिला - चुनाव श्रेणियाँ | JanPoll`,
-    description: `राजस्थान के ${district} जिले में सरपंच, पंचायत समिति और जिला परिषद चुनाव के लिए पोल देखें।`,
+    alternates: { canonical: `/rajasthan/${encodeURIComponent(district)}` },
+    keywords: [district, 'Rajasthan public opinion', 'JanPoll India'],
+    title: `${district.toUpperCase()} जिला - जनमत श्रेणियाँ | JanPoll`,
+    description: `राजस्थान के ${district} जिले में सरपंच, पंचायत समिति और जिला परिषद जनमत के लिए पोल देखें।`,
   };
 }
 
@@ -41,10 +43,10 @@ export default async function DistrictPage({ params }: Props) {
           जिला: {displayNameHi}
         </span>
         <h1 className="text-2xl md:text-3xl font-black mt-3 mb-2">
-          चुनाव श्रेणी का चयन करें
+          जनमत श्रेणी का चयन करें
         </h1>
         <p className="text-emerald-100 text-xs md:text-sm">
-          अपने क्षेत्र के अनुसार सही चुनाव श्रेणी चुनें।
+          अपने क्षेत्र के अनुसार सही जनमत श्रेणी चुनें।
         </p>
       </div>
 
@@ -57,7 +59,7 @@ export default async function DistrictPage({ params }: Props) {
           <div>
             <span className="text-2xl">🟢</span>
             <h3 className="text-lg font-bold text-emerald-900 mt-3 mb-1 group-hover:text-emerald-700">
-              ग्राम पंचायत (सरपंच चुनाव)
+              ग्राम पंचायत (सरपंच जनमत)
             </h3>
             <p className="text-xs text-gray-500">
   तहसील &rarr; पंचायत समिति &rarr; ग्राम पंचायत चुनकर सरपंच पद के पोल देखें।
@@ -79,7 +81,7 @@ export default async function DistrictPage({ params }: Props) {
               पंचायत समिति (मंडल सदस्य)
             </h3>
             <p className="text-xs text-gray-500">
-              तहसील और पंचायत समिति सदस्यों के चुनाव के लिए जनता का रुझान जानें।
+              तहसील और पंचायत समिति सदस्यों के जनमत के लिए जनता का रुझान जानें।
             </p>
           </div>
           <div className="mt-6 text-emerald-700 font-bold text-xs bg-emerald-50 py-2 px-4 rounded-xl text-center group-hover:bg-emerald-700 group-hover:text-white transition">

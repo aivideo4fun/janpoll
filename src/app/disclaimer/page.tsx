@@ -1,10 +1,8 @@
+import { pageMetadata } from '@/lib/seo';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
-export const metadata: Metadata = {
-  title: 'अस्वीकरण (Disclaimer) | JanPoll',
-  description: 'JanPoll पर उपलब्ध डेटा और ओपिनियन पोल के संबंध में अस्वीकरण जानकारी।',
-};
+export const metadata = pageMetadata("अस्वीकरण | JanPoll India","JanPoll opinion polls की सीमाएँ समझें। ये आधिकारिक परिणाम या सरकारी मतदान नहीं हैं।","/disclaimer",["JanPoll disclaimer"]);
 
 export default function Disclaimer() {
   return (
@@ -21,11 +19,11 @@ export default function Disclaimer() {
         </h1>
         
         <div className="bg-amber-50 border border-amber-200 text-amber-900 p-4 rounded-xl text-sm font-medium">
-          ⚠️ <strong>महत्वपूर्ण सूचना:</strong> JanPoll केवल सार्वजनिक राय जानने का एक डिजिटल प्लेटफॉर्म है। यह किसी भी सरकारी संस्था, चुनाव आयोग या आधिकारिक मतदान प्रणाली का हिस्सा नहीं है।
+          ⚠️ <strong>महत्वपूर्ण सूचना:</strong> JanPoll केवल सार्वजनिक राय जानने का एक डिजिटल प्लेटफॉर्म है। यह किसी भी सरकारी संस्था, जनमत आयोग या आधिकारिक मतदान प्रणाली का हिस्सा नहीं है।
         </div>
 
         <p className="text-sm text-gray-600 leading-relaxed">
-          इस वेबसाइट (JanPoll) पर प्रकाशित सभी पोल और उनके परिणाम केवल जनता के विचारों और सहभागिता को प्रदर्शित करने के उद्देश्य से हैं। इन परिणामों को किसी भी प्रकार का आधिकारिक चुनावी सर्वेक्षण या कानूनी रूप से मान्य जनमत संग्रह नहीं समझा जाना चाहिए।
+          इस वेबसाइट (JanPoll) पर प्रकाशित सभी पोल और उनके परिणाम केवल जनता के विचारों और सहभागिता को प्रदर्शित करने के उद्देश्य से हैं। इन परिणामों को किसी भी प्रकार का आधिकारिक जनमत सर्वेक्षण या कानूनी रूप से मान्य जनमत संग्रह नहीं समझा जाना चाहिए।
         </p>
 
         <section className="space-y-2">

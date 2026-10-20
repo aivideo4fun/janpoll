@@ -4,6 +4,7 @@ import { creatorIdentity } from '@/lib/polls/owner';
 import { z } from 'zod';
 
 import { db } from '@/lib/db';
+import { creationGuard } from '@/lib/creation-guard';
 import { getRegionByCode } from '@/lib/regions';
 import { generateSlug } from '@/lib/slugify';
 
@@ -200,6 +201,8 @@ export async function POST(request: Request) {
     }
 
     try {
+      const limited = await creationGuard(creator);
+      if (limited) return NextResponse.json({ message: limited }, { status: 429 });
       const base = generateSlug(input.question) || 'poll';
 
       const poll = await db.poll.create({

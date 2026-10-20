@@ -9,8 +9,10 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { district } = await params;
   return {
+    alternates: { canonical: `/rajasthan/${encodeURIComponent(district)}/sarpanch` },
+    keywords: [district, 'Rajasthan public opinion', 'JanPoll India'],
     title: `${district.toUpperCase()} - पंचायत समिति सूची और सरपंच पोल | JanPoll`,
-    description: `राजस्थान के ${district} जिले में अपनी पंचायत समिति चुनें और सरपंच चुनाव के लाइव ओपिनियन पोल देखें।`,
+    description: `राजस्थान के ${district} जिले में अपनी पंचायत समिति चुनें और सरपंच जनमत के लाइव ओपिनियन पोल देखें।`,
   };
 }
 
@@ -55,7 +57,7 @@ export default async function DistrictSarpanchPage({ params }: Props) {
 
       <div className="bg-gradient-to-r from-emerald-800 to-green-700 text-white rounded-3xl p-6 md:p-8 mb-8 text-center shadow-md">
         <span className="bg-white/20 text-emerald-100 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-          जिला: {displayNameHi} &bull; सरपंच चुनाव
+          जिला: {displayNameHi} &bull; सरपंच जनमत
         </span>
         <h1 className="text-2xl md:text-3xl font-black mt-3 mb-2">
           पंचायत समिति चुनें

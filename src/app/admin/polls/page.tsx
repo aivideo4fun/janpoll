@@ -9,7 +9,8 @@ import PollsList from '../components/PollsList';
 import { editPoll,deletePoll,addPollOption } from '../actions/adminActions';
 export const dynamic='force-dynamic';
 export const metadata={title:'State Poll Manager | JanPoll Admin',robots:{index:false,follow:false}};
-export default async function StatePollManager({searchParams={}}:{searchParams?:{state?:string;search?:string;status?:string;page?:string}}){
+export default async function StatePollManager({searchParams: queryPromise=Promise.resolve({})}:{searchParams?:Promise<{state?:string;search?:string;status?:string;page?:string}>}){
+  const searchParams = await queryPromise;
   if(!(await isAdmin()))redirect('/admin');
   const state=REGIONS.find(r=>r.code===searchParams.state)?.code||'';
   const search=(searchParams.search||'').trim().slice(0,100); const parsed=Number(searchParams.page||1);const page=Number.isSafeInteger(parsed)&&parsed>0?Math.min(parsed,10000):1;

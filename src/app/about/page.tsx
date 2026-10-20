@@ -1,9 +1,7 @@
+import { pageMetadata } from '@/lib/seo';
 import Link from 'next/link';
 
-export const metadata = {
-  title: 'JanPoll क्या है? — राजस्थान जनमत मंच',
-  description: 'JanPoll.in के उद्देश्य, विजन और राजस्थान के स्वतंत्र जनमत मंच के बारे में जानें।',
-};
+export const metadata = pageMetadata("JanPoll India के बारे में","भारत के राज्यों और स्थानीय मुद्दों पर सार्वजनिक राय साझा करने वाला स्वतंत्र JanPoll मंच।","/about",["JanPoll about"]);
 
 export default function AboutPage() {
   return (
