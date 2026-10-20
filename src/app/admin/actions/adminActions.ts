@@ -192,3 +192,25 @@ export async function deleteMessage(formData: FormData) {
     console.error('संदेश हटाने में त्रुटि:', error);
   }
 }
+export async function reviewCreatorRequest(formData: FormData) {
+  if (!(await isAdmin())) throw new Error('Admin access required.');
+  const pollId = formValue(formData, 'pollId');
+  const requestType = formValue(formData, 'requestType');
+  const decision = formValue(formData, 'decision');
+  if (!pollId || !['REQUESTED', 'DEACTIVATION_REQUESTED'].includes(requestType) || !['approve', 'reject'].includes(decision)) {
+    throw new Error('Invalid request decision.');
+  }
+  const where = { id: pollId, deletionStatus: requestType };
+  if (decision === 'reject') {
+    await db.poll.updateMany({ where, data: { deletionStatus: 'REJECTED' } });
+  } else if (requestType === 'DEACTIVATION_REQUESTED') {
+    await db.poll.updateMany({ where, data: { active: false, deletionStatus: 'APPROVED' } });
+  } else {
+    // Conditional deletion prevents a stale review from deleting a changed request.
+    await db.poll.deleteMany({ where });
+  }
+  revalidatePath('/', 'layout');
+  revalidatePath('/my-polls');
+  revalidatePath('/admin/polls');
+  revalidatePath(`/poll/${pollId}`);
+}

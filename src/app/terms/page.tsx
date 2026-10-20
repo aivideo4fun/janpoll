@@ -2,7 +2,7 @@ import { pageMetadata } from '@/lib/seo';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
-export const metadata = pageMetadata("नियम और शर्तें | JanPoll India","Poll creation, voting, moderation, free deactivation और ₹199 + लागू GST वाली सामान्य deletion request की शर्तें।","/terms",["JanPoll terms deletion policy"]);
+export const metadata = pageMetadata("नियम और शर्तें | JanPoll India","Poll creation, voting, moderation, admin-reviewed deactivation requests और ₹199 + लागू GST वाली सामान्य deletion request की शर्तें।","/terms",["JanPoll terms deletion policy"]);
 export default function TermsAndConditions() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 text-gray-800">
@@ -55,7 +55,7 @@ export default function TermsAndConditions() {
         </section>
         <section className="space-y-2">
           <h2 className="text-lg font-bold text-emerald-800">6. Deactivation और deletion</h2>
-          <p className="text-sm leading-8 text-gray-600">पोल बनाने वाला अपने पोल को deactivate करने का अनुरोध बिना शुल्क कर सकता है। सामान्य स्थायी deletion request के लिए ₹199 + लागू GST का सेवा शुल्क है। पहले अनुरोध और स्वामित्व की जाँच होगी; कुल देय राशि तथा भुगतान निर्देश बताए जाने के बाद ही भुगतान करें। किसी public poll ID या share link का पता होना स्वामित्व का प्रमाण नहीं है।</p>
+          <p className="text-sm leading-8 text-gray-600">पोल बनाने वाला केवल deactivate या delete का अनुरोध भेज सकता है; उसे सीधे poll deactivate या delete करने का अधिकार नहीं है। अंतिम निर्णय और कार्रवाई admin करेगा। अनुरोध भेजने से poll का status नहीं बदलता। Deactivate अनुरोध बिना शुल्क भेजा जा सकता है। सामान्य स्थायी deletion request के लिए ₹199 + लागू GST का सेवा शुल्क है। पहले अनुरोध और स्वामित्व की जाँच होगी; कुल देय राशि तथा भुगतान निर्देश बताए जाने के बाद ही भुगतान करें। किसी public poll ID या share link का पता होना स्वामित्व का प्रमाण नहीं है।</p>
           <p className="text-sm leading-8 text-gray-600">गैरकानूनी सामग्री, privacy शिकायत या कानूनन आवश्यक removal इस शुल्क के अधीन नहीं हैं। आवश्यक audit records और backups अपनी लागू retention प्रक्रिया के अनुसार हटेंगे; तत्काल सभी प्रतियों के मिटने का दावा नहीं किया जाता। अनुरोध support@janpoll.in पर भेजें।</p>
         </section>
         <section className="space-y-2">

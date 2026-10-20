@@ -1,3 +1,4 @@
+import { reviewCreatorRequest } from '../actions/adminActions';
 import { db } from '@/lib/db';
 import Link from 'next/link';
 import { getDeadline } from '@/lib/poll-utils';
@@ -74,7 +75,7 @@ export default async function PollsList({
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0">
                       {poll.creatorReference && <p className="mb-2 break-all text-xs font-mono text-emerald-800">Creator reference: {poll.creatorReference}</p>}
-                      {poll.deletionStatus === "REQUESTED" && <p className="mb-2 text-sm text-amber-800">Deletion requested · payment verification pending</p>}
+                      {['REQUESTED', 'DEACTIVATION_REQUESTED'].includes(poll.deletionStatus) && <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4"><p className="text-sm font-semibold text-amber-900">{poll.deletionStatus === 'REQUESTED' ? 'Delete request — ownership और लागू शुल्क जाँचें। Approve करने पर poll और संबंधित votes स्थायी रूप से हटेंगे।' : 'Deactivate request — निर्णय होने तक poll का वर्तमान status बना रहेगा।'}</p>{poll.deletionRequestedAt && <p className="mt-2 text-xs text-amber-800">Request: {formatIndiaDateTime(poll.deletionRequestedAt)}</p>}<form action={reviewCreatorRequest} className="mt-3 flex flex-wrap gap-3"><input type="hidden" name="pollId" value={poll.id}/><input type="hidden" name="requestType" value={poll.deletionStatus}/><button name="decision" value="approve" className="min-h-11 rounded-xl bg-red-700 px-4 text-sm text-white">{poll.deletionStatus === 'REQUESTED' ? 'Approve और स्थायी delete करें' : 'Approve और deactivate करें'}</button><button name="decision" value="reject" className="min-h-11 rounded-xl border border-amber-300 bg-white px-4 text-sm">Reject request</button></form></div>}
                       <div className="mb-2 flex flex-wrap items-center gap-2">
                         <span
                           className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${
