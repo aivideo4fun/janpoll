@@ -103,7 +103,7 @@ export default function Navbar() {
             className="h-14 w-14 shrink-0 object-contain transition-transform duration-200 group-hover:scale-105 motion-reduce:transform-none sm:h-[72px] sm:w-[72px]"
           />
 
-          <span className="inline-flex min-w-0 flex-col items-start justify-center">
+          <span className="inline-grid min-w-0 grid-cols-[max-content] items-center">
             <span
               className="whitespace-nowrap text-[25px] font-extrabold leading-none tracking-[0.015em] text-[#064E3B] sm:text-[30px]"
               style={{
@@ -114,12 +114,12 @@ export default function Navbar() {
             </span>
 
             <span
-              className="mt-2 whitespace-nowrap text-[9px] font-semibold leading-none tracking-[0.18em] text-emerald-700 sm:text-[10px]"
+              className="mt-2 flex w-full items-center justify-between gap-1 whitespace-nowrap text-[9px] font-semibold leading-none tracking-[0.1em] text-emerald-700 sm:text-[10px]"
               style={{
                 fontFamily: 'Arial, Helvetica, sans-serif',
               }}
             >
-              Voice of People
+              <span>VOICE</span><span>OF</span><span>PEOPLE</span>
             </span>
           </span>
         </Link>

@@ -248,7 +248,7 @@ export async function POST(request: Request) {
         slug: `${slugBase.slice(0, 450)}-${randomUUID()}`,
 
         // पहचान browser के payload से नहीं ली जाएगी।
-        creatorName: null,
+        creatorName: creator.name,
         creatorEmail: creator.email,
         creatorGuestHash: creator.guestHash,
 

@@ -1,3 +1,4 @@
+import { getTodayTopPolls } from '@/lib/home-ranking';
 import HomeContent from '@/components/HomeContent';
 import Link from 'next/link';
 import { isPollOpen } from '@/lib/poll-utils';
@@ -86,12 +87,7 @@ async function getHomeData(category: string) {
 
     db.user.count(),
 
-    db.poll.findMany({
-      where: { active: true, ...(filters[category] || {}) },
-      include: { options: true },
-      orderBy: { createdAt: 'desc' },
-      take: 4,
-    }),
+    getTodayTopPolls(filters[category] || {}),
 
     db.poll.groupBy({
       by: ['stateCode'],
@@ -508,7 +504,7 @@ export default async function HomePage({ searchParams }: { searchParams?: Promis
               </p>
 
               <h2 id="polls-title">
-                मुद्दे जो मायने रखते हैं
+                आज के लोकप्रिय जनमत
               </h2>
             </div>
 
@@ -582,13 +578,13 @@ export default async function HomePage({ searchParams }: { searchParams?: Promis
               <h3>
                 {data.pollsFailed
                   ? 'पोल लोड नहीं हो सके'
-                  : 'अपने मुद्दे पर पहला सवाल उठाएँ'}
+                  : 'आज इस श्रेणी में अभी कोई वोट नहीं आया'}
               </h3>
 
               <p>
                 {data.pollsFailed
                   ? 'कुछ देर बाद दोबारा कोशिश करें।'
-                  : 'पानी, सड़क, शिक्षा या रोज़गार पर पोल बनाकर चर्चा शुरू करें।'}
+                  : 'आज मिले मतों के आधार पर लोकप्रिय जनमत यहाँ दिखाई देंगे।'}
               </p>
 
               <Link

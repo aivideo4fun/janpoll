@@ -16,7 +16,7 @@ async function main(){
  if(!env.VOTE_SALT||env.VOTE_SALT.length<32)errors.push('VOTE_SALT missing or too short.');
  if(!/\.apps\.googleusercontent\.com$/.test(env.GOOGLE_CLIENT_ID||''))errors.push('Configure a real Google OAuth client ID, not a callback URL.');
  if(!env.GOOGLE_CLIENT_SECRET)errors.push('GOOGLE_CLIENT_SECRET missing.');
- if(env.REQUIRE_LOGIN_FOR_ALL_VOTES!=='true')errors.push('Production rollout requires REQUIRE_LOGIN_FOR_ALL_VOTES=true.');
+ if(!['true','false'].includes(env.REQUIRE_LOGIN_FOR_ALL_VOTES))errors.push('Set REQUIRE_LOGIN_FOR_ALL_VOTES explicitly: false preserves each creator-selected voting mode.');
  if(env.NEXT_PUBLIC_ADS_ENABLED==='true'){
   if(!/^ca-pub-\d+$/.test(env.NEXT_PUBLIC_ADSENSE_CLIENT||'')||!/^\d+$/.test(env.NEXT_PUBLIC_ADSENSE_SLOT||''))errors.push('Valid approved AdSense client/slot missing.');
   if(env.ADS_CONSENT_REVIEWED!=='true')errors.push('Advertising consent/CMP setup must be reviewed before enabling ads.');

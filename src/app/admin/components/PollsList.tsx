@@ -1,3 +1,4 @@
+import { db } from '@/lib/db';
 import Link from 'next/link';
 import { getDeadline } from '@/lib/poll-utils';
 import { formatIndiaDateTime } from '@/lib/format-india';
@@ -17,7 +18,7 @@ type PollsListProps = {
 const DAY_MS = 24 * 60 * 60 * 1000;
 const EXTEND_OPTIONS = [1, 2, 3, 5, 7, 10, 15, 30, 60, 90];
 
-export default function PollsList({
+export default async function PollsList({
   polls,
   totalPolls,
   searchQuery,
@@ -28,6 +29,12 @@ export default function PollsList({
   addPollOption,
   formatIndiaDate,
 }: PollsListProps) {
+  const emails = Array.from(new Set<string>(polls.filter(p => p.creatorReference && p.creatorEmail && !p.creatorName).map(p => String(p.creatorEmail))));
+  if (emails.length) {
+    const profiles = await db.user.findMany({ where: { email: { in: emails } }, select: { email: true, name: true } });
+    const names = new Map(profiles.map(profile => [profile.email, profile.name]));
+    polls = polls.map(poll => ({ ...poll, creatorName: poll.creatorName || (poll.creatorReference ? names.get(poll.creatorEmail) : null) || null }));
+  }
   return (
     <section className="overflow-hidden rounded-3xl border border-emerald-100 bg-white shadow-sm">
       <div className="flex items-center justify-between border-b border-emerald-100 bg-emerald-50 px-5 py-4">
@@ -92,10 +99,10 @@ export default function PollsList({
 
                       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-gray-500">
                         <span>
-                          👤 <strong className="text-gray-700">{poll.creatorName || 'गुमनाम'}</strong>
+                          👤 <strong className="text-gray-700">{poll.creatorName || (poll.creatorGuestHash ? 'Guest creator' : 'नाम उपलब्ध नहीं')}</strong>
                         </span>
                         <span>
-                          📧 <strong className="text-gray-700">{poll.creatorEmail || 'ईमेल उपलब्ध नहीं'}</strong>
+                          📧 <strong className="text-gray-700">{poll.creatorEmail || (poll.creatorGuestHash ? 'Guest — ईमेल नहीं ली गई' : 'ईमेल उपलब्ध नहीं')}</strong>
                         </span>
                         <span>
                           👥 <strong className="text-gray-700">{pollTotalVotes} मत</strong>

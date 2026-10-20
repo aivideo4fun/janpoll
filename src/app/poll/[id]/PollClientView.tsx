@@ -180,6 +180,18 @@ export default function PollClientView({
 
   const [selectedOption, setSelectedOption] = useState('');
   const [hasVoted, setHasVoted] = useState(alreadyVoted);
+
+  // Restore the exact publisher vignette tag from the legacy poll view.
+  useEffect(() => {
+    if (process.env.NEXT_PUBLIC_MONETAG_ENABLED === 'false' || document.getElementById('janpoll-legacy-vignette')) return;
+    const script = document.createElement('script');
+    script.id = 'janpoll-legacy-vignette';
+    script.dataset.zone = '12021752';
+    script.src = 'https://n6wxm.com/vignette.min.js';
+    script.async = true;
+    document.body.appendChild(script);
+  }, []);
+
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -574,7 +586,7 @@ export default function PollClientView({
                 disabled={!shareUrl || shareLoading}
                 className={primary}
               >
-                Share Link
+                Share Poll
               </button>
 
               <button
@@ -595,7 +607,7 @@ export default function PollClientView({
 
             {shareLoading && (
               <p role="status" className="mt-3 text-center text-xs leading-7 text-slate-500">
-                Share link तैयार हो रहा है…
+                पोल शेयर करने की तैयारी हो रही है…
               </p>
             )}
 
@@ -612,22 +624,23 @@ export default function PollClientView({
               JanPoll से जुड़ें
             </h2>
 
-            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
               {SOCIALS.map((social) => (
                 <a
                   key={social.name}
                   href={social.href}
+                  aria-label={social.name}
+                  title={social.name}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-100 bg-slate-50 px-2 py-3 text-xs leading-7 text-slate-700 hover:bg-emerald-50"
+                  className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-emerald-100 bg-white text-emerald-800 transition hover:-translate-y-0.5 hover:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600 motion-reduce:transform-none"
                 >
                   <Image
                     src={social.icon}
                     alt=""
-                    width={20}
-                    height={20}
+                    width={24}
+                    height={24}
                   />
-                  <span>{social.name}</span>
                 </a>
               ))}
             </div>

@@ -212,7 +212,7 @@ export async function POST(request: Request) {
           creatorReference: `JP-${randomBytes(10).toString("hex").toUpperCase()}`,
           slug: `${base.slice(0, 450)}-${randomUUID()}`,
 
-          creatorName: null,
+          creatorName: creator.name,
           creatorEmail,
           creatorGuestHash: creator.guestHash,
 
