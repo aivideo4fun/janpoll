@@ -93,6 +93,8 @@ async function FooterContent() {
               <span>❓</span> सहायता एवं जानकारी
             </h3>
             <ul className="space-y-2.5 text-xs text-gray-300 font-medium">
+              <li><Link href="/en" lang="en" className="hover:text-emerald-400 transition">English — Create a Poll</Link></li>
+              <li><Link href="/poll-banaye" className="hover:text-emerald-400 transition">पोल कैसे बनाएँ?</Link></li>
               <li><Link href="/about" className="hover:text-emerald-400 transition flex items-center gap-1.5">› JanPoll क्या है?</Link></li>
               <li><Link href="/how-it-works" className="hover:text-emerald-400 transition flex items-center gap-1.5">› यह कैसे काम करता है?</Link></li>
               <li><Link href="/privacy-policy" className="hover:text-emerald-400 transition flex items-center gap-1.5">› सुरक्षा और गोपनीयता</Link></li>

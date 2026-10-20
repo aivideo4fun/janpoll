@@ -58,7 +58,7 @@ export const getRegionBySlug = (slug?: string | null): Region | undefined =>
 export const regionHref = (r: Region) =>
   r.code === 'RJ' ? '/rajasthan' : `/state/${r.slug}`;
 
-export const createHref = (r: Region) => `/create?state=${r.slug}`;
+export const createHref = (r: Region) => r.code === 'RJ' ? '/create/rajasthan?state=rajasthan' : `/create/public?state=${r.slug}`;
 
 export function rankRegions(counts: Map<string, number>) {
   const rank = (code: string) => {

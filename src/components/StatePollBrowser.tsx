@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
 import { db } from '@/lib/db';
-import type { Region } from '@/lib/regions';
+import { createHref as regionCreateHref, type Region } from '@/lib/regions';
 
 export type BrowserSearch = Record<
   string,
@@ -87,7 +87,7 @@ export default async function StatePollBrowser({
   );
 
   const createHref =
-    `/create/public?state=${encodeURIComponent(region.slug)}`;
+    regionCreateHref(region);
 
   return (
     <main

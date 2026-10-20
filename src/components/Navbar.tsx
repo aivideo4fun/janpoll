@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 
-import { getRegionBySlug } from '@/lib/regions';
+import { getRegionBySlug, createHref as regionCreateHref } from '@/lib/regions';
 
 const SOCIALS = [
   { name: 'Telegram', href: 'https://t.me/janpollindia', icon: '/images/telegram.svg' },
@@ -47,7 +47,7 @@ export default function Navbar() {
   );
 
   const createHref = region
-    ? `/create?state=${encodeURIComponent(region.slug)}`
+    ? regionCreateHref(region)
     : '/create';
 
   useEffect(() => {

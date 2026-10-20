@@ -293,11 +293,11 @@ export default function PollClientView({
       if (navigator.share) {
         await navigator.share({
           title: poll.question,
-          text: `इस JanPoll पर अपनी राय दें:\n${poll.question}`,
+          text: poll.question,
           url: shareUrl,
         });
       } else {
-        await navigator.clipboard.writeText(shareUrl);
+        await navigator.clipboard.writeText(`${poll.question}\n\n${shareUrl}`);
         setShareMessage('Share link कॉपी हो गया।');
       }
     } catch (error) {
@@ -313,7 +313,7 @@ export default function PollClientView({
   const shareWhatsApp = () => {
     if (!shareUrl) return;
 
-    const text = `${poll.question}\n\nअपनी राय दें:\n${shareUrl}`;
+    const text = `${poll.question}\n\n${shareUrl}`;
 
     window.open(
       `https://wa.me/?text=${encodeURIComponent(text)}`,

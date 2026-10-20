@@ -1,3 +1,4 @@
+import { SITE_GRAPH, jsonLd } from '@/lib/site-seo';
 import AnnouncementBar from '@/components/AnnouncementBar';
 import AnalyticsConsent from '@/components/AnalyticsConsent';
 import './globals.css';
@@ -8,6 +9,7 @@ import Providers from './providers';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://janpoll.in'),
+  verification: process.env.GOOGLE_SITE_VERIFICATION ? { google: process.env.GOOGLE_SITE_VERIFICATION } : undefined,
   title: 'JanPoll India — Voice of People',
   description: 'अपने राज्य और स्थानीय मुद्दों पर राय दें। JanPoll India एक स्वतंत्र public opinion मंच है।',
   keywords: ['JanPoll India', 'जनमत पोल', 'public opinion India', 'state polls', 'Rajasthan public opinion'],
@@ -39,6 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="hi">
       <body className="min-h-screen flex flex-col bg-[#F8FAFC] text-[#111827] antialiased">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(SITE_GRAPH) }} />
         <Providers>
           <Navbar />
           <AnnouncementBar />

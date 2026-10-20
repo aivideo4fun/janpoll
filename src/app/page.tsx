@@ -1,3 +1,4 @@
+import { getTrendingStates } from '@/lib/state-trending';
 import { getTodayTopPolls } from '@/lib/home-ranking';
 import HomeContent from '@/components/HomeContent';
 import Link from 'next/link';
@@ -16,14 +17,16 @@ import './janpoll-home.css';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'JanPoll India — Voice of People',
+  title: 'पोल बनाएँ और जनता की राय जानें | JanPoll India',
   description:
-    'गाँव की चौपाल से देश की राजधानी तक। स्थानीय और राष्ट्रीय मुद्दों पर अपनी राय साझा करें, पोल बनाएँ और जनमत जानें।',
+    'JanPoll India पर नया पोल बनाएँ, अपना सवाल साझा करें और जनता का जनमत जानें। Create a poll and explore public opinion across India, including Rajasthan sarpanch polls.',
   alternates: {
     canonical: 'https://janpoll.in/',
+    languages: { 'hi-IN': 'https://janpoll.in/', 'en-IN': 'https://janpoll.in/en', 'x-default': 'https://janpoll.in/' },
   },
+  keywords: ['JanPoll India', 'poll', 'create poll', 'new poll', 'vote poll', 'poll banaye', 'sarpanch poll', 'janta ka poll', 'पोल बनाएँ', 'जनता का पोल', 'जनमत'],
   openGraph: {
-    title: 'JanPoll India — Voice of People',
+    title: 'पोल बनाएँ और जनता की राय जानें | JanPoll India',
     description:
       'स्थानीय और राष्ट्रीय मुद्दों पर अपनी राय साझा करें।',
     url: 'https://janpoll.in/',
@@ -282,7 +285,8 @@ function PollCard({ poll }: { poll: Poll }) {
 export default async function HomePage({ searchParams }: { searchParams?: Promise<{ category?: string }> }) {
   const requested = (await searchParams)?.category || 'all';
   const selectedCategory = CATEGORIES.some(item => item.slug === requested) ? requested : 'all';
-  const data = await getHomeData(selectedCategory);
+  const [data, trendingStates] = await Promise.all([getHomeData(selectedCategory), getTrendingStates().catch(error => { console.error('Trending states unavailable', error); return []; })]);
+  const stateActivity = new Map(trendingStates.map(state => [state.code, state]));
 
   const regions = REGIONS.map((region) => ({
     code: region.code,
@@ -291,19 +295,9 @@ export default async function HomePage({ searchParams }: { searchParams?: Promis
       region.code,
     )}`,
     count: data.statesLoaded
-      ? data.stateCounts.get(region.code) ?? 0
+      ? stateActivity.get(region.code)?.activePolls ?? data.stateCounts.get(region.code) ?? 0
       : null,
   }));
-
-  const featuredRegions = [...regions]
-    .sort((a, b) => {
-      if (a.code === b.code) return 0;
-      if (a.code === 'RJ') return -1;
-      if (b.code === 'RJ') return 1;
-
-      return (b.count ?? 0) - (a.count ?? 0);
-    })
-    .slice(0, 4);
 
   const stats = [
     {
@@ -316,7 +310,7 @@ export default async function HomePage({ searchParams }: { searchParams?: Promis
     },
     {
       value: data.statesLoaded
-        ? data.stateCounts.size
+        ? regions.filter(region => (region.count ?? 0) > 0).length
         : null,
       label: 'राज्य / UT में सक्रिय पोल',
     },
@@ -360,12 +354,13 @@ export default async function HomePage({ searchParams }: { searchParams?: Promis
               क्या सोचते हैं।
             </p>
 
+            <p lang="en" className="mt-3 text-sm leading-7 text-slate-600">Create a poll, share your question and explore public opinion across India. <Link href="/en" className="text-emerald-800 underline">English</Link></p>
             <div className="jp-actions">
               <Link
                 className="jp-btn jp-btn-primary"
                 href="/create"
               >
-                अपनी आवाज़ उठाएँ
+                पोल बनाएँ
                 <span aria-hidden="true">↗</span>
               </Link>
 
@@ -628,6 +623,12 @@ export default async function HomePage({ searchParams }: { searchParams?: Promis
         </div>
       </section>
 
+      <section className="jp-wrap jp-regions" aria-labelledby="trending-states-title">
+        <div className="jp-section-heading"><div><p className="jp-eyebrow">TRENDING STATES</p><h2 id="trending-states-title">जनमत में आगे रहने वाले राज्य</h2></div><Link href="/states" className="jp-text-link">सभी राज्य →</Link></div>
+        <p className="jp-section-copy">राज्यों के सभी polls में अब तक दर्ज कुल votes के आधार पर। केवल वोट वाले राज्य दिखाए जाते हैं।</p>
+        {trendingStates.length ? <div className="jp-featured-regions">{trendingStates.slice(0,4).map((region,index) => <Link className="jp-region" key={region.code} href={region.href}><span className="jp-region-code">#{index+1} · {region.code}</span><strong>{region.name}</strong><span>{numbers.format(region.votes)} दर्ज वोट</span><span className="jp-region-arrow" aria-hidden="true">↗</span></Link>)}</div> : <p className="mt-5 text-sm leading-7 text-slate-500">राज्यवार भागीदारी के आँकड़े उपलब्ध होने पर यहाँ दिखाई देंगे।</p>}
+      </section>
+
       {/* BLOCK 4 — STATE / UT SELECTION */}
       <section
         className="jp-section jp-wrap"
@@ -656,39 +657,10 @@ export default async function HomePage({ searchParams }: { searchParams?: Promis
           क्षेत्रीय पोल देखें।
         </p>
 
-        <div className="jp-featured-regions">
-          {featuredRegions.map((region) => (
-            <Link
-              className="jp-region"
-              key={region.code}
-              href={region.href}
-            >
-              <span className="jp-region-code">
-                {region.code}
-              </span>
-
-              <strong>{region.name}</strong>
-
-              <span>
-                {region.count === null
-                  ? 'आंकड़े उपलब्ध नहीं'
-                  : `${numbers.format(
-                      region.count,
-                    )} सक्रिय पोल`}
-              </span>
-
-              <span
-                className="jp-region-arrow"
-                aria-hidden="true"
-              >
-                ↗
-              </span>
-            </Link>
-          ))}
-        </div>
-
         <RegionPicker regions={regions} />
       </section>
+
+      <section className="jp-wrap py-10" aria-labelledby="create-guide-title"><h2 id="create-guide-title" className="text-2xl font-semibold text-emerald-950">नया पोल कैसे बनाएँ? / Create a poll</h2><p className="mt-4 max-w-3xl text-sm leading-8 text-slate-600">अपने राज्य और स्थानीय मुद्दों पर जनता की राय जानने के लिए JanPoll पर सवाल और विकल्प जोड़ें। Creator Google से sign-in करता है; voting बिना login या login के बाद रख सकता है। राजस्थान में सरपंच, पंचायत समिति और जिला परिषद से जुड़े जनमत उसी स्थानीय interface से बनाए जा सकते हैं।</p><div className="mt-5 flex flex-wrap gap-4"><Link href="/poll-banaye" className="text-emerald-800 underline">पोल बनाने की जानकारी →</Link><Link href="/create/rajasthan?state=rajasthan" className="text-emerald-800 underline">राजस्थान में पोल बनाएँ →</Link><Link href="/en" lang="en" className="text-emerald-800 underline">Create a poll in India — English →</Link></div></section>
 
       {/* BLOCK 5 — FINAL CALL TO ACTION */}
       <section className="jp-cta">

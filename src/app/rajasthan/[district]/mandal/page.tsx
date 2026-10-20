@@ -173,7 +173,7 @@ export default async function MandalIndexPage({ params }: Props) {
 
                   {!hasReachedLimit && (
                     <Link
-                      href={`/create?samitiId=${mandal.id}&samiti=${encodeURIComponent(
+                      href={`/create/rajasthan?samitiId=${mandal.id}&samiti=${encodeURIComponent(
                         mandal.nameHi
                       )}&districtId=${districtId}&district=${encodeURIComponent(
                         districtNameHi

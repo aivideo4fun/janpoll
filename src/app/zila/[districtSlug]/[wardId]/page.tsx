@@ -62,7 +62,7 @@ export default async function ZilaWardPollsPage({ params }: ZilaWardPageProps) {
               इस वॉर्ड में अभी कोई सक्रिय पोल उपलब्ध नहीं है।
             </p>
             <Link
-              href={`/create?district=${encodeURIComponent(ward.district.nameEn)}&districtId=${ward.districtId}&zilaWardId=${ward.id}&wardNo=${ward.wardNo}&category=zila-parishad`}
+              href={`/create/rajasthan?district=${encodeURIComponent(ward.district.nameEn)}&districtId=${ward.districtId}&zilaWardId=${ward.id}&wardNo=${ward.wardNo}&category=zila-parishad`}
               className="inline-block bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs py-2.5 px-5 rounded-xl transition shadow"
             >
               ＋ इस वॉर्ड का पहला पोल बनाएँ →

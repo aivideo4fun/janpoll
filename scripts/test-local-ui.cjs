@@ -10,7 +10,10 @@ const html=renderToStaticMarkup(React.createElement(client,{poll:{id:'fixture-po
 assert(html.includes('Share Poll'));for(const name of ['Instagram','Facebook','Telegram']){assert(html.includes(`aria-label="${name}"`));assert(!html.includes(`<span>${name}</span>`));}assert(html.includes('href="https://t.me/janpollindia"'));assert(html.includes('href="https://instagram.com/janpoll.in"'));assert(html.includes('h-12 w-12'));
 console.log('Real component SSR checks passed: centered tagline, Share Poll label and icon-only accessible social links; no live ads or votes executed.');
 let status='unauthenticated';
-const create=load('src/app/create/public/page.tsx',{'next/link':link,'next/navigation':{useRouter:()=>({push(){}}),useSearchParams:()=>new URLSearchParams('state=rajasthan')},'next-auth/react':{useSession:()=>({status,data:status==='authenticated'?{user:{name:'Creator Name',email:'creator@example.test'}}:null}),signIn:async()=>{}},'@/lib/regions':regions}).default;
+const create=load('src/app/create/public/PublicCreateForm.tsx',{'next/link':link,'next/navigation':{useRouter:()=>({push(){}}),useSearchParams:()=>new URLSearchParams('state=rajasthan')},'next-auth/react':{useSession:()=>({status,data:status==='authenticated'?{user:{name:'Creator Name',email:'creator@example.test'}}:null}),signIn:async()=>{}},'@/lib/regions':regions}).default;
 let form=renderToStaticMarkup(React.createElement(create));assert(form.includes('Continue with Google'));assert(form.includes('<fieldset disabled=""'));assert(!form.includes('बिना login भी poll बनाएँ'));
 status='authenticated';form=renderToStaticMarkup(React.createElement(create));assert(form.includes('creator@example.test'));assert(form.includes('Creator Name'));assert(form.includes('value="login"'));assert(form.includes('value="open"'));
 console.log('Creation UI SSR passed: unauthenticated form disabled, Google CTA visible, signed-in identity and both voting modes retained.');
+
+assert(/<option(?=[^>]*value="open")(?=[^>]*selected)[^>]*>/.test(form), 'New polls must default to guest voting');
+console.log('Default voting mode check passed: guest voting selected; login option remains available.');

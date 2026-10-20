@@ -47,29 +47,17 @@ export async function generateMetadata({
 
   const region = getRegionByCode(poll.stateCode);
 
-  const location =
-    poll.scope === 'NATIONAL'
-      ? 'भारत'
-      : [
-          region?.name,
-          poll.districtName,
-          poll.gramPanchayatName,
-        ]
-          .filter(Boolean)
-          .join(' · ') || 'आपके क्षेत्र';
-
-  const title = `${poll.question} | JanPoll India`;
-
-  const description =
-    `${location} के इस सवाल पर सार्वजनिक राय जानें। ` +
-    'यह opinion poll है, आधिकारिक जनमत मतदान नहीं।';
+  // Shared previews show the poll question; platform guidance stays on the page.
+  const title = poll.question;
+  const description = poll.question;
 
   const canonical =
     `https://janpoll.in/poll/${encodeURIComponent(id)}`;
 
   return {
-    title,
+    title: { absolute: title },
     description,
+    twitter: { card: 'summary', title, description },
     keywords: [poll.question, region?.en || 'India', 'JanPoll opinion poll'],
     alternates: {
       canonical,
@@ -151,7 +139,7 @@ export default async function PollPage({ params }: Props) {
   const query = new URLSearchParams();
   let createHref = '/create';
 
-  if (region && poll.scope === 'STATE') {
+  if (region && (poll.scope === 'STATE' || legacyRajasthan)) {
     query.set('state', region.slug);
 
     const electionType = poll.electionType ?? '';
@@ -253,6 +241,8 @@ export default async function PollPage({ params }: Props) {
     if (poll.electionType) legacyQuery.set('electionType', poll.electionType);
     createHref = '/create/rajasthan?' + legacyQuery.toString();
   }
+
+  if (region?.code === 'RJ') createHref = `/create/rajasthan?${query.toString()}`;
 
   const alreadyVoted = await hasAlreadyVoted(poll.id);
   const isOpen = isPollOpen(poll);

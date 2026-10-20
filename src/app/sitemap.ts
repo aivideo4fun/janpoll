@@ -25,7 +25,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: now,
       changeFrequency: 'always',
       priority: 1.0,
+      alternates: { languages: { 'hi-IN': baseUrl + '/', 'en-IN': baseUrl + '/en' } },
     },
+    { url: `${baseUrl}/en`, lastModified: now, changeFrequency: 'daily', priority: 0.9, alternates: { languages: { 'hi-IN': baseUrl + '/', 'en-IN': baseUrl + '/en' } } },
     {
       url: `${baseUrl}/rajasthan`,
       lastModified: now,
@@ -77,6 +79,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   const articles = await db.article.findMany({ where: { published: true }, select: { slug: true, updatedAt: true } }).catch(() => []);
-  const urls = [...staticUrls, ...REGIONS.map(region => ({ url: baseUrl + regionHref(region) })), ...['/articles','/advertise','/editorial-policy','/about','/contact','/privacy-policy','/terms','/disclaimer','/faq','/how-it-works'].map(path=>({url:baseUrl+path})), ...articles.map(article => ({ url: baseUrl + '/articles/' + article.slug, lastModified: article.updatedAt })), ...districtUrls, ...pollUrls];
+  const urls = [...staticUrls, ...REGIONS.map(region => ({ url: baseUrl + regionHref(region) })), ...['/poll-banaye','/articles','/advertise','/editorial-policy','/about','/contact','/privacy-policy','/terms','/disclaimer','/faq','/how-it-works'].map(path=>({url:baseUrl+path})), ...articles.map(article => ({ url: baseUrl + '/articles/' + article.slug, lastModified: article.updatedAt })), ...districtUrls, ...pollUrls];
   return Array.from(new Map(urls.map(item=>[item.url,item])).values());
 }

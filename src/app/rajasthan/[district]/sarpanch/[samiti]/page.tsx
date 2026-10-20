@@ -178,7 +178,7 @@ export default async function PanchayatPollingPage({ params }: Props) {
 
                   {!hasReachedLimit && (
                     <Link
-                      href={`/create?gpId=${gp.id}&gp=${encodeURIComponent(gp.nameHi)}&samiti=${encodeURIComponent(samitiTitle)}&district=${encodeURIComponent(districtTitle)}`}
+                      href={`/create/rajasthan?gpId=${gp.id}&gp=${encodeURIComponent(gp.nameHi)}&samiti=${encodeURIComponent(samitiTitle)}&district=${encodeURIComponent(districtTitle)}`}
                       className="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs py-2 px-4 rounded-xl transition shadow inline-block"
                     >
                       ＋ नया पोल बनाएँ →

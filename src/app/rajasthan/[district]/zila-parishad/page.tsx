@@ -162,7 +162,7 @@ export default async function ZilaParishadIndexPage({ params }: Props) {
 
                   {!hasReachedLimit && (
                     <Link
-                      href={`/create?district=${encodeURIComponent(
+                      href={`/create/rajasthan?district=${encodeURIComponent(
                         district
                       )}&districtId=${districtId}&zilaWardId=${ward.id}&wardNo=${
                         ward.wardNo

@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   alternates: { canonical: '/rajasthan' },
   title: 'राजस्थान जिला चयन और पंचायत राज जनमत ओपिनियन पोल | JanPoll',
   description: 'राजस्थान के सभी जिलों, तहसीलों, और ग्राम पंचायतों के लाइव पंचायत राज जनमत ओपिनियन पोल देखें और अपनी राय साझा करें।',
-  keywords: ['rajasthan districts poll', 'rajasthan election 2026', 'sarpanch chunav rajasthan', 'janpoll rajasthan'],
+  keywords: ['Rajasthan sarpanch poll', 'sarpanch poll', 'राजस्थान सरपंच जनमत', 'राजस्थान पोल बनाएँ', 'JanPoll Rajasthan'],
   openGraph: {
     title: 'राजस्थान जिला चयन और पंचायत राज जनमत ओपिनियन पोल | JanPoll',
     description: 'अपने जिले और ग्राम पंचायत के जनमत पर ऑनलाइन वोटिंग करें।',
@@ -33,10 +33,11 @@ export default async function RajasthanStatePage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 text-gray-800">
-      <div className="mb-6">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <SmartBackLink fallbackHref="/" className="inline-flex items-center gap-2 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-4 py-2 rounded-xl text-sm font-bold transition">
           ← पिछले पेज पर वापस जाएं
         </SmartBackLink>
+        <Link href="/create/rajasthan?state=rajasthan" className="inline-flex min-h-12 items-center rounded-xl bg-emerald-800 px-5 py-3 text-sm font-semibold text-white">＋ पोल बनाएँ</Link>
       </div>
 
       <div className="bg-gradient-to-r from-emerald-800 to-green-700 text-white rounded-3xl p-6 md:p-8 mb-8 text-center shadow-md">
