@@ -1,17 +1,21 @@
 import { getTrendingStates } from '@/lib/state-trending';
+import { getRecentSessions, getIssuePoll } from '@/lib/home-community';
+import HomeGuides from '@/components/home/HomeGuides';
 import { getTodayTopPolls } from '@/lib/home-ranking';
-import HomeContent from '@/components/HomeContent';
+import HomeNews from '@/components/home/HomeNews';
+import HomeMotion from '@/components/home/HomeMotion';
+import HomeAnnouncements from '@/components/home/HomeAnnouncements';
+import VideoSection from '@/components/home/VideoSection';
+import StateArt from '@/components/home/StateArt';
+import StateDirectory from '@/components/home/StateDirectory';
+import Adsterra728 from '@/components/home/Adsterra728';
+import { ArrowRight, Plus, SquarePen, ListChecks, Share2 } from 'lucide-react';
 import Link from 'next/link';
 import { isPollOpen } from '@/lib/poll-utils';
 import type { Metadata } from 'next';
 import type { Prisma } from '@prisma/client';
 import { db } from '@/lib/db';
 import { REGIONS } from '@/lib/regions';
-import {
-  CountUp,
-  RegionPicker,
-} from '@/components/JanPollHomeClient';
-
 import './janpoll-home.css';
 
 export const dynamic = 'force-dynamic';
@@ -46,30 +50,9 @@ const CATEGORIES = [
   { slug: 'entertainment', label: 'मनोरंजन', icon: '✧' },
 ];
 
-const STEPS = [
-  {
-    number: '01',
-    title: 'अपना सवाल रखें',
-    description:
-      'एक स्पष्ट सवाल और संतुलित विकल्पों के साथ पोल बनाएँ।',
-  },
-  {
-    number: '02',
-    title: 'लोगों को जोड़ें',
-    description:
-      'पोल का लिंक साझा करें और लोगों को अपनी राय रखने दें।',
-  },
-  {
-    number: '03',
-    title: 'जनमत समझें',
-    description:
-      'दर्ज वोटों के आधार पर परिणाम देखें और चर्चा आगे बढ़ाएँ।',
-  },
-];
-
 const numbers = new Intl.NumberFormat('en-IN');
 
-async function getHomeData(category: string) {
+async function getHomeData(category: string, query = '') {
   const filters: Record<string, Prisma.PollWhereInput> = {
     politics: { OR: [{ topic: 'political' }, { categoryType: 'political' }] },
     elections: { electionType: { in: ['sarpanch', 'samiti', 'zila', 'assembly'] } },
@@ -80,17 +63,21 @@ async function getHomeData(category: string) {
   };
 
   const results = await Promise.allSettled([
-    db.poll.count({
-      where: { active: true },
-    }),
+    db.poll.count(),
 
     db.pollOption.aggregate({
       _sum: { voteCount: true },
     }),
 
-    db.user.count(),
+    getRecentSessions(),
 
-    getTodayTopPolls(filters[category] || {}),
+    query ? db.poll.findMany({
+      where: { AND: [{ active: true }, filters[category] || {}, { OR: [
+        { question: { contains: query, mode: 'insensitive' } },
+        { districtName: { contains: query, mode: 'insensitive' } },
+        { stateCode: { in: REGIONS.filter(r => `${r.name} ${r.en} ${r.code}`.toLowerCase().includes(query.toLowerCase())).map(r => r.code) } },
+      ] }] }, orderBy: { createdAt: 'desc' }, take: 8, include: { options: true },
+    }) : getTodayTopPolls(filters[category] || {}),
 
     db.poll.groupBy({
       by: ['stateCode'],
@@ -267,7 +254,7 @@ function PollCard({ poll }: { poll: Poll }) {
       <p className="mt-4 text-sm leading-8 text-slate-600">अपनी राय साझा करें। विकल्प और परिणाम देखने के लिए पोल खोलें।</p>
 
       <div className="jp-card-bottom">
-        <span>{poll.options.length} विकल्प</span>
+        <span>{poll.options.length} विकल्प{'todayVoteCount' in poll && typeof poll.todayVoteCount==='number' ? ` · आज ${numbers.format(poll.todayVoteCount)} वोट` : ''}</span>
 
         <Link
           className="jp-card-action"
@@ -282,414 +269,38 @@ function PollCard({ poll }: { poll: Poll }) {
   );
 }
 
-export default async function HomePage({ searchParams }: { searchParams?: Promise<{ category?: string }> }) {
-  const requested = (await searchParams)?.category || 'all';
+export default async function HomePage({ searchParams }: { searchParams?: Promise<{ category?: string; q?: string }> }) {
+  const params = await searchParams;
+  const requested = params?.category || 'all';
   const selectedCategory = CATEGORIES.some(item => item.slug === requested) ? requested : 'all';
-  const [data, trendingStates] = await Promise.all([getHomeData(selectedCategory), getTrendingStates().catch(error => { console.error('Trending states unavailable', error); return []; })]);
-  const stateActivity = new Map(trendingStates.map(state => [state.code, state]));
-
-  const regions = REGIONS.map((region) => ({
-    code: region.code,
-    name: region.name,
-    href: `/states?state=${encodeURIComponent(
-      region.code,
-    )}`,
-    count: data.statesLoaded
-      ? stateActivity.get(region.code)?.activePolls ?? data.stateCounts.get(region.code) ?? 0
-      : null,
-  }));
-
-  const stats = [
-    {
-      value: data.voteCount,
-      label: 'अब तक दर्ज वोट',
-    },
-    {
-      value: data.pollCount,
-      label: 'सक्रिय पोल',
-    },
-    {
-      value: data.statesLoaded
-        ? regions.filter(region => (region.count ?? 0) > 0).length
-        : null,
-      label: 'राज्य / UT में सक्रिय पोल',
-    },
-    {
-      value: data.userCount,
-      label: 'पंजीकृत उपयोगकर्ता',
-    },
-  ];
-
-  return (
-    <main className="jp-home" lang="hi">
-      {/* BLOCK 1 — HERO */}
-      <section
-        className="jp-hero"
-        aria-labelledby="home-title"
-      >
-        <div className="jp-wrap jp-hero-grid">
-          <div>
-            <p className="jp-eyebrow">
-              <span
-                className="jp-dot"
-                aria-hidden="true"
-              />
-              INDIA’S INDEPENDENT OPINION PLATFORM
-            </p>
-
-            <h1 id="home-title">
-              <span className="jp-headline-line">
-                गाँव की चौपाल से
-              </span>
-
-              <span className="jp-headline-line jp-headline-green">
-                देश की राजधानी तक।
-              </span>
-            </h1>
-
-            <p className="jp-hero-copy">
-              स्थानीय और राष्ट्रीय मुद्दों पर अपनी राय
-              साझा करें। अपना सवाल उठाएँ, लोगों को
-              जोड़ें और जानें कि भाग लेने वाले लोग
-              क्या सोचते हैं।
-            </p>
-
-            <p lang="en" className="mt-3 text-sm leading-7 text-slate-600">Create a poll, share your question and explore public opinion across India. <Link href="/en" className="text-emerald-800 underline">English</Link></p>
-            <div className="jp-actions">
-              <Link
-                className="jp-btn jp-btn-primary"
-                href="/create"
-              >
-                पोल बनाएँ
-                <span aria-hidden="true">↗</span>
-              </Link>
-
-              <a
-                className="jp-btn jp-btn-light"
-                href="#live-polls"
-              >
-                पोल देखें
-                <span aria-hidden="true">→</span>
-              </a>
-            </div>
-          </div>
-
-          <aside className="jp-voice">
-            <div className="jp-voice-top">
-              <span>PEOPLE. OPINIONS. CHANGE.</span>
-              <span aria-hidden="true">↗</span>
-            </div>
-
-            <span
-              className="jp-quote"
-              aria-hidden="true"
-            >
-              “
-            </span>
-
-            <h2>
-              मुद्दा आपका है।
-              <br />
-              आवाज़ भी आपकी हो।
-            </h2>
-
-            <p>
-              पानी, सड़क, शिक्षा या रोज़गार—आपके
-              आसपास क्या बदलना चाहिए? सवाल उठाइए,
-              जनमत जुटाइए।
-            </p>
-
-            <div className="jp-voice-bottom">
-              <span
-                className="jp-dot"
-                aria-hidden="true"
-              />
-              आपकी बात, एक साझा मंच पर
-            </div>
-          </aside>
-        </div>
-
-        {/* REAL DATABASE STATISTICS */}
-        <dl className="jp-wrap jp-stats">
-          {stats.map((stat) => (
-            <div key={stat.label}>
-              <dt>{stat.label}</dt>
-
-              <dd>
-                <CountUp value={stat.value} />
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </section>
-
-      <HomeContent kind="updates" />
-      {/* BLOCK 2 — ABOUT + HOW IT WORKS */}
-      <section
-        className="jp-section jp-wrap jp-about"
-        aria-labelledby="about-title"
-      >
-        <div>
-          <p className="jp-eyebrow">
-            JANPOLL क्या है?
-          </p>
-
-          <h2 id="about-title">
-            एक सवाल से शुरू हो
-            <br />
-            <span>बदलाव की बातचीत।</span>
-          </h2>
-
-          <p>
-            JanPoll एक स्वतंत्र सार्वजनिक राय मंच
-            है। यहाँ आप अपने गाँव, वार्ड, शहर,
-            राज्य और देश से जुड़े विषयों पर पोल
-            बना सकते हैं और भाग लेने वाले लोगों
-            की राय जान सकते हैं।
-          </p>
-
-          <p>
-            क्या आपकी बात अनसुनी रह जाती है?
-            पोल बनाकर उसे सामने लाइए। हमारी टीम
-            महत्वपूर्ण जनहित के मुद्दों की समीक्षा
-            कर उन्हें मंच पर फ़ीचर करने और व्यापक
-            चर्चा तक पहुँचाने का प्रयास करेगी।
-          </p>
-
-          <Link
-            href="/create"
-            className="jp-text-link"
-          >
-            पोल बनाएँ, बदलाव की मुहिम से जुड़ें
-            <span aria-hidden="true">↗</span>
-          </Link>
-        </div>
-
-        <div
-          className="jp-steps"
-          aria-label="JanPoll कैसे काम करता है"
-        >
-          {STEPS.map((step) => (
-            <div
-              className="jp-step"
-              key={step.number}
-            >
-              <span>{step.number}</span>
-
-              <div>
-                <h3>{step.title}</h3>
-                <p>{step.description}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* BLOCK 3 — CATEGORIES + FOUR REAL POLLS */}
-      <section
-        className="jp-feed-section"
-        id="live-polls"
-        aria-labelledby="polls-title"
-      >
-        <div className="jp-wrap">
-          <div className="jp-section-heading">
-            <div>
-              <p className="jp-eyebrow">
-                EXPLORE PUBLIC OPINION
-              </p>
-
-              <h2 id="polls-title">
-                आज के लोकप्रिय जनमत
-              </h2>
-            </div>
-
-            <Link
-              href="/#live-polls"
-              className="jp-text-link"
-            >
-              सभी पोल देखें
-              <span aria-hidden="true">↗</span>
-            </Link>
-          </div>
-
-          <nav
-            className="jp-categories"
-            aria-label="पोल श्रेणियाँ"
-          >
-            <Link
-              className="jp-chip jp-chip-dark"
-              href="/#live-polls"
-            >
-              <span aria-hidden="true">◉</span>
-              लाइव पोल
-            </Link>
-
-            <Link
-              className="jp-chip"
-              href="/closed-polls"
-            >
-              <span aria-hidden="true">▤</span>
-              पुराने परिणाम
-            </Link>
-
-            <span
-              className="jp-category-divider"
-              aria-hidden="true"
-            />
-
-            {CATEGORIES.map((category) => (
-              <Link
-                key={category.slug}
-                className={`jp-chip ${
-                  category.slug === selectedCategory
-                    ? 'jp-chip-selected'
-                    : ''
-                }`}
-                href={
-                  category.slug === 'all'
-                    ? '/#live-polls'
-                    : `/?category=${category.slug}#live-polls`
-                }
-              >
-                <span aria-hidden="true">
-                  {category.icon}
-                </span>
-                {category.label}
-              </Link>
-            ))}
-          </nav>
-
-          {data.polls.length > 0 ? (
-            <div className="jp-poll-grid">
-              {data.polls.map((poll) => (
-                <PollCard
-                  key={poll.id}
-                  poll={poll}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="jp-empty">
-              <h3>
-                {data.pollsFailed
-                  ? 'पोल लोड नहीं हो सके'
-                  : 'आज इस श्रेणी में अभी कोई वोट नहीं आया'}
-              </h3>
-
-              <p>
-                {data.pollsFailed
-                  ? 'कुछ देर बाद दोबारा कोशिश करें।'
-                  : 'आज मिले मतों के आधार पर लोकप्रिय जनमत यहाँ दिखाई देंगे।'}
-              </p>
-
-              <Link
-                className="jp-btn jp-btn-primary"
-                href="/create"
-              >
-                ＋ पोल बनाएँ
-              </Link>
-            </div>
-          )}
-
-          {/* MODERATION INFORMATION */}
-          <div className="jp-review-note">
-            <span
-              className="jp-review-icon"
-              aria-hidden="true"
-            >
-              ✓
-            </span>
-
-            <div>
-              <h3>
-                समीक्षा, स्पष्ट पहचान और
-                ज़िम्मेदार चर्चा
-              </h3>
-
-              <p>
-                राष्ट्रीय स्तर के पोल की हमारी
-                टीम समीक्षा करेगी। स्वीकृत पोल
-                पर समीक्षा का बैज दिखाई देगा।
-                समीक्षा लंबित होने पर भी पोल का
-                लिंक साझा किया जा सकता है।
-                बैज विषय की समीक्षा बताता है,
-                परिणामों की सत्यता की गारंटी नहीं।
-                हिंसक, आपत्तिजनक या नियम-विरुद्ध
-                पोल हटाने का अधिकार प्रशासन के
-                पास सुरक्षित है।
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="jp-wrap jp-regions" aria-labelledby="trending-states-title">
-        <div className="jp-section-heading"><div><p className="jp-eyebrow">TRENDING STATES</p><h2 id="trending-states-title">जनमत में आगे रहने वाले राज्य</h2></div><Link href="/states" className="jp-text-link">सभी राज्य →</Link></div>
-        <p className="jp-section-copy">राज्यों के सभी polls में अब तक दर्ज कुल votes के आधार पर। केवल वोट वाले राज्य दिखाए जाते हैं।</p>
-        {trendingStates.length ? <div className="jp-featured-regions">{trendingStates.slice(0,4).map((region,index) => <Link className="jp-region" key={region.code} href={region.href}><span className="jp-region-code">#{index+1} · {region.code}</span><strong>{region.name}</strong><span>{numbers.format(region.votes)} दर्ज वोट</span><span className="jp-region-arrow" aria-hidden="true">↗</span></Link>)}</div> : <p className="mt-5 text-sm leading-7 text-slate-500">राज्यवार भागीदारी के आँकड़े उपलब्ध होने पर यहाँ दिखाई देंगे।</p>}
-      </section>
-
-      {/* BLOCK 4 — STATE / UT SELECTION */}
-      <section
-        className="jp-section jp-wrap"
-        id="regions"
-        aria-labelledby="regions-title"
-      >
-        <div className="jp-section-heading">
-          <div>
-            <p className="jp-eyebrow">
-              STATES &amp; UNION TERRITORIES
-            </p>
-
-            <h2 id="regions-title">
-              अपने आसपास का जनमत जानें
-            </h2>
-          </div>
-
-          <span className="jp-region-total">
-            {REGIONS.length} राज्य व केंद्र
-            शासित प्रदेश
-          </span>
-        </div>
-
-        <p className="jp-section-copy">
-          राज्य चुनें और उससे जुड़े स्थानीय व
-          क्षेत्रीय पोल देखें।
-        </p>
-
-        <RegionPicker regions={regions} />
-      </section>
-
-      <section className="jp-wrap py-10" aria-labelledby="create-guide-title"><h2 id="create-guide-title" className="text-2xl font-semibold text-emerald-950">नया पोल कैसे बनाएँ? / Create a poll</h2><p className="mt-4 max-w-3xl text-sm leading-8 text-slate-600">अपने राज्य और स्थानीय मुद्दों पर जनता की राय जानने के लिए JanPoll पर सवाल और विकल्प जोड़ें। Creator Google से sign-in करता है; voting बिना login या login के बाद रख सकता है। राजस्थान में सरपंच, पंचायत समिति और जिला परिषद से जुड़े जनमत उसी स्थानीय interface से बनाए जा सकते हैं।</p><div className="mt-5 flex flex-wrap gap-4"><Link href="/poll-banaye" className="text-emerald-800 underline">पोल बनाने की जानकारी →</Link><Link href="/create/rajasthan?state=rajasthan" className="text-emerald-800 underline">राजस्थान में पोल बनाएँ →</Link><Link href="/en" lang="en" className="text-emerald-800 underline">Create a poll in India — English →</Link></div></section>
-
-      {/* BLOCK 5 — FINAL CALL TO ACTION */}
-      <section className="jp-cta">
-        <div className="jp-wrap">
-          <div>
-            <p className="jp-eyebrow">
-              बात उठेगी, तभी आगे बढ़ेगी।
-            </p>
-
-            <h2>
-              आपकी आवाज़ को मिले एक मंच।
-            </h2>
-
-            <p>
-              सवाल आपका। राय जनता की।
-              शुरुआत आज से।
-            </p>
-          </div>
-
-          <Link
-            href="/create"
-            className="jp-btn jp-btn-primary"
-          >
-            अपना पोल बनाएँ
-            <span aria-hidden="true">↗</span>
-          </Link>
-        </div>
-      </section>
-      <HomeContent kind="articles" />
-    </main>
-  );
+  const query = (params?.q || '').trim().slice(0, 100);
+  const [data, trending, issue] = await Promise.all([getHomeData(selectedCategory, query), getTrendingStates().catch(()=>null), getIssuePoll()]);
+  const stateVotes = trending===null?null:Object.fromEntries((trending || []).map(state=>[state.code,state.votes]));
+  const metric = (value:number|null)=>value===null?'—':numbers.format(value);
+  return <main className="jh-home" lang="hi"><div className="jh-shell"><HomeMotion />
+    <section className="jh-panel jh-rajasthan" aria-labelledby="jh-rajasthan-title">
+      <h1 id="jh-rajasthan-title">राजस्थान की जनता की आवाज़</h1>
+      <div className="jh-rajasthan-content"><StateArt code="RJ" variant="featured" /><div><p className="jh-featured-name">राजस्थान</p><p className="jh-featured-copy">अपने गांव, पंचायत और जिले की राय जानें।</p><div className="jh-actions"><Link href="/rajasthan" className="jh-button jh-primary">राजस्थान के पोल देखें <ArrowRight aria-hidden="true" /></Link><Link href="/create/rajasthan?state=rajasthan" className="jh-button jh-secondary">पोल बनाएं</Link></div></div></div>
+    </section>
+    <section className="jh-panel jh-create" aria-labelledby="jh-create-title"><div><span className="jh-kicker">आसान • ऑनलाइन • स्थानीय</span><h2 id="jh-create-title">आपकी राय मायने रखती है</h2><p className="jh-section-copy">अपने गांव, शहर और राज्य के मुद्दों पर सवाल पूछें।</p><div className="jh-actions"><Link href="/create" className="jh-button jh-primary"><Plus aria-hidden="true" /> अपना पोल बनाएं</Link><a href="#live-polls" className="jh-button jh-secondary">पोल देखें</a></div></div><ol className="jh-steps" aria-label="पोल बनाने के तीन कदम">{[{title:'सवाल लिखें',Icon:SquarePen},{title:'विकल्प जोड़ें',Icon:ListChecks},{title:'पोल शेयर करें',Icon:Share2}].map(({title,Icon},i)=><li key={title}><span className="jh-step-number">{i+1}</span><span className="jh-step-icon"><Icon aria-hidden="true" /></span><span>{title}</span></li>)}</ol><p className="jh-create-note">शुरू करने के लिए “अपना पोल बनाएं” दबाएं और Google से लॉगिन करें।</p></section>
+    <HomeAnnouncements />
+    <section className="jh-panel" aria-labelledby="community-stats"><h2 id="community-stats">JanPoll पर जनता की भागीदारी</h2><dl className="jh-community-stats">
+      {[["कुल पोल",data.pollCount],["कुल दर्ज वोट",data.voteCount],["वोट वाले राज्य / UT",trending===null?null:trending.length],["सक्रिय सत्र · 5 मिनट*",data.userCount]].map(([label,value])=><div key={String(label)}><dt>{label}</dt><dd>{metric(value as number|null)}</dd></div>)}
+    </dl><p className="jh-metric-note">*पिछले 5 मिनट में गतिविधि वाली, analytics की सहमति देने वाली sessions का अनुमान; यह अलग-अलग लोगों की सटीक संख्या नहीं है। आँकड़े सरकारी चुनाव परिणाम नहीं हैं।</p></section>
+    <StateDirectory query={query} votes={stateVotes} />
+    {trending===null && <p role="status" className="jh-metric-note">राज्यों के vote totals अभी उपलब्ध नहीं हैं; नाम के अनुसार दिखाए गए हैं।</p>}
+    <Adsterra728 placement="home" />
+    <section className="jh-panel" id="live-polls" aria-labelledby="polls-title"><div className="jh-section-head"><h2 id="polls-title">{query ? 'आपकी खोज के पोल' : 'आज के सबसे ज़्यादा वोट वाले 4 पोल'}</h2><Link href="/rajasthan" className="jh-text-link">और पोल देखें →</Link></div>
+      {!query && <p className="jh-metric-note">आज 00:00 से अभी तक मिले votes के आधार पर · भारतीय समय (IST) · लगभग हर 30 सेकंड में अपडेट।</p>}
+      {query && <p className="jh-search-status" role="status">खोज: “{query}” <Link href="/#live-polls">खोज हटाएं ×</Link></p>}
+      <nav className="jh-categories" aria-label="पोल श्रेणियां">{CATEGORIES.map(item => <Link key={item.slug} href={`/?category=${item.slug}${query ? `&q=${encodeURIComponent(query)}` : ''}#live-polls`} className={selectedCategory === item.slug ? 'jh-category jh-selected' : 'jh-category'} aria-current={selectedCategory === item.slug ? 'page' : undefined}>{item.label}</Link>)}</nav>
+      {data.pollsFailed ? <p className="jh-empty">पोल अभी लोड नहीं हो पाए। कुछ देर बाद फिर कोशिश करें।</p> : data.polls.length ? <div className="jh-poll-grid">{data.polls.map(poll => <PollCard key={poll.id} poll={poll} />)}</div> : <div className="jh-empty"><p>{query ? 'इस खोज का कोई पोल नहीं मिला। दूसरा शब्द खोजें।' : 'आज इस सूची के लिए कोई vote दर्ज नहीं हुआ। आज vote पाने वाले अधिकतम 4 पोल यहाँ दिखेंगे।'}</p><Link className="jh-text-link" href="/create">अपना सवाल जोड़ें →</Link></div>}
+    </section>
+    <section className="jh-panel jh-issue"><span className="jh-kicker">आपके क्षेत्र की प्राथमिकता</span><h2>सड़क, पानी, शिक्षा — सबसे पहले क्या बदले?</h2><p className="jh-section-copy">पेयजल, सड़कें, स्कूल, स्वास्थ्य, रोज़गार, सफाई, बिजली और परिवहन: एक सवाल में अपने क्षेत्र की सबसे ज़रूरी समस्या चुनें। इसमें राय दें, फिर अपने क्षेत्र के लिए अलग पोल बनाकर चर्चा आगे बढ़ाएँ।</p><div className="jh-actions">{issue && <Link href={`/poll/${issue.id}`} className="jh-button jh-primary">{isPollOpen(issue)?'मुद्दों के पोल में अपनी राय दें':'मुद्दों के पोल के परिणाम देखें'} →</Link>}<Link href="/create" className="jh-button jh-secondary">अपने क्षेत्र का पोल बनाएँ</Link></div><p className="jh-metric-note">जनमत सेवा की मांग समझने में मदद कर सकता है। शिकायत के आधिकारिक निवारण के लिए संबंधित विभाग से भी संपर्क करें।</p></section>
+    <HomeNews />
+    <HomeGuides />
+    <VideoSection />
+    <section className="jh-panel jh-about"><div><h2>JanPoll क्या है?</h2><p>अपने क्षेत्र और देश के मुद्दों पर राय रखने और जनमत जानने का आसान मंच। सवाल बनाएं, लोगों की राय लें और चर्चा आगे बढ़ाएं।</p><Link href="/how-it-works" className="jh-text-link">पूरी गाइड पढ़ें →</Link></div><dl className="jh-stats"><div><dt>दर्ज वोट</dt><dd>{data.voteCount === null ? '—' : numbers.format(data.voteCount)}</dd></div><div><dt>कुल पोल</dt><dd>{data.pollCount === null ? '—' : numbers.format(data.pollCount)}</dd></div></dl></section>
+    <p className="jh-disclaimer">JanPoll एक जनमत मंच है। यह सरकारी मतदान प्रणाली या आधिकारिक चुनाव परिणाम नहीं है।</p>
+  </div></main>;
 }

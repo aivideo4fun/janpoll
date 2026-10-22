@@ -3,219 +3,25 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { db } from '@/lib/db';
 import { subscribeNewsletter } from '@/app/actions/newsletterAction';
-import Ad728x90 from '@/components/Ad728x90';
-
-const WHATSAPP_CHANNEL_URL = 'https://whatsapp.com/channel/0029VbEDUaJ5Ui2OzmpEYI3D';
-
-export default function Footer() {
-  return <FooterContent />;
-}
-
-async function FooterContent() {
-  let totalVotes = 0;
-  let totalPolls = 0;
-  let totalDistricts = 0;
-
-  try {
-    totalPolls = await db.poll.count();
-
-    const voteSum = await db.pollOption.aggregate({
-      _sum: {
-        voteCount: true,
-      },
-    });
-    totalVotes = voteSum._sum.voteCount ?? 0;
-
-    totalDistricts = await db.district.count();
-  } catch (error) {
-    console.error('फूटर डेटा लोड करने में त्रुटि:', error);
-  }
-
-  return (
-    <footer className="bg-[#031d15] text-white pt-12 pb-8 border-t border-emerald-900/50 overflow-x-hidden">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-12">
-        
-        {/* महत्वपूर्ण सूचना बॉक्स */}
-        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/40 p-4 sm:p-5 flex items-start gap-3 shadow-inner">
-          <span className="text-emerald-400 text-xl">ℹ️</span>
-          <p className="text-xs sm:text-sm text-emerald-100/90 leading-relaxed font-medium">
-            <strong className="text-white font-bold">महत्वपूर्ण सूचना:</strong> JanPoll पर दिखाए गए पोल्स केवल जनता की राय/जनमत जानने के लिए हैं। ये किसी सरकारी संस्था, निर्वाचन आयोग या आधिकारिक मतदान प्रणाली का हिस्सा नहीं हैं।
-          </p>
-        </div>
-
-        {/* मुख्य फूटर ग्रिड कॉलम */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-6">
-          
-          <div className="lg:col-span-2 space-y-4">
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl sm:text-3xl font-black tracking-tight text-white">JANPOLL</span>
-              <span className="text-xs sm:text-sm font-bold text-emerald-400 bg-emerald-900/60 px-2 py-0.5 rounded-md">INDIA</span>
-            </div>
-            
-            <p className="text-xs sm:text-sm text-emerald-100/80 font-medium">
-              भारत की जनता की राय, एक जगह।
-            </p>
-
-            <p className="text-xs text-gray-300 leading-relaxed max-w-md">
-              JanPoll.in एक स्वतंत्र जनमत मंच है जहाँ आप अपने राज्य और स्थानीय मुद्दों पर अपनी राय साझा कर सकते हैं। राजस्थान की पंचायत और निकाय hierarchy भी उपलब्ध है.
-            </p>
-
-            <div className="pt-2 flex flex-wrap gap-2">
-              <div className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-950/60 px-3 py-1.5 text-xs text-emerald-200">
-                <span>🟢</span>
-                <span>राजस्थान: लाइव (सक्रिय)</span>
-              </div>
-            </div>
-          </div>
-
-          {/* मुख्य लिंक */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-black text-emerald-300 uppercase tracking-wider flex items-center gap-2 border-b border-emerald-900 pb-2">
-              <span>🔗</span> मुख्य लिंक
-            </h3>
-            <ul className="space-y-2.5 text-xs text-gray-300 font-medium">
-              <li><Link href="/" className="hover:text-emerald-400 transition flex items-center gap-1.5">› होम पेज</Link></li>
-              <li><Link href="/articles" className="hover:text-emerald-400 transition">› लेख और विश्लेषण</Link></li>
-              <li><Link href="/create" className="hover:text-emerald-400 transition flex items-center gap-1.5">› पोल बनाएं</Link></li>
-              <li><Link href="/rajasthan" className="hover:text-emerald-400 transition flex items-center gap-1.5">› लोकप्रिय पोल</Link></li>
-              <li><Link href="/privacy-policy" className="hover:text-emerald-400 transition flex items-center gap-1.5">› गोपनीयता नीति</Link></li>
-              <li><Link href="/terms" className="hover:text-emerald-400 transition flex items-center gap-1.5">› नियम और शर्तें</Link></li>
-              <li><Link href="/advertise" className="hover:text-emerald-400">› विज्ञापन और साझेदारी</Link></li>
-              <li><Link href="/editorial-policy" className="hover:text-emerald-400">› संपादकीय नीति</Link></li>
-              <li><AnalyticsSettingsButton /></li>
-              <li><Link href="/contact" className="hover:text-emerald-400 transition flex items-center gap-1.5">› संपर्क करें</Link></li>
-            </ul>
-          </div>
-
-          {/* सहायता एवं जानकारी */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-black text-emerald-300 uppercase tracking-wider flex items-center gap-2 border-b border-emerald-900 pb-2">
-              <span>❓</span> सहायता एवं जानकारी
-            </h3>
-            <ul className="space-y-2.5 text-xs text-gray-300 font-medium">
-              <li><Link href="/en" lang="en" className="hover:text-emerald-400 transition">English — Create a Poll</Link></li>
-              <li><Link href="/poll-banaye" className="hover:text-emerald-400 transition">पोल कैसे बनाएँ?</Link></li>
-              <li><Link href="/about" className="hover:text-emerald-400 transition flex items-center gap-1.5">› JanPoll क्या है?</Link></li>
-              <li><Link href="/how-it-works" className="hover:text-emerald-400 transition flex items-center gap-1.5">› यह कैसे काम करता है?</Link></li>
-              <li><Link href="/privacy-policy" className="hover:text-emerald-400 transition flex items-center gap-1.5">› सुरक्षा और गोपनीयता</Link></li>
-              <li><Link href="/faq" className="hover:text-emerald-400 transition flex items-center gap-1.5">› अक्सर पूछे जाने वाले प्रश्न</Link></li>
-              <li><Link href="/feedback" className="hover:text-emerald-400 transition flex items-center gap-1.5">› सुझाव या शिकायत</Link></li>
-            </ul>
-          </div>
-
-          {/* सोशल मीडिया और न्यूज़लेटर */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-black text-emerald-300 uppercase tracking-wider flex items-center gap-2 border-b border-emerald-900 pb-2">
-              <span>👥</span> हमसे जुड़ें
-            </h3>
-            
-            <div className="flex flex-wrap items-center gap-2.5 pt-1">
-              <a href="https://t.me/janpollindia" target="_blank" rel="noopener noreferrer" title="Telegram" className="h-10 w-10 rounded-full bg-white/10 p-2 flex items-center justify-center hover:bg-white/20 transition shadow"><Image src="/images/telegram.svg" alt="Telegram" width={24} height={24} /></a>
-              <a href={WHATSAPP_CHANNEL_URL} target="_blank" rel="noreferrer" title="WhatsApp चैनल" className="h-10 w-10 rounded-full bg-white/10 p-2 flex items-center justify-center hover:bg-white/20 transition shadow">
-                <Image src="/images/whatsapp.png" alt="WhatsApp" width={24} height={24} className="object-contain" />
-              </a>
-              <a href="https://www.facebook.com/profile.php?id=61595121995283" target="_blank" rel="noreferrer" title="Facebook" className="h-10 w-10 rounded-full bg-white/10 p-2 flex items-center justify-center hover:bg-white/20 transition shadow">
-                <Image src="/images/facebook.png" alt="Facebook" width={24} height={24} className="object-contain" />
-              </a>
-              <a href="https://www.instagram.com/janpoll.in" target="_blank" rel="noreferrer" title="Instagram" className="h-10 w-10 rounded-full bg-white/10 p-2 flex items-center justify-center hover:bg-white/20 transition shadow">
-                <Image src="/images/instagram.png" alt="Instagram" width={24} height={24} className="object-contain" />
-              </a>
-              <a href="https://twitter.com/janpollindia" target="_blank" rel="noreferrer" title="X (Twitter)" className="h-10 w-10 rounded-full bg-white/10 p-2 flex items-center justify-center hover:bg-white/20 transition shadow">
-                <Image src="/images/x.png" alt="X (Twitter)" width={24} height={24} className="object-contain" />
-              </a>
-              <a href="https://whatsapp.com/channel/0029VbEDUaJ5Ui2OzmpEYI3D/113" target="_blank" rel="noreferrer" title="YouTube" className="h-10 w-10 rounded-full bg-white/10 p-2 flex items-center justify-center hover:bg-white/20 transition shadow">
-                <Image src="/images/youtube.png" alt="YouTube" width={24} height={24} className="object-contain" />
-              </a>
-            </div>
-
-            {/* WhatsApp चैनल बटन */}
-            <a
-              href={WHATSAPP_CHANNEL_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center justify-center gap-2 rounded-xl bg-green-500 hover:bg-green-400 text-green-950 text-xs font-bold py-2.5 transition shadow"
-            >
-              <Image src="/images/whatsapp.png" alt="" width={18} height={18} className="object-contain" />
-              WhatsApp चैनल जॉइन करें
-            </a>
-
-            {/* न्यूज़लेटर फॉर्म */}
-            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/50 p-3 space-y-2">
-              <p className="text-xs font-bold text-white flex items-center gap-1.5">
-                <span>✉️</span> जानकारी पाएं
-              </p>
-              <form action={async (formData) => { 'use server'; await subscribeNewsletter(formData); }} className="flex flex-col gap-2">
-                <input
-                  type="email"
-                  name="email"
-                  required
-                  placeholder="अपना ईमेल दर्ज करें"
-                  className="w-full rounded-xl border border-emerald-800 bg-[#01140e] px-3 py-2 text-xs text-white outline-none focus:border-emerald-500"
-                />
-                <button
-                  type="submit"
-                  className="w-full rounded-xl bg-emerald-500 py-2 text-xs font-bold text-emerald-950 hover:bg-emerald-400 transition shadow"
-                >
-                  सबस्क्राइब करें
-                </button>
-              </form>
-            </div>
-          </div>
-
-        </div>
-
-        {/* 100% रियल डेटाबेस आंकड़े */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
-          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-900/30 p-4 text-center">
-            <p className="text-xl sm:text-2xl font-black text-white">{totalVotes.toLocaleString('en-IN')}+</p>
-            <p className="text-xs text-emerald-300 font-medium">कुल वोटर्स</p>
-          </div>
-          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-900/30 p-4 text-center">
-            <p className="text-xl sm:text-2xl font-black text-white">{totalPolls.toLocaleString('en-IN')}+</p>
-            <p className="text-xs text-emerald-300 font-medium">कुल पोल</p>
-          </div>
-          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-900/30 p-4 text-center">
-            <p className="text-xl sm:text-2xl font-black text-white">{totalDistricts}+</p>
-            <p className="text-xs text-emerald-300 font-medium">जिलों से सहभागिता</p>
-          </div>
-          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-900/30 p-4 text-center">
-            <p className="text-xl sm:text-2xl font-black text-white">100%</p>
-            <p className="text-xs text-emerald-300 font-medium">सुरक्षित राय</p>
-          </div>
-        </div>
-
-        {/* 📢 विज्ञापन: 728x90 */}
-        <div className="rounded-2xl border border-dashed border-emerald-500/40 bg-emerald-950/30 p-6 text-center space-y-3 relative overflow-hidden shadow-sm">
-          <span className="absolute top-2 right-3 text-[10px] uppercase tracking-widest text-emerald-400/60 font-bold bg-emerald-900/50 px-2 py-0.5 rounded">
-            विज्ञापन
-          </span>
-          <p className="text-xs font-bold text-emerald-300">📢 प्रायोजक एवं विज्ञापन (Sponsored / Ads)</p>
-
-          <div className="py-2">
-            <Ad728x90 placement="footer" />
-          </div>
-        </div>
-
-        {/* कॉपीराइट और बॉटम लिंक्स */}
-        <div className="border-t border-emerald-900/80 pt-6 flex flex-col lg:flex-row items-center justify-between gap-4 text-xs text-gray-400 text-center lg:text-left">
-          <p>© 2026 JanPoll.in — सभी अधिकार सुरक्षित।</p>
-
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 font-medium">
-            <Link href="/privacy-policy" className="hover:text-emerald-400 transition">गोपनीयता नीति</Link>
-            <span>•</span>
-            <Link href="/terms" className="hover:text-emerald-400 transition">नियम और शर्तें</Link>
-            <span>•</span>
-            <Link href="/disclaimer" className="hover:text-emerald-400 transition">अस्वीकरण</Link>
-            <span>•</span>
-            <Link href="/contact" className="hover:text-emerald-400 transition">संपर्क करें</Link>
-          </div>
-
-          <div className="flex items-center gap-1.5 text-emerald-300 font-medium">
-            <span>❤️ राजस्थान के लोगों के लिए, जनता द्वारा 🇮🇳</span>
-          </div>
-        </div>
-
-      </div>
-    </footer>
-  );
+import Adsterra728 from '@/components/home/Adsterra728';
+const WHATSAPP_CHANNEL_URL='https://whatsapp.com/channel/0029VbEDUaJ5Ui2OzmpEYI3D';
+const MAIN_LINKS=[['/','Home'],['/en','JanPoll in English'],['/articles','News & articles'],['/create','Create a poll'],['/rajasthan','Rajasthan polls'],['/advertise','Advertising & partnerships'],['/editorial-policy','Editorial policy']];
+const HELP_LINKS=[['/guides','Poll guides & local issues'],['/about','About JanPoll'],['/how-it-works','How it works'],['/poll-banaye','How to create a poll'],['/videos','Video guides'],['/faq','Frequently asked questions'],['/feedback','Feedback & complaints'],['/contact','Contact us']];
+const LEGAL_LINKS=[['/privacy-policy','Privacy policy'],['/terms','Terms & conditions'],['/disclaimer','Disclaimer'],['/contact','Contact us']];
+const SOCIALS=[['Telegram','https://t.me/janpollindia','telegram.svg'],['WhatsApp channel',WHATSAPP_CHANNEL_URL,'whatsapp.png'],['Facebook','https://www.facebook.com/profile.php?id=61595121995283','facebook.png'],['Instagram','https://www.instagram.com/janpoll.in','instagram.png'],['X','https://twitter.com/janpollindia','x.png']];
+export default async function Footer(){
+  const [polls,votes,districts]=await Promise.allSettled([db.poll.count(),db.pollOption.aggregate({_sum:{voteCount:true}}),db.district.count()]);
+  const number=(value:number|null)=>value===null?'—':value.toLocaleString('en-IN');
+  const stats=[['Recorded votes',number(votes.status==='fulfilled'?votes.value._sum.voteCount||0:null)],['Polls created',number(polls.status==='fulfilled'?polls.value:null)],['Districts listed',number(districts.status==='fulfilled'?districts.value:null)],['Platform','Public opinion']];
+  return <footer lang="en" className="overflow-x-hidden border-t border-emerald-900/50 bg-[#031d15] pb-8 pt-10 text-white"><div className="mx-auto max-w-7xl space-y-9 px-4 sm:px-6 lg:px-8">
+    <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/40 p-4 text-sm leading-7 text-emerald-100"><strong className="text-white">Important:</strong> JanPoll polls reflect the views of participating users. JanPoll is independent of government bodies and election authorities and is not an official voting system.</div>
+    <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-5"><div className="space-y-4 lg:col-span-2"><p className="text-3xl font-bold tracking-tight">JANPOLL <span className="text-sm text-emerald-400">INDIA</span></p><p className="text-sm font-semibold text-emerald-100">India’s opinions, brought together.</p><p className="max-w-md text-sm leading-7 text-emerald-100/80">An independent platform for questions about your village, neighbourhood, state and country. Create a poll, share your question and listen to your community.</p><Link href="/rajasthan" className="inline-flex min-h-11 items-center rounded-xl border border-emerald-700 px-3 py-2 text-xs text-emerald-200">Explore Rajasthan polls →</Link></div>
+      <nav aria-label="Footer main links"><h2 className="border-b border-emerald-900 pb-3 text-sm font-bold text-emerald-300">Explore JanPoll</h2><ul className="mt-3 space-y-1">{MAIN_LINKS.map(([href,label])=><li key={href}><Link href={href} className="inline-flex min-h-11 items-center text-sm text-gray-300 hover:text-emerald-300">{label}</Link></li>)}</ul></nav>
+      <nav aria-label="Help and information"><h2 className="border-b border-emerald-900 pb-3 text-sm font-bold text-emerald-300">Help & information</h2><ul className="mt-3 space-y-1">{HELP_LINKS.map(([href,label])=><li key={href}><Link href={href} className="inline-flex min-h-11 items-center text-sm text-gray-300 hover:text-emerald-300">{label}</Link></li>)}</ul></nav>
+      <section className="space-y-4"><h2 className="border-b border-emerald-900 pb-3 text-sm font-bold text-emerald-300">Stay connected</h2><div className="flex flex-wrap gap-2">{SOCIALS.map(([label,href,icon])=><a key={label} href={href} title={label} aria-label={label} target="_blank" rel="noopener noreferrer" className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 p-2.5 hover:bg-white/20"><Image src={`/images/${icon}`} alt="" width={24} height={24}/></a>)}</div><a href={WHATSAPP_CHANNEL_URL} target="_blank" rel="noopener noreferrer" className="flex min-h-11 items-center justify-center rounded-xl bg-green-500 px-3 py-2 text-center text-xs font-bold text-green-950">Join our WhatsApp channel</a><div className="rounded-2xl border border-emerald-700 p-4"><h3 className="text-sm font-semibold">Get JanPoll updates</h3><form action={async form=>{'use server';await subscribeNewsletter(form);}} className="mt-3 space-y-3"><label htmlFor="footer-newsletter" className="sr-only">Email address</label><input id="footer-newsletter" type="email" name="email" required maxLength={255} autoComplete="email" placeholder="Your email address" className="min-h-11 w-full rounded-xl border border-emerald-700 bg-emerald-950 px-3 py-2 text-base text-white placeholder:text-emerald-200/70"/><button type="submit" className="min-h-11 w-full rounded-xl bg-emerald-500 px-3 py-2 text-sm font-semibold text-emerald-950">Subscribe</button></form></div></section>
+    </div>
+    <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">{stats.map(([label,value])=><div key={label} className="min-w-0 rounded-2xl border border-emerald-800 bg-emerald-900/25 p-4 text-center"><dt className="text-xs text-emerald-200">{label}</dt><dd className="mt-2 break-words text-xl font-bold text-white">{value}</dd></div>)}</dl>
+    <div className="rounded-2xl border border-dashed border-emerald-700 bg-emerald-950/30 p-3 sm:p-5"><Adsterra728 placement="footer" language="en"/></div>
+    <div className="flex flex-col gap-4 border-t border-emerald-900 pt-6 text-center text-xs text-gray-400 lg:flex-row lg:items-center lg:justify-between"><p>© {new Date().getFullYear()} JanPoll.in. All rights reserved.</p><nav aria-label="Legal information" className="flex flex-wrap justify-center gap-x-5 gap-y-1">{LEGAL_LINKS.map(([href,label])=><Link key={href} href={href} className="inline-flex min-h-11 items-center hover:text-emerald-300">{label}</Link>)}</nav><AnalyticsSettingsButton/></div><p className="text-center text-xs text-emerald-200/80">Voice of People • Made for communities across India</p>
+  </div></footer>;
 }

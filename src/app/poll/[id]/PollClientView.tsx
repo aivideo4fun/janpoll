@@ -24,7 +24,7 @@ import {
 
 import { castVote } from '@/lib/actions';
 import { getDeadline } from '@/lib/poll-utils';
-import Ad728x90 from '@/components/Ad728x90';
+import Adsterra728 from '@/components/home/Adsterra728';
 
 type Poll = {
   requiresLogin?: boolean;
@@ -180,17 +180,6 @@ export default function PollClientView({
 
   const [selectedOption, setSelectedOption] = useState('');
   const [hasVoted, setHasVoted] = useState(alreadyVoted);
-
-  // Restore the exact publisher vignette tag from the legacy poll view.
-  useEffect(() => {
-    if (process.env.NEXT_PUBLIC_MONETAG_ENABLED === 'false' || document.getElementById('janpoll-legacy-vignette')) return;
-    const script = document.createElement('script');
-    script.id = 'janpoll-legacy-vignette';
-    script.dataset.zone = '12021752';
-    script.src = 'https://n6wxm.com/vignette.min.js';
-    script.async = true;
-    document.body.appendChild(script);
-  }, []);
 
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -652,7 +641,7 @@ export default function PollClientView({
             aria-label="विज्ञापन"
             className="overflow-hidden rounded-2xl border border-slate-100 p-3 print:hidden"
           >
-            <Ad728x90 />
+            <Adsterra728 placement="poll" />
           </section>
         </div>
       </article>

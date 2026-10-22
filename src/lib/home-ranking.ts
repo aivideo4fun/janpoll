@@ -19,18 +19,19 @@ const loadRanking = unstable_cache(async (start: string, end: string, filter: Pr
     orderBy: [{ _count: { pollId: 'desc' } }, { pollId: 'asc' }],
     take: 4,
   });
-  return ranked.map(row => row.pollId);
-}, ['janpoll-daily-ranking-v2'], { revalidate: 30, tags: ['home-daily-ranking'] });
+  return ranked.map(row => ({id:row.pollId,votes:row._count.pollId}));
+}, ['janpoll-daily-ranking-v3'], { revalidate: 30, tags: ['home-daily-ranking'] });
 
 export async function getTodayTopPolls(filter: Prisma.PollWhereInput = {}) {
   const { start, end } = indiaDayBounds();
-  const ids = await loadRanking(start.toISOString(), end.toISOString(), filter);
-  if (!ids.length) return [];
+  const ranking = await loadRanking(start.toISOString(), end.toISOString(), filter);
+  if (!ranking.length) return [];
+  const ids=ranking.map(row=>row.id);
   // Keep Date objects outside the JSON data cache; poll expiry uses Date methods.
   const polls = await db.poll.findMany({
     where: { AND: [{ active: true }, filter, { id: { in: ids } }] },
     include: { options: true },
   });
   const byId = new Map(polls.map(poll => [poll.id, poll]));
-  return ids.flatMap(id => { const poll = byId.get(id); return poll ? [poll] : []; });
+  return ranking.flatMap(row => { const poll = byId.get(row.id); return poll ? [{...poll,todayVoteCount:row.votes}] : []; });
 }

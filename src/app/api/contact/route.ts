@@ -18,7 +18,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           success: false,
-          message: 'नाम, ईमेल और संदेश भरना अनिवार्य है।',
+          message: 'Name, email and message are required.',
         },
         { status: 400 }
       );
@@ -26,28 +26,28 @@ export async function POST(req: Request) {
 
     if (name.length > 100) {
       return NextResponse.json(
-        { success: false, message: 'नाम अधिकतम 100 अक्षरों का होना चाहिए।' },
+        { success: false, message: 'Name must be 100 characters or fewer.' },
         { status: 400 }
       );
     }
 
     if (email.length > 255) {
       return NextResponse.json(
-        { success: false, message: 'ईमेल बहुत लंबा है।' },
+        { success: false, message: 'Email must be 255 characters or fewer.' },
         { status: 400 }
       );
     }
 
     if (whatsapp && whatsapp.length > 20) {
       return NextResponse.json(
-        { success: false, message: 'WhatsApp नंबर अधिकतम 20 अंकों का होना चाहिए।' },
+        { success: false, message: 'WhatsApp / phone number must be 20 characters or fewer.' },
         { status: 400 }
       );
     }
 
     if (message.length > 5000) {
       return NextResponse.json(
-        { success: false, message: 'संदेश अधिकतम 5000 अक्षरों का होना चाहिए।' },
+        { success: false, message: 'Message must be 5,000 characters or fewer.' },
         { status: 400 }
       );
     }
@@ -63,7 +63,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: 'संदेश सफलतापूर्वक भेज दिया गया है।',
+      message: 'Your message has been sent successfully.',
     });
   } catch (error) {
     console.error('Contact API error:', error);
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         success: false,
-        message: 'संदेश भेजने में त्रुटि हुई।',
+        message: 'Unable to send your message. Please try again later.',
       },
       { status: 500 }
     );

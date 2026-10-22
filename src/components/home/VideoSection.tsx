@@ -1,0 +1,7 @@
+import Link from 'next/link';
+import { publishedVideos } from '@/lib/home/videos';
+import YouTubeCard from './YouTubeCard';
+export default async function VideoSection({ all = false, language = 'hi' }: { all?: boolean; language?: 'hi'|'en' }) {
+  const videos = await publishedVideos(all ? 24 : 4).catch(error => { console.error('Home videos unavailable', error.code || error.message); return []; });
+  return <section className="jh-panel" id="learn-videos" aria-labelledby="jh-videos-title"><div className="jh-section-head"><div><span className="jh-kicker">{language==='en'?'WATCH & LEARN':'देखें और सीखें'}</span><h2 id="jh-videos-title">{language==='en'?'How to use JanPoll':'JanPoll कैसे इस्तेमाल करें?'}</h2></div>{!all && <Link href="/videos" className="jh-text-link">{language==='en'?'All videos →':'सभी वीडियो →'}</Link>}</div><p className="jh-section-copy">{language==='en'?'Learn how to create a poll, participate and share its link.':'पोल बनाना, राय देना और लिंक शेयर करना—वीडियो में समझें।'}</p>{videos.length ? <div className="jh-video-grid">{videos.map(video => <YouTubeCard key={video.id} video={video} language={language} />)}</div> : <div className="jh-empty"><p>{language==='en'?'Video guides will appear here when published.':'समझाने वाले वीडियो जल्द यहाँ जुड़ेंगे।'}</p><Link href="/how-it-works" className="jh-text-link">{language==='en'?'Read the step-by-step guide →':'तब तक आसान गाइड पढ़ें →'}</Link></div>}</section>;
+}

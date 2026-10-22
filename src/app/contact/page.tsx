@@ -1,119 +1,13 @@
 'use client';
-
 import { useState } from 'react';
 import Link from 'next/link';
-
-export default function ContactPage() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [whatsapp, setWhatsapp] = useState(''); // 👈 WhatsApp state
-  const [message, setMessage] = useState('');
-  const [status, setStatus] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setStatus('');
-
-    try {
-      const res = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, whatsapp, message }), // 👈 body में भेजा गया
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        setStatus('संदेश सफलतापूर्वक भेज दिया गया है!');
-        setName('');
-        setEmail('');
-        setWhatsapp('');
-        setMessage('');
-      } else {
-        setStatus(data.message || 'त्रुटि हुई।');
-      }
-    } catch (err) {
-      setStatus('सर्वर से कनेक्ट करने में विफल।');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="max-w-xl mx-auto px-4 py-12">
-      <Link href="/" className="text-emerald-700 font-semibold text-sm">&larr; होम पेज पर वापस जाएं</Link>
-      
-      <div className="bg-white p-8 rounded-2xl shadow-sm border border-emerald-100 mt-4">
-        <h1 className="text-2xl font-black text-emerald-900 mb-2">संपर्क करें (Contact Us)</h1>
-        <p className="text-xs text-gray-500 mb-6">यदि आपके पास कोई सुझाव, प्रश्न या विज्ञापन (Advertising) संबंधी पूछताछ है, तो आप हमें संदेश भेज सकते हैं।</p>
-
-        {status && (
-          <div className={`mb-4 p-3 rounded-xl text-xs font-semibold ${status.includes('सफलता') ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
-            {status}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">आपका नाम *</label>
-            <input
-              type="text"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              placeholder="जैसे: विक्रम सिंह"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">ईमेल आईडी *</label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              placeholder="name@example.com"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">व्हाट्सएप नंबर (वैकल्पिक)</label>
-            <input
-              type="tel"
-              value={whatsapp}
-              onChange={(e) => setWhatsapp(e.target.value)}
-              className="w-full px-3 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              placeholder="जैसे: 9876543210"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1">संदेश या सुझाव (MESSAGE) *</label>
-            <textarea
-              required
-              rows={4}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              className="w-full px-3 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              placeholder="अपना संदेश यहाँ लिखें..."
-            ></textarea>
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl text-sm transition shadow"
-          >
-            {loading ? 'भेजा जा रहा है...' : 'संदेश भेजें (Send Message)'}
-          </button>
-        </form>
-
-        <div className="mt-6 pt-6 border-t border-gray-100 text-center">
-          <p className="text-xs text-gray-500 mb-1">सीधे ईमेल द्वारा संपर्क करें:</p>
-          <a href="mailto:support@janpoll.in" className="text-xs font-bold text-emerald-700 hover:underline">
-            support@janpoll.in
-          </a>
-        </div>
-      </div>
-    </div>
-  );
+export default function ContactPage(){
+  const [loading,setLoading]=useState(false),[status,setStatus]=useState<{ok:boolean;text:string}|null>(null);
+  async function submit(event:React.FormEvent<HTMLFormElement>){
+    event.preventDefault();const form=event.currentTarget;const data=new FormData(form);setLoading(true);setStatus(null);
+    try{const response=await fetch('/api/contact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.fromEntries(['name','email','whatsapp','message'].map(key=>[key,String(data.get(key)||'')])))});const result=await response.json();const ok=response.ok&&result.success===true;setStatus({ok,text:result.message||(ok?'Your message has been sent.':'Unable to send your message. Please try again.')});if(ok)form.reset();}
+    catch{setStatus({ok:false,text:'Unable to connect. Please try again later.'});}finally{setLoading(false);}
+  }
+  const field='mt-2 min-h-12 w-full rounded-xl border border-emerald-200 bg-white px-4 py-3 text-base text-slate-800 focus:outline-emerald-700';
+  return <main lang="en" className="min-h-screen bg-[#f5f9f6] px-4 py-8"><div className="mx-auto max-w-2xl"><Link href="/" className="inline-flex min-h-11 items-center text-sm font-semibold text-emerald-800">← Back to home</Link><section className="mt-4 rounded-3xl border border-emerald-100 bg-white p-5 sm:p-8"><h1 className="text-3xl font-semibold text-emerald-950">Contact us</h1><p className="mt-4 text-base leading-8 text-slate-600">Send a suggestion, ask a question or contact us about a poll, technical problem or advertising enquiry.</p>{status&&<p role={status.ok?'status':'alert'} className={`mt-5 rounded-xl border p-4 text-sm leading-7 ${status.ok?'border-emerald-200 bg-emerald-50 text-emerald-900':'border-red-200 bg-red-50 text-red-800'}`}>{status.text}</p>}<form onSubmit={submit} className="mt-6 space-y-5"><label className="block text-sm">Your name *<input name="name" required maxLength={100} autoComplete="name" className={field}/></label><label className="block text-sm">Email address *<input type="email" name="email" required maxLength={255} autoComplete="email" className={field} placeholder="name@example.com"/></label><label className="block text-sm">WhatsApp / phone number (optional)<input type="tel" name="whatsapp" maxLength={20} autoComplete="tel" className={field} placeholder="Include your country code"/></label><label className="block text-sm">Message *<textarea name="message" required maxLength={5000} rows={6} className={field} placeholder="Include the poll or article link, if relevant."/></label><p className="text-xs leading-6 text-slate-500">We use the information you submit to handle your enquiry and administer the platform. Read our <Link href="/privacy-policy" className="text-emerald-800 underline">Privacy Policy</Link>.</p><button disabled={loading} className="min-h-12 w-full rounded-xl bg-emerald-800 px-5 py-3 font-semibold text-white disabled:opacity-60">{loading?'Sending…':'Send message'}</button></form><p className="mt-6 border-t border-emerald-100 pt-5 text-sm text-slate-600">You can also email <a href="mailto:support@janpoll.in" className="break-all text-emerald-800 underline">support@janpoll.in</a>.</p></section></div></main>;
 }

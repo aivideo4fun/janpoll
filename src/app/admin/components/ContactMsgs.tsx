@@ -1,3 +1,4 @@
+import Link from 'next/link';
 type MessageData = {
   id: string;
   name: string;
@@ -35,6 +36,7 @@ export default function ContactMsgs({
         </span>
       </div>
 
+      <Link href="/admin/exports" className="mx-5 mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-emerald-800 underline">Export support contacts / creator emails →</Link>
       <div className="divide-y divide-emerald-100">
         {messages.length === 0 ? (
           <div className="px-5 py-12 text-center">

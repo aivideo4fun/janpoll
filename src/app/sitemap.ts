@@ -1,3 +1,4 @@
+import { POLL_GUIDES, GUIDE_UPDATED } from '@/lib/poll-guides';
 import { MetadataRoute } from 'next';
 import { unstable_noStore as noStore } from 'next/cache';
 import { db } from '@/lib/db';
@@ -79,6 +80,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   const articles = await db.article.findMany({ where: { published: true }, select: { slug: true, updatedAt: true } }).catch(() => []);
-  const urls = [...staticUrls, ...REGIONS.map(region => ({ url: baseUrl + regionHref(region) })), ...['/poll-banaye','/articles','/advertise','/editorial-policy','/about','/contact','/privacy-policy','/terms','/disclaimer','/faq','/how-it-works'].map(path=>({url:baseUrl+path})), ...articles.map(article => ({ url: baseUrl + '/articles/' + article.slug, lastModified: article.updatedAt })), ...districtUrls, ...pollUrls];
+  const urls = [...staticUrls, {url:baseUrl+'/guides',lastModified:new Date(GUIDE_UPDATED)}, ...POLL_GUIDES.map(g=>({url:baseUrl+'/guides/'+g.slug,lastModified:new Date(GUIDE_UPDATED)})), ...REGIONS.map(region => ({ url: baseUrl + regionHref(region) })), ...['/poll-banaye','/articles','/advertise','/editorial-policy','/about','/contact','/privacy-policy','/terms','/disclaimer','/faq','/how-it-works'].map(path=>({url:baseUrl+path})), ...articles.map(article => ({ url: baseUrl + '/articles/' + article.slug, lastModified: article.updatedAt })), ...districtUrls, ...pollUrls];
   return Array.from(new Map(urls.map(item=>[item.url,item])).values());
 }

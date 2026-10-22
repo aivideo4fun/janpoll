@@ -3,6 +3,7 @@
 import { getServerSession } from 'next-auth';
 import { revalidatePath } from 'next/cache';
 
+import { normalizeMobile } from '@/lib/profile-mobile';
 import { db } from '@/lib/db';
 import { googleAuthOptions } from '@/lib/google-auth';
 
@@ -40,18 +41,21 @@ export async function updateProfileName(formData: FormData) {
     };
   }
 
+  let mobile:string|null;
+  try { mobile=normalizeMobile(String(formData.get('mobile') || '')); }
+  catch { return {success:false,message:'सही 10 अंकों का भारतीय mobile या +country code वाला नंबर लिखें। नंबर वैकल्पिक है।',name:''}; }
   try {
-    const user = await db.user.update({
-      where: { id: userId },
-      data: { name },
-      select: { name: true },
+    const user = await db.$transaction(async tx => {
+      const updated = await tx.user.update({where:{id:userId},data:{name},select:{name:true}});
+      await tx.$executeRaw`UPDATE "User" SET mobile = ${mobile} WHERE id = ${userId}`;
+      return updated;
     });
 
     revalidatePath('/profile');
 
     return {
       success: true,
-      message: 'आपका नाम अपडेट हो गया है।',
+      message: 'आपकी profile अपडेट हो गई है।',
       name: user.name ?? name,
     };
   } catch (error) {

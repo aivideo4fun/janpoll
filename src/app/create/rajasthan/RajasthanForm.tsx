@@ -95,5 +95,8 @@ export default function RajasthanForm({ initial }: { initial: Initial }) {
       <label className="flex items-start gap-3 text-sm leading-7"><input required type="checkbox" checked={terms} onChange={e => setTerms(e.target.checked)} className="mt-2 h-4 w-4" /><span>मैं JanPoll के <Link href="/terms" target="_blank" className="text-emerald-800 underline">नियम और शर्तों</Link> से सहमत हूँ।</span></label>
       <button disabled={busy} className="min-h-12 w-full rounded-xl bg-emerald-800 px-5 py-3 font-semibold text-white disabled:opacity-60">{busy ? 'प्रकाशित हो रहा है…' : 'पोल प्रकाशित करें'}</button><p className="text-xs leading-6 text-slate-500">Verified badge केवल admin review के बाद मिलता है।</p>
     </fieldset></form>
+    <aside className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-8" aria-label="स्थान का डेटा नहीं मिला?">
+      <strong>आपके क्षेत्र का डेटा नहीं मिला?</strong> अगर आपकी पंचायत, मंडल / पंचायत समिति या जिला परिषद का डेटा सूची में नहीं है, तो जिले और क्षेत्र के नाम के साथ <a href="mailto:support@janpoll.in" className="break-all font-semibold text-emerald-800 underline">support@janpoll.in</a> पर संपर्क करें।
+    </aside>
   </section></main>;
 }

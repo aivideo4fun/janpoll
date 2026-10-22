@@ -7,7 +7,7 @@ export async function subscribeNewsletter(formData: FormData) {
   const email = formData.get('email')?.toString().trim();
 
   if (!email || !email.includes('@')) {
-    return { success: false, message: 'कृपया एक वैध ईमेल दर्ज करें।' };
+    return { success: false, message: 'Please enter a valid email address.' };
   }
 
   try {
@@ -17,13 +17,13 @@ export async function subscribeNewsletter(formData: FormData) {
     });
 
     revalidatePath('/');
-    return { success: true, message: 'सफलतापूर्वक सब्सक्राइब हो गया!' };
+    return { success: true, message: 'You have subscribed successfully.' };
   } catch (error: any) {
     // अगर ईमेल पहले से मौजूद है
     if (error.code === 'P2002') {
-      return { success: false, message: 'यह ईमेल पहले से रजिस्टर्ड है।' };
+      return { success: false, message: 'This email is already subscribed.' };
     }
     console.error('न्यूज़लेटर सब्सक्रिप्शन में त्रुटि:', error);
-    return { success: false, message: 'कुछ गलत हुआ, कृपया पुनः प्रयास करें।' };
+    return { success: false, message: 'Unable to subscribe. Please try again.' };
   }
 }

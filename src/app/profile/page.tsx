@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { getServerSession } from 'next-auth';
 
+import { readMobile } from '@/lib/profile-mobile';
 import { db } from '@/lib/db';
 import { googleAuthOptions } from '@/lib/google-auth';
 
@@ -138,6 +139,7 @@ export default async function ProfilePage() {
     );
   }
 
+  const mobile = await readMobile(userId);
   const displayName = user.name?.trim() || 'JanPoll User';
   const initial = Array.from(displayName)[0] || 'J';
 
@@ -190,11 +192,11 @@ export default async function ProfilePage() {
             </h2>
 
             <p className="mb-6 mt-2 text-sm leading-7 text-slate-500">
-              यहाँ अपना नाम अपडेट कर सकते हैं।
+              यहाँ अपना नाम और वैकल्पिक mobile number अपडेट कर सकते हैं।
             </p>
 
             <Link href="/my-polls" className="my-4 inline-flex min-h-11 items-center rounded-xl bg-emerald-800 px-5 text-white">मेरे पोल और Reference IDs →</Link>
-          <ProfileNameForm initialName={user.name ?? ''} />
+          <ProfileNameForm initialName={user.name ?? ''} initialMobile={mobile} />
 
             <div className="mt-7 border-t border-slate-100 pt-5">
               <p className="text-sm font-medium leading-7 text-slate-700">

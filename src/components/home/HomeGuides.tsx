@@ -1,0 +1,3 @@
+import Link from 'next/link';
+import { POLL_GUIDES } from '@/lib/poll-guides';
+export default function HomeGuides(){return <section className="jh-panel" aria-labelledby="poll-guides-title"><div className="jh-section-head"><h2 id="poll-guides-title">पोल बनाने और समझने की गाइड</h2><Link href="/guides" className="jh-text-link">सभी गाइड →</Link></div><p className="jh-section-copy">पहली बार create poll कर रहे हैं? सही सवाल, स्पष्ट विकल्प और जिम्मेदार sharing के लिए हमारी विस्तृत English guides पढ़ें।</p><div className="jh-guide-grid" lang="en">{POLL_GUIDES.map(g=><article className="jh-guide" key={g.slug}><h3><Link href={`/guides/${g.slug}`}>{g.title}</Link></h3><p>{g.summary}</p><Link href={`/guides/${g.slug}`}>Read the guide →</Link></article>)}</div></section>}

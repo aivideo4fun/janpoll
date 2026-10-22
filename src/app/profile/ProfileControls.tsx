@@ -90,9 +90,9 @@ export function LogoutButton() {
 }
 
 export function ProfileNameForm({
-  initialName,
+  initialName, initialMobile = '',
 }: {
-  initialName: string;
+  initialName: string; initialMobile?: string;
 }) {
   const router = useRouter();
 
@@ -158,6 +158,7 @@ export function ProfileNameForm({
         />
       </div>
 
+      <div><label htmlFor="profile-mobile" className="mb-2 block text-sm text-slate-700">Mobile number (वैकल्पिक)</label><input id="profile-mobile" name="mobile" type="tel" inputMode="tel" autoComplete="tel" maxLength={24} defaultValue={initialMobile} disabled={busy} placeholder="जैसे +91 9876543210" className="min-h-12 w-full min-w-0 rounded-xl border border-slate-200 px-4 py-3 text-base"/><p className="mt-2 text-xs leading-7 text-slate-500">आपकी इच्छा पर दिया गया नंबर केवल account और support के लिए admin को उपलब्ध होगा; public profile में नहीं दिखेगा। यह OTP verified नहीं है। नंबर हटाने के लिए खाली करके Save करें।</p></div>
       {message && (
         <p
           role={success ? 'status' : 'alert'}
