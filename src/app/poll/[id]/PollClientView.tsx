@@ -189,6 +189,17 @@ export default function PollClientView({
   const [shareLoading, setShareLoading] = useState(true);
 
   const voteLock = useRef(false);
+  useEffect(() => {
+    const id = 'janpoll-monetag-vignette';
+    if (document.getElementById(id) || document.querySelector('script[data-zone="12021752"]')) return;
+    const script = document.createElement('script');
+    script.id = id;
+    script.dataset.zone = '12021752';
+    script.src = 'https://n6wxm.com/vignette.min.js';
+    script.async = true;
+    (document.body || document.documentElement).appendChild(script);
+    // Keep one script for this document, including client navigation/remounts.
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
